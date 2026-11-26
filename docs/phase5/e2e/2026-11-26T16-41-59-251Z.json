@@ -1,0 +1,432 @@
+{
+  "schema": "sss.phase5-e2e/v1",
+  "kind": "REAL DATA — live Bluesky calls, real web UI, independent workbook validation (openpyxl)",
+  "startedAt": "2026-11-26T16:41:59.251Z",
+  "finishedAt": "2026-11-26T16:42:47.402Z",
+  "environment": {
+    "node": "v22.16.0",
+    "platform": "win32",
+    "browser": "msedge.exe"
+  },
+  "testControls": [
+    "The script approves the 2 best-scored candidates (a person does this in the product).",
+    "allowExport=true was set for Bluesky in the throwaway database only, after the default-policy export, to prove the workbook with real rows. The product keeps deny-by-default until the Product Owner approves the policy."
+  ],
+  "privateArtifacts": "Workbooks and screenshots contain third-party content: kept in .data/evidence/ (git-ignored), not committed.",
+  "steps": [
+    {
+      "step": "discover (real Bluesky)",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "candidates": {
+          "new": 35,
+          "updated": 0,
+          "notEnriched": 17,
+          "autoApproved": 0,
+          "alreadyTracked": 0
+        }
+      }
+    },
+    {
+      "step": "approve top 2 → sync",
+      "ok": true,
+      "summary": {
+        "approved": 2
+      }
+    },
+    {
+      "step": "posts via API",
+      "ok": true,
+      "summary": {
+        "posts": 4
+      }
+    },
+    {
+      "step": "xlsx export, default policy (Bluesky export not allowed → rows withheld)",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "rowCounts": {
+          "posts": 0,
+          "accounts": 0,
+          "keywords": 1,
+          "collectionRuns": 3
+        },
+        "withheld": [
+          {
+            "posts": 4,
+            "reason": "Effective data policy does not allow export (allowExport=false; deny-by-default until the policy is approved)",
+            "accounts": 2,
+            "policyId": "bluesky-public-v0-unverified",
+            "providerId": "bluesky-appview"
+          }
+        ],
+        "sizeBytes": 7989,
+        "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "validation": {
+          "sheets": [
+            {
+              "name": "Summary",
+              "rows": 11,
+              "header": [
+                "Field",
+                "Value"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Accounts",
+              "rows": 0,
+              "header": [
+                "platform",
+                "external_id",
+                "username",
+                "display_name",
+                "profile_url",
+                "status",
+                "followers",
+                "following",
+                "posts_count",
+                "missing_reason",
+                "metrics_collected_at",
+                "provider",
+                "policy_id",
+                "approval",
+                "tracking",
+                "relevance"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Posts",
+              "rows": 0,
+              "header": [
+                "platform",
+                "account",
+                "title",
+                "caption",
+                "published_at",
+                "provider_indexed_at",
+                "url",
+                "content_type",
+                "hashtags",
+                "language",
+                "views",
+                "likes",
+                "comments",
+                "shares",
+                "saves",
+                "extra_metrics",
+                "missing_reason",
+                "metrics_collected_at",
+                "thumbnail_url",
+                "status",
+                "provider",
+                "policy_id",
+                "schema_version"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Keywords",
+              "rows": 1,
+              "header": [
+                "text",
+                "normalized",
+                "status",
+                "origin",
+                "language",
+                "priority"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Collection_Log",
+              "rows": 3,
+              "header": [
+                "started_at",
+                "provider",
+                "operation",
+                "status",
+                "requests",
+                "records",
+                "quota_units",
+                "latency_ms",
+                "error_code"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Usage",
+              "rows": 2,
+              "header": [
+                "day (UTC)",
+                "provider",
+                "unit",
+                "quantity"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Data_Dictionary",
+              "rows": 17,
+              "header": [
+                "sheet",
+                "column",
+                "meaning",
+                "source",
+                "when empty"
+              ],
+              "formulaColumns": []
+            }
+          ],
+          "ok": true
+        }
+      }
+    },
+    {
+      "step": "xlsx export with export allowed (test control)",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "rowCounts": {
+          "posts": 4,
+          "accounts": 2,
+          "keywords": 1,
+          "collectionRuns": 3
+        },
+        "withheld": [],
+        "sizeBytes": 9492,
+        "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "validation": {
+          "sheets": [
+            {
+              "name": "Summary",
+              "rows": 10,
+              "header": [
+                "Field",
+                "Value"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Accounts",
+              "rows": 2,
+              "header": [
+                "platform",
+                "external_id",
+                "username",
+                "display_name",
+                "profile_url",
+                "status",
+                "followers",
+                "following",
+                "posts_count",
+                "missing_reason",
+                "metrics_collected_at",
+                "provider",
+                "policy_id",
+                "approval",
+                "tracking",
+                "relevance"
+              ],
+              "formulaColumns": [
+                "profile_url"
+              ]
+            },
+            {
+              "name": "Posts",
+              "rows": 4,
+              "header": [
+                "platform",
+                "account",
+                "title",
+                "caption",
+                "published_at",
+                "provider_indexed_at",
+                "url",
+                "content_type",
+                "hashtags",
+                "language",
+                "views",
+                "likes",
+                "comments",
+                "shares",
+                "saves",
+                "extra_metrics",
+                "missing_reason",
+                "metrics_collected_at",
+                "thumbnail_url",
+                "status",
+                "provider",
+                "policy_id",
+                "schema_version"
+              ],
+              "formulaColumns": [
+                "url"
+              ]
+            },
+            {
+              "name": "Keywords",
+              "rows": 1,
+              "header": [
+                "text",
+                "normalized",
+                "status",
+                "origin",
+                "language",
+                "priority"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Collection_Log",
+              "rows": 3,
+              "header": [
+                "started_at",
+                "provider",
+                "operation",
+                "status",
+                "requests",
+                "records",
+                "quota_units",
+                "latency_ms",
+                "error_code"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Usage",
+              "rows": 2,
+              "header": [
+                "day (UTC)",
+                "provider",
+                "unit",
+                "quantity"
+              ],
+              "formulaColumns": []
+            },
+            {
+              "name": "Data_Dictionary",
+              "rows": 17,
+              "header": [
+                "sheet",
+                "column",
+                "meaning",
+                "source",
+                "when empty"
+              ],
+              "formulaColumns": []
+            }
+          ],
+          "ok": true
+        }
+      }
+    },
+    {
+      "step": "csv export",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "rowCounts": {
+          "posts": 4
+        },
+        "withheld": [],
+        "sizeBytes": 2062,
+        "contentType": "text/csv; charset=utf-8",
+        "validation": {
+          "ok": true,
+          "rows": 4,
+          "header": [
+            "platform",
+            "account",
+            "title",
+            "caption",
+            "published_at",
+            "provider_indexed_at",
+            "url",
+            "content_type"
+          ]
+        }
+      }
+    },
+    {
+      "step": "json export",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "rowCounts": {
+          "posts": 4,
+          "accounts": 2,
+          "keywords": 1,
+          "collectionRuns": 3
+        },
+        "withheld": [],
+        "sizeBytes": 9532,
+        "contentType": "application/json; charset=utf-8",
+        "validation": {
+          "ok": true,
+          "posts": 4,
+          "accounts": 2
+        }
+      }
+    },
+    {
+      "step": "UI pages rendered (headless browser screenshots)",
+      "ok": true,
+      "summary": [
+        {
+          "page": "dashboard",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-dashboard.png",
+          "bytes": 109331
+        },
+        {
+          "page": "project",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-project.png",
+          "bytes": 120221
+        },
+        {
+          "page": "explore",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-explore.png",
+          "bytes": 75006
+        },
+        {
+          "page": "accounts",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-accounts.png",
+          "bytes": 187025
+        },
+        {
+          "page": "jobs",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-jobs.png",
+          "bytes": 70341
+        },
+        {
+          "page": "workflows",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-workflows.png",
+          "bytes": 67022
+        },
+        {
+          "page": "exports",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-exports.png",
+          "bytes": 52464
+        },
+        {
+          "page": "sources",
+          "file": ".\\.data\\evidence\\phase5\\2026-11-26T16-41-59-251Z\\ui-sources.png",
+          "bytes": 77181
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "discover (real Bluesky)": true,
+    "approve top 2 → sync": true,
+    "posts via API": true,
+    "xlsx export, default policy (Bluesky export not allowed → rows withheld)": true,
+    "xlsx export with export allowed (test control)": true,
+    "csv export": true,
+    "json export": true,
+    "UI pages rendered (headless browser screenshots)": true
+  }
+}

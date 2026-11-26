@@ -45,6 +45,10 @@ export const configSchema = z
     /** WF14: delete posts the provider stopped returning after this grace period (Bluesky Developer Guidelines). */
     CLEANUP_DELETE_UNAVAILABLE: bool.default(true),
     CLEANUP_UNAVAILABLE_GRACE_HOURS: z.coerce.number().int().min(1).max(8760).default(72),
+    /** Export files (WF17). Relative paths are resolved from the repository root. */
+    EXPORT_DIR: z.string().default('.data/exports'),
+    EXPORT_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(7),
+    EXPORT_MAX_POSTS: z.coerce.number().int().min(1).max(500_000).default(50_000),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
     BLUESKY_IDENTIFIER: z.preprocess(emptyToUndef, z.string().optional()),

@@ -107,6 +107,16 @@ The discovery job result has `coverage`: one entry per platform/keyword/operatio
 | POST | `/scheduler/pause`, `/scheduler/resume` | Stop or resume firing schedules |
 | GET | `/jobs/stats` | Job monitor (`windowHours`, default 24): `byStatus`, `byName`, `active` (with `ageSeconds`, `stuck`), `deadLetter` (FAILED by error code, recent failures with retry URLs) |
 
+## Dashboard and exports (Phase 5)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/dashboard` | Counts, posts per day (14 d), latest posts, most-liked posts in 7 d (raw provider count, not a score), coverage with usage, reserved and cost today, scheduler, jobs. Optional `projectId` |
+| POST | `/exports` | `{format: xlsx\|csv\|json, projectId?, filters?}` (Content Explorer filters). Returns 202 + job + export |
+| GET | `/exports` | Recent exports: status, row counts, `withheld` (per provider, with policy id and reason), file, expiry |
+| GET | `/exports/:id` | One export |
+| GET | `/exports/:id/download` | The file (`content-disposition: attachment`). 409 while not finished; 404 once expired |
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |

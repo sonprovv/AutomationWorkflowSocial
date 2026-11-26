@@ -1,3 +1,4 @@
+import { createReadStream } from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -11,6 +12,9 @@ import {
   discoverRequestSchema,
   enqueueDiscovery,
   KeywordService,
+  DashboardService,
+  ExportService,
+  exportRequestSchema,
   SchedulerService,
   keywordPatchSchema,
   createProjectSchema,
@@ -22,6 +26,7 @@ import {
   toJobView,
   trackAccountSchema,
   trackingPatchSchema,
+  toExportView,
   workflowCreateSchema,
   workflowPatchSchema,
   updateProjectSchema,
@@ -51,6 +56,8 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   const keywords = new KeywordService(ctx);
   const candidates = new CandidateService(ctx);
   const scheduler = new SchedulerService(ctx);
+  const exportsSvc = new ExportService(ctx);
+  const dashboard = new DashboardService(ctx);
 
   /* ---------------- health ---------------- */
   api.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok', time: new Date().toISOString() }));
@@ -184,14 +191,30 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   api.post('/scheduler/pause', { schema: { tags: ['workflows'], description: 'Stop firing scheduled workflows (running jobs continue; manual runs still work).' } }, async () => scheduler.setPaused(true));
   api.post('/scheduler/resume', { schema: { tags: ['workflows'] } }, async () => scheduler.setPaused(false));
 
+  /* ---------------- dashboard & exports (Phase 5) ---------------- */
+  api.get('/dashboard', { schema: { tags: ['dashboard'], querystring: z.object({ projectId: z.uuid().optional() }) } }, async (req) => dashboard.overview(req.query.projectId));
+  api.post('/exports', { schema: { tags: ['exports'], body: exportRequestSchema, description: 'WF17: Excel/CSV/JSON export of posts/accounts (Content Explorer filters). Rows a provider policy does not allow to export are withheld and listed. Returns 202 + job.' } }, async (req, reply) => {
+    const r = await exportsSvc.request(req.body);
+    const job = toJobView(r.job);
+    return reply.status(202).send({ job_id: job.id, status: job.status, status_url: job.statusUrl, warnings: [], job, export: r.export });
+  });
+  api.get('/exports', { schema: { tags: ['exports'], querystring: z.object({ limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => ({ items: await exportsSvc.list(req.query.limit) }));
+  api.get('/exports/:id', { schema: { tags: ['exports'], params: idParam } }, async (req) => toExportView(await exportsSvc.get(req.params.id)));
+  api.get('/exports/:id/download', { schema: { tags: ['exports'], params: idParam } }, async (req, reply) => {
+    const f = await exportsSvc.fileFor(req.params.id);
+    const ascii = f.fileName.replace(/[^ -~]/g, '_').replace(/"/g, '');
+    reply.header('content-type', f.contentType);
+    reply.header('content-disposition', `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(f.fileName)}`);
+    reply.header('cache-control', 'no-store');
+    return reply.send(createReadStream(f.path));
+  });
+
   /* ---------------- planned routes (later phases) ---------------- */
   const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
     ['/posts/:id/analyze', 'post', 'AI content analysis (WF08)', 6],
     ['/analytics/viral', 'get', 'Viral results (policy-gated, WF07)', 6],
     ['/analytics/trends', 'get', 'Trend results (WF09)', 6],
     ['/reports', 'post', 'Generate report', 7],
-    ['/exports', 'post', 'Generate export', 5],
-    ['/exports/:id/download', 'get', 'Download export', 5],
   ];
   for (const [url, method, what, phase] of planned) {
     api[method](url, { schema: { tags: ['planned'], description: `${what} — planned for Phase ${phase} (Master Plan §16)` } }, async (_req, reply) =>

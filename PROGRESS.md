@@ -15,9 +15,25 @@
 | 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | 🟡 **Bluesky done with real data** (contract tests, real-data sync of 3 accounts, metrics refresh, usage + provenance). Open: YouTube live verification (needs the key); TikTok/Meta wait on Product Owner decisions (§Phase 2) |
 | 3 | Project, keyword, discovery, review, tracking, incremental sync | ✅ **Gate passed with real Bluesky data** (seed keyword → candidates → approved account → posts). YouTube discovery waits for the key |
 | 4 | Scheduled workflows, reliability, policy & budget guards, job monitor | ✅ **Done and tested** (also in a real native run without Redis). Open: BullMQ-mode verification of the scheduler process and worker stall handling (needs Redis) |
-| 5–9 | See Master Plan §16 | ⬜ |
+| 5 | Web dashboard, content explorer, exports | ✅ **Gate passed with real data**: UI rendered in a real browser, real Excel file validated by openpyxl. Bluesky rows are withheld from exports until the Product Owner approves the policy |
+| 6–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 5 — Dashboard, Content Explorer, exports (started 2026-11-26 16:20 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P5-01 | Exports xlsx/csv/json (WF17): Summary, Accounts, Posts, Keywords, Collection_Log, Usage, Data_Dictionary; TTL + WF14 purge | ✅ | `tests/integration/exports-dashboard.test.ts`; ADR-0013 |
+| P5-02 | Policy guard at export: rows of providers without `allowExport` are withheld and listed (never silently dropped) | ✅ | tests; E2E step "default policy" |
+| P5-03 | Formula-injection defence (CSV + XLSX); dependency-free XLSX writer | ✅ | `packages/services/test/xlsx.test.ts` (11 tests) |
+| P5-04 | `GET /dashboard` | ✅ | tests |
+| P5-05 | Web UI: Dashboard, Projects/Project (keywords, discovery coverage, review queue), Accounts, Content Explorer (filters + export), Job Monitor, Automations, Exports, Data Sources | ✅ | real headless-browser screenshots of 8 pages (private, `.data/evidence/phase5/`) |
+| P5-06 | Gate: real data end-to-end | ✅ | `npm run phase5:e2e` → `docs/phase5/e2e/2026-11-26T16-41-59-251Z.json`: 8/8 PASS. Real Bluesky discovery → approve → sync → refresh → xlsx/csv/json; workbook opened by openpyxl with 7 sheets and only our own HYPERLINK formulas |
+
+Waiting on the Product Owner: the Bluesky policy proposal (export, history, derived metrics). Until it is approved, Bluesky posts and accounts are withheld from exports.
+
+Tests: `npm test` **156 passed, 1 skipped**.
 
 ## Phase 4 — Scheduling, reliability, guards (started 2026-11-26 16:07 UTC)
 
@@ -194,6 +210,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-26 ~16:45 — Phase 5: exports with policy guard, dashboard API, full web UI; real-data E2E 8/8. 156 tests passing.
 - 2026-11-26 16:07 — Product Owner: build all phases in order; keys and Redis will be provided later.
 - 2026-11-26 ~16:20 — Phase 4: DB scheduler, workflows API, reservations budget guard, WF14 cleanup, job monitor. 141 tests passing.
 - 2026-11-26 15:51 — Product Owner: continue with Phase 3.

@@ -35,9 +35,12 @@ export interface Project {
   name: string;
   niche: string | null;
   platforms: string[];
+  languages: string[];
+  markets: string[];
   status: string;
   accountCount: number | null;
   timezone: string;
+  settings: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -106,6 +109,102 @@ export interface Job {
   createdAt: string;
   finishedAt: string | null;
   resourceId: string | null;
+}
+
+export interface PostFull extends Post {
+  externalId: string;
+  accountId: string;
+  providerIndexedAt: string | null;
+  status: string;
+  unavailable: { since: string | null; reason: string | null } | null;
+}
+
+export interface Keyword {
+  id: string;
+  text: string;
+  normalizedText: string;
+  language: string | null;
+  origin: string;
+  status: string;
+  priority: number;
+  parentId: string | null;
+}
+
+export interface Candidate {
+  id: string;
+  accountId: string;
+  account: { platform: string; externalId: string; username: string | null; displayName: string | null; profileUrl: string; bio: string | null };
+  score: number;
+  classification: string;
+  approvalStatus: string;
+  evidence: {
+    scoreVersion?: string;
+    confidence?: string;
+    reasons?: string[];
+    matchedKeywords?: string[];
+    samplePosts?: { url: string; text: string | null; publishedAt: string | null; likes: number | null; keyword: string }[];
+    profile?: { url: string; followers: number | null; postsCount: number | null; collectedAt: string };
+  };
+  decidedAt: string | null;
+  decidedBy: string | null;
+  lastSeenAt: string;
+}
+
+export interface CoverageEntry {
+  platform: string;
+  providerId: string | null;
+  keyword: string | null;
+  operation: string;
+  status: string;
+  results: number | null;
+  reason: string | null;
+  warnings: string[];
+}
+
+export interface Workflow {
+  id: string;
+  workflowKey: string;
+  description: string | null;
+  enabled: boolean;
+  everyMinutes: number | null;
+  cron: string | null;
+  timezone: string;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  lastStatus: string | null;
+  lastResult: { jobIds?: string[]; notes?: string[] } | null;
+}
+
+export interface ExportRow {
+  id: string;
+  format: string;
+  status: string;
+  filters: Record<string, unknown>;
+  rowCounts: Record<string, number>;
+  withheld: { providerId: string; posts: number; accounts: number; reason: string; policyId: string }[];
+  fileName: string | null;
+  sizeBytes: number | null;
+  error: string | null;
+  createdAt: string;
+  expiresAt: string;
+  downloadUrl: string | null;
+}
+
+export interface JobStats {
+  byStatus: Record<string, number>;
+  byName: Record<string, Record<string, number>>;
+  active: { id: string; name: string; status: string; progress: number; ageSeconds: number; stuck: boolean }[];
+  deadLetter: { byErrorCode: Record<string, number>; recent: { id: string; name: string; errorCode: string | null; errorMessage: string | null; finishedAt: string | null }[] };
+}
+
+export interface Dashboard {
+  counts: Record<string, number>;
+  postsPerDay: { day: string; posts: number }[];
+  latestPosts: PostFull[];
+  topPostsByLikes7d: { note: string; items: PostFull[] };
+  coverage: { providerId: string; platform: string; status: string; enabled: boolean; healthy: boolean | null; checkedAt: string | null; usageToday: Record<string, number>; reservedToday: Record<string, number>; costTodayUsd: number }[];
+  scheduler: { paused: boolean; next: { id: string; workflowKey: string; nextRunAt: string | null; lastStatus: string | null }[] };
+  jobs: { byStatus: Record<string, number>; active: number; stuck: number; failed24h: number };
 }
 
 export interface Provider {

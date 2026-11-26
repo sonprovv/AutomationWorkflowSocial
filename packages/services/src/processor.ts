@@ -1,8 +1,9 @@
 import { CollectorError, toCollectorError } from '@sss/collector-core';
-import { accountSyncPayload, discoverPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { accountSyncPayload, discoverPayload, exportPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
 import { CleanupService } from './cleanup.ts';
+import { ExportService } from './exports.ts';
 import { DiscoveryService } from './discovery.ts';
 import { JobService } from './jobs.ts';
 import { MetricsRefreshService } from './metrics.ts';
@@ -21,6 +22,7 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
   const metrics = new MetricsRefreshService(ctx);
   const discovery = new DiscoveryService(ctx);
   const cleanup = new CleanupService(ctx);
+  const exportsSvc = new ExportService(ctx);
 
   const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
     const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
@@ -73,6 +75,13 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
           errorMessage: r.error?.message ?? null,
         });
         await log('info', 'finish', `${r.status}: ${r.postsUpdated} updated, ${r.postsUnavailable} unavailable of ${r.postsDue} due`);
+        return;
+      }
+      if (name === JOB_NAMES.EXPORT) {
+        const { exportId } = exportPayload.parse(payload);
+        const r = await exportsSvc.generate(exportId);
+        await jobs.finish(jobId, 'SUCCEEDED', { result: r.export, warnings: r.warnings });
+        await log('info', 'finish', `export ${r.export.format}: ${JSON.stringify(r.export.rowCounts)}; withheld ${JSON.stringify(r.export.withheld)}`);
         return;
       }
       if (name === JOB_NAMES.CLEANUP) {

@@ -14,6 +14,7 @@ export const JOB_NAMES = {
   METRICS_REFRESH: 'post.metrics_refresh',
   DISCOVER: 'project.discover',
   CLEANUP: 'maintenance.cleanup',
+  EXPORT: 'export.generate',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -23,6 +24,7 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'post.metrics_refresh': 'collection',
   'project.discover': 'discovery',
   'maintenance.cleanup': 'maintenance',
+  'export.generate': 'report',
 };
 
 export const accountSyncPayload = z.object({
@@ -55,12 +57,16 @@ export type DiscoverPayload = z.infer<typeof discoverPayload>;
 /** WF14 policy cleanup & housekeeping. */
 export const cleanupPayload = z.object({ trigger: z.enum(['manual', 'schedule', 'retry']) });
 
+/** WF17 export: the export row holds format and filters. */
+export const exportPayload = z.object({ exportId: z.uuid() });
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
   'post.metrics_refresh': metricsRefreshPayload,
   'project.discover': discoverPayload,
   'maintenance.cleanup': cleanupPayload,
+  'export.generate': exportPayload,
 } as const;
 
 /**

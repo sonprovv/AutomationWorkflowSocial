@@ -36,7 +36,10 @@ The gate passed with real Bluesky data: seed keyword → candidates → approved
 ## Phase 4 status
 Done (ADR-0012). Schedules now also run without Redis (inside the API). Open: once Redis is installed, run `start.bat` and check that it reports "worker + scheduler mode", that `GET /workflows` shows runs, and that `tests/integration/bullmq.test.ts` passes.
 
-**Next: Phase 5** (Master Plan §16): web dashboard, content explorer, exports (Excel/CSV/JSON with data dictionary and provenance).
+## Phase 5 status
+Done (ADR-0013). Bluesky rows are withheld from exports until the policy proposal is approved: set `policyProposal.status` to `"APPROVED"` in `docs/feasibility/capabilities/bluesky.json` and restart.
+
+**Next: Phase 6** (Master Plan §16): allowed analytics, AI analysis, trend engine, with evidence and confidence, policy gates and fixture tests.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

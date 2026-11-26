@@ -426,6 +426,32 @@ model AppSetting {
   @@map("app_settings")
 }
 
+/// Generated export files (WF17, Master Plan §12). The file lives under EXPORT_DIR; the row keeps provenance.
+model Export {
+  id         String    @id @default(uuid()) @db.Uuid
+  projectId  String?   @map("project_id") @db.Uuid
+  /// xlsx | csv | json
+  format     String
+  /// QUEUED | RUNNING | SUCCEEDED | FAILED
+  status     String    @default("QUEUED")
+  /// Filters applied (same as GET /posts) + timezone.
+  filters    Json      @default("{}")
+  /// Rows per sheet/table.
+  rowCounts  Json      @default("{}") @map("row_counts")
+  /// Rows left out by the policy guard, per provider, with the reason.
+  withheld   Json      @default("[]")
+  fileName   String?   @map("file_name")
+  sizeBytes  Int?      @map("size_bytes")
+  jobId      String?   @map("job_id") @db.Uuid
+  error      String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("exports")
+}
+
 /// Budget/quota reservations (Master Plan §9.1 authorize → reserve → execute → reconcile).
 /// Active = not settled and not expired. Granting takes a per-(provider, unit, day) advisory lock, so concurrent
 /// workers cannot reserve more than the daily cap. Expiry releases reservations of crashed workers.

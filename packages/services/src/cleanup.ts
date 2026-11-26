@@ -1,4 +1,5 @@
 import { nowOf, type ServiceContext } from './context.ts';
+import { ExportService } from './exports.ts';
 import { UsageGuard } from './usage.ts';
 
 export interface CleanupResult {
@@ -7,6 +8,7 @@ export interface CleanupResult {
   retention: { policyId: string; providerId: string; retentionDays: number | null; postsDeleted: number; note: string | null }[];
   stalePosts: { policyId: string; refreshDays: number; posts: number }[];
   reservationsPurged: number;
+  exportsPurged: number;
   jobLogsPurged: number;
   searchResultsPurged: number;
   warnings: string[];
@@ -31,7 +33,7 @@ export class CleanupService {
   async run(): Promise<CleanupResult> {
     const { db, config } = this.ctx;
     const now = nowOf(this.ctx);
-    const res: CleanupResult = { status: 'SUCCEEDED', unavailablePostsDeleted: 0, retention: [], stalePosts: [], reservationsPurged: 0, jobLogsPurged: 0, searchResultsPurged: 0, warnings: [] };
+    const res: CleanupResult = { status: 'SUCCEEDED', unavailablePostsDeleted: 0, retention: [], stalePosts: [], reservationsPurged: 0, exportsPurged: 0, jobLogsPurged: 0, searchResultsPurged: 0, warnings: [] };
 
     if (config.CLEANUP_DELETE_UNAVAILABLE) {
       const cutoff = new Date(now.getTime() - config.CLEANUP_UNAVAILABLE_GRACE_HOURS * 3600_000);
@@ -56,6 +58,7 @@ export class CleanupService {
     }
 
     res.reservationsPurged = await new UsageGuard(this.ctx).purgeReservations(7);
+    res.exportsPurged = await new ExportService(this.ctx).purgeExpired();
     res.jobLogsPurged = (
       await db.jobLog.deleteMany({ where: { ts: { lt: new Date(now.getTime() - JOB_LOG_DAYS * DAY) }, job: { status: { notIn: ['QUEUED', 'RUNNING'] } } } })
     ).count;

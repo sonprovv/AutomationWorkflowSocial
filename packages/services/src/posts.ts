@@ -74,6 +74,22 @@ export type PostView = ReturnType<typeof toPostView>;
 
 const cursorSchema = z.object({ t: z.string(), id: z.string() });
 
+/** Post filters shared by the Content Explorer and exports. */
+export type PostFilters = Omit<z.infer<typeof postQuerySchema>, 'limit' | 'cursor'>;
+
+export function postWhere(v: PostFilters): Prisma.PostWhereInput {
+  return {
+    accountId: v.accountId,
+    ...(v.includeUnavailable ? {} : { status: 'AVAILABLE' as const }),
+    platform: v.platform,
+    contentType: v.contentType,
+    ...(v.hashtag ? { hashtags: { has: v.hashtag.toLowerCase().replace(/^#/, '') } } : {}),
+    ...(v.projectId ? { account: { projects: { some: { projectId: v.projectId } } } } : {}),
+    ...(v.q ? { OR: [{ caption: { contains: v.q, mode: 'insensitive' } }, { title: { contains: v.q, mode: 'insensitive' } }] } : {}),
+    ...(v.since || v.until ? { sortAt: { gte: v.since ? new Date(v.since) : undefined, lte: v.until ? new Date(v.until) : undefined } } : {}),
+  };
+}
+
 export class PostQueryService {
   constructor(private readonly ctx: ServiceContext) {}
 
@@ -81,16 +97,7 @@ export class PostQueryService {
   async list(input: unknown): Promise<PageResult<PostView>> {
     const v = postQuerySchema.parse(input);
     const c = decodeCursor(v.cursor, cursorSchema);
-    const where: Prisma.PostWhereInput = {
-      accountId: v.accountId,
-      ...(v.includeUnavailable ? {} : { status: 'AVAILABLE' as const }),
-      platform: v.platform,
-      contentType: v.contentType,
-      ...(v.hashtag ? { hashtags: { has: v.hashtag.toLowerCase().replace(/^#/, '') } } : {}),
-      ...(v.projectId ? { account: { projects: { some: { projectId: v.projectId } } } } : {}),
-      ...(v.q ? { OR: [{ caption: { contains: v.q, mode: 'insensitive' } }, { title: { contains: v.q, mode: 'insensitive' } }] } : {}),
-      ...(v.since || v.until ? { sortAt: { gte: v.since ? new Date(v.since) : undefined, lte: v.until ? new Date(v.until) : undefined } } : {}),
-    };
+    const where = postWhere(v);
     const keyset: Prisma.PostWhereInput | undefined = c
       ? { OR: [{ sortAt: { lt: new Date(c.t) } }, { sortAt: new Date(c.t), id: { lt: c.id } }] }
       : undefined;
