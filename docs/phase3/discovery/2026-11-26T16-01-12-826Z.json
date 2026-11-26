@@ -1,0 +1,399 @@
+{
+  "schema": "sss.phase3-discovery/v1",
+  "kind": "REAL DATA — live provider calls",
+  "seeds": [
+    "live wallpaper",
+    "depth wallpaper"
+  ],
+  "startedAt": "2026-11-26T16:01:12.826Z",
+  "finishedAt": "2026-11-26T16:01:36.529Z",
+  "environment": {
+    "node": "v22.16.0",
+    "platform": "win32",
+    "db": "embedded PostgreSQL (ephemeral)",
+    "queue": "inline (dev mode)"
+  },
+  "testControls": [
+    "The script approves the 2 best-scored candidates (a person does this in the product)."
+  ],
+  "seededProviders": [
+    {
+      "providerId": "bluesky-appview",
+      "enabled": true,
+      "status": "VERIFIED"
+    },
+    {
+      "providerId": "meta-graph-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "instagram-graph-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "linkedin-marketing-api",
+      "enabled": false,
+      "status": "BLOCKED"
+    },
+    {
+      "providerId": "pinterest-api-v5",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "reddit-data-api",
+      "enabled": false,
+      "status": "UNVERIFIED"
+    },
+    {
+      "providerId": "threads-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "tiktok-official-apis",
+      "enabled": false,
+      "status": "BLOCKED"
+    },
+    {
+      "providerId": "x-api-v2",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "youtube-data-api-v3",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    }
+  ],
+  "steps": [
+    {
+      "step": "add seed keywords",
+      "ms": 24,
+      "status": 201,
+      "summary": [
+        "live wallpaper",
+        "depth wallpaper"
+      ]
+    },
+    {
+      "step": "rule expansion (suggestions, not searched)",
+      "ms": 22,
+      "status": 201,
+      "summary": [
+        "livewallpaper",
+        "live wallpapers",
+        "depthwallpaper",
+        "depth wallpapers"
+      ]
+    },
+    {
+      "step": "discover (WF02)",
+      "ms": 10776,
+      "status": 202,
+      "summary": {
+        "status": "SUCCEEDED",
+        "candidates": {
+          "new": 67,
+          "updated": 0,
+          "notEnriched": 30,
+          "autoApproved": 0,
+          "alreadyTracked": 0
+        },
+        "usage": [
+          {
+            "requests": 34,
+            "providerId": "bluesky-appview",
+            "quotaUnits": 0
+          }
+        ],
+        "coverage": [
+          {
+            "reason": null,
+            "status": "OK",
+            "keyword": "live wallpaper",
+            "results": 30,
+            "platform": "bluesky",
+            "warnings": [
+              "searchActors ignores language/region filters.",
+              "searchActors returns profiles without follower/post counts (metrics=null). Call getProfile to enrich."
+            ],
+            "operation": "searchAccounts",
+            "providerId": "bluesky-appview"
+          },
+          {
+            "reason": null,
+            "status": "OK",
+            "keyword": "live wallpaper",
+            "results": 30,
+            "platform": "bluesky",
+            "warnings": [
+              "Unauthenticated searchPosts via api.bsky.app (undocumented; may start requiring auth). Configure BLUESKY_APP_PASSWORD for the documented path.",
+              "searchPosts cursor may not page through the entire result set (per API docs)."
+            ],
+            "operation": "searchPosts",
+            "providerId": "bluesky-appview"
+          },
+          {
+            "reason": null,
+            "status": "OK",
+            "keyword": "depth wallpaper",
+            "results": 28,
+            "platform": "bluesky",
+            "warnings": [
+              "searchActors ignores language/region filters.",
+              "searchActors returns profiles without follower/post counts (metrics=null). Call getProfile to enrich."
+            ],
+            "operation": "searchAccounts",
+            "providerId": "bluesky-appview"
+          },
+          {
+            "reason": null,
+            "status": "OK",
+            "keyword": "depth wallpaper",
+            "results": 27,
+            "platform": "bluesky",
+            "warnings": [
+              "Unauthenticated searchPosts via api.bsky.app (undocumented; may start requiring auth). Configure BLUESKY_APP_PASSWORD for the documented path.",
+              "searchPosts cursor may not page through the entire result set (per API docs)."
+            ],
+            "operation": "searchPosts",
+            "providerId": "bluesky-appview"
+          },
+          {
+            "reason": "Provider not enabled (status AUTH_REQUIRED)",
+            "status": "SKIPPED",
+            "keyword": null,
+            "results": null,
+            "platform": "youtube",
+            "warnings": [],
+            "operation": "provider",
+            "providerId": "youtube-data-api-v3"
+          },
+          {
+            "reason": "No collector for tiktok (status BLOCKED); add accounts by URL where possible. See docs/feasibility/tiktok.md",
+            "status": "SKIPPED",
+            "keyword": null,
+            "results": null,
+            "platform": "tiktok",
+            "warnings": [],
+            "operation": "provider",
+            "providerId": "tiktok-official-apis"
+          }
+        ]
+      }
+    },
+    {
+      "step": "review queue (top 10)",
+      "ms": 17,
+      "status": 200,
+      "summary": [
+        {
+          "username": "mugenkabe.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:m3e5iq6sziozsst3ih65atvx",
+          "score": 47,
+          "classification": "ADJACENT_COMPETITOR",
+          "reasons": [
+            "Keyword in handle/name: live wallpaper",
+            "Keyword in bio: live wallpaper",
+            "Account search rank 1/30 for \"live wallpaper\""
+          ],
+          "samplePosts": 0
+        },
+        {
+          "username": "2liveapp.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:upzjihrikdwlowilxktwdvpr",
+          "score": 47,
+          "classification": "DIRECT_COMPETITOR",
+          "reasons": [
+            "Keyword in handle/name: live wallpaper",
+            "Keyword in bio: live wallpaper",
+            "Account search rank 2/30 for \"live wallpaper\""
+          ],
+          "samplePosts": 0
+        },
+        {
+          "username": "livewallpaper-8k.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:ugle6rjqzjbjfp3w2h5fhbtk",
+          "score": 46,
+          "classification": "ADJACENT_COMPETITOR",
+          "reasons": [
+            "Keyword in handle/name: live wallpaper",
+            "Keyword in bio: live wallpaper",
+            "Account search rank 3/30 for \"live wallpaper\""
+          ],
+          "samplePosts": 0
+        },
+        {
+          "username": "masterilli.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:3hdo2jbsk46xaef7seojchix",
+          "score": 42,
+          "classification": "ADJACENT_COMPETITOR",
+          "reasons": [
+            "Keyword in bio: live wallpaper",
+            "3 own post(s) matched keyword search"
+          ],
+          "samplePosts": 3
+        },
+        {
+          "username": "misskitty.art",
+          "profileUrl": "https://bsky.app/profile/did:plc:hc7tndm7gduompba65aps75k",
+          "score": 30,
+          "classification": "PUBLISHER",
+          "reasons": [
+            "3 own post(s) matched keyword search"
+          ],
+          "samplePosts": 3
+        },
+        {
+          "username": "stumblegirl.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:xeeq7izc4t7zdrdlbdcg3iy7",
+          "score": 30,
+          "classification": "CREATOR",
+          "reasons": [
+            "7 own post(s) matched keyword search"
+          ],
+          "samplePosts": 3
+        },
+        {
+          "username": "mtxar.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:hnpadzu673t2sf5kcgyqozbt",
+          "score": 30,
+          "classification": "UNKNOWN",
+          "reasons": [
+            "4 own post(s) matched keyword search"
+          ],
+          "samplePosts": 3
+        },
+        {
+          "username": "martin16-b.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:uajlg44wiggmiz5yzqrjzddr",
+          "score": 26,
+          "classification": "ADJACENT_COMPETITOR",
+          "reasons": [
+            "Keyword in bio: live wallpaper",
+            "Account search rank 4/30 for \"live wallpaper\""
+          ],
+          "samplePosts": 0
+        },
+        {
+          "username": "scrnsvrs.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:w2s6prrzhnfmn447olwx6olc",
+          "score": 25,
+          "classification": "UNKNOWN",
+          "reasons": [
+            "2 own post(s) matched keyword search",
+            "Matched 2 distinct keywords"
+          ],
+          "samplePosts": 2
+        },
+        {
+          "username": "catalinprata.bsky.social",
+          "profileUrl": "https://bsky.app/profile/did:plc:w62ljhqei63niaa34d3qi6wl",
+          "score": 25,
+          "classification": "ADJACENT_COMPETITOR",
+          "reasons": [
+            "Keyword in bio: live wallpaper",
+            "Account search rank 6/30 for \"live wallpaper\""
+          ],
+          "samplePosts": 0
+        }
+      ]
+    },
+    {
+      "step": "approve top 2 → initial sync",
+      "ms": 549,
+      "status": 200,
+      "summary": [
+        {
+          "status": "SUCCEEDED",
+          "postsNew": 2,
+          "pages": 1
+        },
+        {
+          "status": "SUCCEEDED",
+          "postsNew": 2,
+          "pages": 1
+        }
+      ]
+    },
+    {
+      "step": "GET /posts for the project (top 5)",
+      "ms": 20,
+      "status": 200,
+      "summary": [
+        {
+          "account": "2liveapp.bsky.social",
+          "url": "https://bsky.app/profile/did:plc:upzjihrikdwlowilxktwdvpr/post/3mshrb3tmtc2t",
+          "publishedAt": "2026-08-07T04:54:52.937Z",
+          "likes": 0,
+          "provenance": {
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified",
+            "schemaVersion": "bluesky-appview@2026-11-26",
+            "lastCollectedAt": "2026-11-26T16:01:36.008Z",
+            "lastMetricsAt": "2026-11-26T16:01:36.008Z"
+          }
+        },
+        {
+          "account": "2liveapp.bsky.social",
+          "url": "https://bsky.app/profile/did:plc:upzjihrikdwlowilxktwdvpr/post/3msezb245ws2t",
+          "publishedAt": "2026-08-06T02:40:01.839Z",
+          "likes": 1,
+          "provenance": {
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified",
+            "schemaVersion": "bluesky-appview@2026-11-26",
+            "lastCollectedAt": "2026-11-26T16:01:36.008Z",
+            "lastMetricsAt": "2026-11-26T16:01:36.008Z"
+          }
+        },
+        {
+          "account": "mugenkabe.bsky.social",
+          "url": "https://bsky.app/profile/did:plc:m3e5iq6sziozsst3ih65atvx/post/3laujrghx5u2w",
+          "publishedAt": "2024-11-13T23:45:46.231Z",
+          "likes": 1,
+          "provenance": {
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified",
+            "schemaVersion": "bluesky-appview@2026-11-26",
+            "lastCollectedAt": "2026-11-26T16:01:36.142Z",
+            "lastMetricsAt": "2026-11-26T16:01:36.142Z"
+          }
+        },
+        {
+          "account": "mugenkabe.bsky.social",
+          "url": "https://bsky.app/profile/did:plc:m3e5iq6sziozsst3ih65atvx/post/3lauj3lywqe2w",
+          "publishedAt": "2024-11-13T23:33:33.835Z",
+          "likes": 3,
+          "provenance": {
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified",
+            "schemaVersion": "bluesky-appview@2026-11-26",
+            "lastCollectedAt": "2026-11-26T16:01:36.142Z",
+            "lastMetricsAt": "2026-11-26T16:01:36.142Z"
+          }
+        }
+      ]
+    }
+  ],
+  "dbCounts": {
+    "keywords": 6,
+    "searchResults": 115,
+    "candidates": 67,
+    "approved": 2,
+    "trackedAccounts": 2,
+    "posts": 4
+  },
+  "checks": {
+    "discoveryFinished": true,
+    "candidatesFound": true,
+    "nothingTrackedBeforeApproval": true,
+    "everyCandidateHasEvidence": true,
+    "blockedPlatformsReportedNotZero": true,
+    "approvedAccountsSynced": true,
+    "postsForApprovedAccounts": true
+  }
+}

@@ -13,9 +13,25 @@
 | 0 | Data Source Feasibility | 🟡 Code, tests and docs are done. **The gate is still open:** it needs `YOUTUBE_API_KEY` to verify a second source. The Product Owner chose to continue in the meantime (ADR-0007) |
 | 1 | Monorepo, runtime, DB, REST, queue, provider SDK, vertical slice | 🟡 **Core done and tested with real data.** Open: the BullMQ path with a real Redis, Docker mode, and macOS (§Phase 1 open items) |
 | 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | 🟡 **Bluesky done with real data** (contract tests, real-data sync of 3 accounts, metrics refresh, usage + provenance). Open: YouTube live verification (needs the key); TikTok/Meta wait on Product Owner decisions (§Phase 2) |
-| 3–9 | See Master Plan §16 | ⬜ |
+| 3 | Project, keyword, discovery, review, tracking, incremental sync | ✅ **Gate passed with real Bluesky data** (seed keyword → candidates → approved account → posts). YouTube discovery waits for the key |
+| 4–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 3 — Keywords, discovery and review (started 2026-11-26 15:51 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P3-01 | Tables `keywords`, `discovery_candidates`, `search_results` | ✅ | migration `20261126155650_discovery_keywords_candidates` |
+| P3-02 | Keyword CRUD with normalized dedup; WF01 rule expansion (SUGGESTED, never searched until activated) | ✅ | `packages/services/test/discovery-rules.test.ts` |
+| P3-03 | WF02 discovery job `project.discover`: keywords × platforms, budget-checked calls, explicit coverage (OK/ERROR/SKIPPED), profile enrichment | ✅ | `tests/integration/discovery.test.ts` (4 tests) |
+| P3-04 | Rule score `rule-v1` 0–100 with reasons, matched keywords, sample posts; low-confidence classification | ✅ | unit tests; ADR-0011 |
+| P3-05 | Review queue: list (keyset by score), approve (tracks + queues the sync, respects `max_accounts`), reject (keeps human decisions on re-runs), audit log; opt-in bounded auto-track | ✅ | `tests/integration/discovery.test.ts` |
+| P3-06 | Real-data gate run | ✅ | `npm run phase3:discover` → `docs/phase3/discovery/2026-11-26T16-01-12-826Z.json`: "live wallpaper" + "depth wallpaper" on Bluesky → 115 search hits → 67 candidates (34 requests) → top 2 approved → both synced → posts via API. YouTube (AUTH_REQUIRED) and TikTok (BLOCKED) reported as SKIPPED with reasons |
+
+Known limits: account search on Bluesky ignores language; unauthenticated post search is page 1 only (≤100 per query); post-only authors beyond the 30-profile enrichment cap are not stored (`notEnriched`).
+
+Tests: `npm test` **134 passed, 1 skipped**.
 
 ## Phase 2 — Production adapters (started 2026-11-26 15:33 UTC)
 
@@ -160,5 +176,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-26 15:51 — Product Owner: continue with Phase 3.
+- 2026-11-26 ~16:01 — Phase 3: keywords, rule expansion, discovery job, rule score, review queue; real-data gate run passed. 134 tests passing.
 - 2026-11-26 ~15:50 — Phase 2: metrics refresh, availability fields, shared contract suite, real-data sync of 3 Bluesky accounts. 122 tests passing.
 - 2026-11-26 ~15:30 — Phase 1 code review done: 7 bugs fixed with regression tests (see above). `npm test`: 94 passed, 1 skipped. Native start/stop re-checked on Windows.

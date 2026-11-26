@@ -28,7 +28,12 @@ Bluesky is done with real data (see `PROGRESS.md` → Phase 2). Open:
 - **YouTube live verification.** Once `YOUTUBE_API_KEY` is set and the Phase 0 runs are done, run `npm run phase2:sync -- https://www.youtube.com/@GoogleDevelopers` (add any channels) and check the quota units in the report.
 - **TikTok / Meta.** These wait on the Product Owner decisions above.
 
-After that: **Phase 3** (Master Plan §16): project, keyword, discovery, review, tracking, incremental sync. Seed keyword → candidate → approved account → posts.
+## Phase 3 status
+The gate passed with real Bluesky data: seed keyword → candidates → approved account → posts (`docs/phase3/discovery/`, ADR-0011). Open:
+- **YouTube discovery.** This needs the key. Once the key is in, re-run `npm run phase3:discover`; YouTube search costs 100 quota units per call, so keep `max_keywords_per_run` small.
+- **Web UI** for keywords and the review queue. The API is ready; the UI comes with Phase 5.
+
+**Next: Phase 4** (Master Plan §16): scheduled workflows (WF03/04 sync, WF05/06 metrics refresh, WF02 discovery), reliability (restart, retry, cancel, pause), policy and budget guards (atomic reservations), and a job monitor.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

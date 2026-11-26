@@ -44,15 +44,21 @@
 | `sync_cursors` | Checkpoint per `(account, provider)`: cursor, watermark, `backfill_done` | |
 | `usage_logs` | Usage per provider and per UTC day (Phase 1 quota guard) | index `(provider_id, day)` |
 
+### Keywords and discovery (Phase 3)
+| Table | Purpose | Key constraints and indexes |
+|---|---|---|
+| `keywords` | Project keywords: `normalized_text` (NFKC, lower-case, no `#`), `origin` MANUAL/RULE/AI, `status` SUGGESTED/ACTIVE/PAUSED/REJECTED (only ACTIVE is searched), `parent_id` for expansions | unique `(project_id, normalized_text)`; index `(project_id, status)` |
+| `discovery_candidates` | Review queue: account, rule score 0–100, classification, `evidence` JSON (reasons, matched keywords, sources, sample post URLs, profile snapshot), approval status, who decided and when | unique `(project_id, account_id)`; index `(project_id, approval_status, score DESC)` |
+| `search_results` | Every search hit per keyword/provider/job (rank, account and post external IDs, URL). Post hits are not stored as posts until the account is approved | indexes `(project_id, collected_at DESC)`, `(keyword_id)` |
+
 ### Operations
 | Table | Purpose |
 |---|---|
 | `schedules` | Schedules defined in the DB, which the scheduler applies |
-| `audit_logs` | Actions such as `project.create/update/delete`, `account.track` and `account.tracking`, with redacted metadata |
+| `audit_logs` | Actions such as `project.create/update/delete`, `account.track`, `account.tracking` and `candidate.approved/rejected`, with redacted metadata |
 
 **Tables in Master Plan §6.2 that arrive in later phases:**
-- `keywords` and `keyword_groups`
-- `discovery_candidates` and `search_results`
+- `keyword_groups`
 - `post_media`, `comments` and `raw_responses`
 - `viral_scores`, `trends` / `trend_snapshots`, `content_analysis` and `creative_ideas`
 - `workflows` / `workflow_versions` and `workflow_runs`

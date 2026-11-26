@@ -79,14 +79,26 @@ Errors:
 - `403 POLICY_BLOCKED`: the provider is not enabled yet (for example YouTube before its Phase 0 verification).
 - `429 BUDGET_EXCEEDED`: the daily cap is reached.
 
+## Keywords and discovery (Phase 3)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/projects/:id/keywords` | Keywords (`status` filter) |
+| POST | `/projects/:id/keywords` | `{keywords: [{text, language?, priority?}]}` → `201 {created, existing}`. Dedup by normalized text; adding a SUGGESTED keyword activates it |
+| PATCH / DELETE | `/keywords/:id` | `{status?, priority?}` / delete |
+| POST | `/projects/:id/keywords/expand` | WF01 rule mode: SUGGESTED variants (compact form, English singular/plural), capped by `max_keywords_per_run`. They are not searched until activated |
+| POST | `/projects/:id/discover` | WF02, returns 202 + job. Body `{keywordIds?, platforms?}`. 400 without ACTIVE keywords; 409 while a discovery of the project is active |
+| GET | `/projects/:id/candidates` | Review queue, best score first: `status`, `minScore`, `classification`, `limit`, `cursor` |
+| GET | `/projects/:id/candidates/:candidateId` | One candidate with evidence |
+| POST | `/projects/:id/candidates/approve` | `{candidateIds, sync=true}` → tracked in the project (relevance = score) + initial sync job. 409 if it would exceed `max_accounts` |
+| POST | `/projects/:id/candidates/reject` | `{candidateIds}`. Rejecting an approved candidate pauses its tracking (data kept) |
+
+The discovery job result has `coverage`: one entry per platform/keyword/operation with `status` `OK` (searched; 0 results is a real answer), `ERROR` (the call failed, with the typed code) or `SKIPPED` (not possible: no collector, provider disabled, capability missing, budget), so a failed source is never shown as "0 results".
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |
 |---|---|---|
-| POST | `/projects/:id/discover` | 3 |
-| POST | `/projects/:id/keywords/expand` | 3 |
-| GET | `/projects/:id/candidates` | 3 |
-| POST | `/projects/:id/candidates/approve` | 3 |
 | POST | `/posts/:id/analyze` | 6 |
 | GET | `/analytics/viral` | 6 |
 | GET | `/analytics/trends` | 6 |

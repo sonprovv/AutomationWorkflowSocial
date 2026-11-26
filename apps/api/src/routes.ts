@@ -4,6 +4,14 @@ import { z } from 'zod';
 import { pingDb } from '@sss/database';
 import {
   AccountService,
+  addKeywordsSchema,
+  candidateQuerySchema,
+  CandidateService,
+  decideSchema,
+  discoverRequestSchema,
+  enqueueDiscovery,
+  KeywordService,
+  keywordPatchSchema,
   createProjectSchema,
   JobService,
   PostQueryService,
@@ -37,6 +45,8 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   const posts = new PostQueryService(ctx);
   const jobs = new JobService(ctx);
   const providers = new ProviderService(ctx);
+  const keywords = new KeywordService(ctx);
+  const candidates = new CandidateService(ctx);
 
   /* ---------------- health ---------------- */
   api.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok', time: new Date().toISOString() }));
@@ -125,12 +135,38 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     };
   });
 
+  /* ---------------- keywords & discovery (Phase 3) ---------------- */
+  api.get('/projects/:id/keywords', { schema: { tags: ['discovery'], params: idParam, querystring: z.object({ status: z.enum(['SUGGESTED', 'ACTIVE', 'PAUSED', 'REJECTED']).optional() }) } }, async (req) => ({
+    items: await keywords.list(req.params.id, req.query.status),
+  }));
+  api.post('/projects/:id/keywords', { schema: { tags: ['discovery'], params: idParam, body: addKeywordsSchema, description: 'Add manual keywords (ACTIVE). Duplicates by normalized text are returned under `existing`.' } }, async (req, reply) =>
+    reply.status(201).send(await keywords.add(req.params.id, req.body)),
+  );
+  api.patch('/keywords/:id', { schema: { tags: ['discovery'], params: idParam, body: keywordPatchSchema } }, async (req) => keywords.update(req.params.id, req.body));
+  api.delete('/keywords/:id', { schema: { tags: ['discovery'], params: idParam } }, async (req, reply) => {
+    await keywords.delete(req.params.id);
+    return reply.status(204).send();
+  });
+  api.post('/projects/:id/keywords/expand', { schema: { tags: ['discovery'], params: idParam, description: 'WF01 (rule mode): suggest variants of ACTIVE keywords as SUGGESTED; activate them with PATCH /keywords/:id.' } }, async (req, reply) => {
+    const p = await projects.get(req.params.id);
+    return reply.status(201).send(await keywords.expand(req.params.id, p.settings.max_keywords_per_run));
+  });
+  api.post('/projects/:id/discover', { schema: { tags: ['discovery'], params: idParam, body: discoverRequestSchema.nullish(), description: 'WF02: search ACTIVE keywords on the project platforms and fill the review queue. Returns 202 + job.' } }, async (req, reply) =>
+    accepted(reply, toJobView(await enqueueDiscovery(ctx, req.params.id, req.body ?? {}))),
+  );
+  api.get('/projects/:id/candidates', { schema: { tags: ['discovery'], params: idParam, querystring: candidateQuerySchema } }, async (req) => candidates.list(req.params.id, req.query));
+  api.get('/projects/:id/candidates/:candidateId', { schema: { tags: ['discovery'], params: z.object({ id: z.uuid(), candidateId: z.uuid() }) } }, async (req) => candidates.get(req.params.id, req.params.candidateId));
+  api.post('/projects/:id/candidates/approve', { schema: { tags: ['discovery'], params: idParam, body: decideSchema, description: 'Approve candidates: track them in the project and queue their initial sync (sync=false to skip).' } }, async (req) => {
+    const b = decideSchema.parse(req.body);
+    return candidates.decide(req.params.id, b.candidateIds, 'APPROVED', 'local-user', { sync: b.sync });
+  });
+  api.post('/projects/:id/candidates/reject', { schema: { tags: ['discovery'], params: idParam, body: decideSchema } }, async (req) => {
+    const b = decideSchema.parse(req.body);
+    return candidates.decide(req.params.id, b.candidateIds, 'REJECTED', 'local-user', { sync: false });
+  });
+
   /* ---------------- planned routes (later phases) ---------------- */
   const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
-    ['/projects/:id/discover', 'post', 'Market discovery (WF02)', 3],
-    ['/projects/:id/keywords/expand', 'post', 'Keyword expansion (WF01)', 3],
-    ['/projects/:id/candidates', 'get', 'Discovery review queue', 3],
-    ['/projects/:id/candidates/approve', 'post', 'Approve candidates', 3],
     ['/posts/:id/analyze', 'post', 'AI content analysis (WF08)', 6],
     ['/analytics/viral', 'get', 'Viral results (policy-gated, WF07)', 6],
     ['/analytics/trends', 'get', 'Trend results (WF09)', 6],

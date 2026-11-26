@@ -1,7 +1,8 @@
 import { CollectorError, toCollectorError } from '@sss/collector-core';
-import { accountSyncPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { accountSyncPayload, discoverPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
+import { DiscoveryService } from './discovery.ts';
 import { JobService } from './jobs.ts';
 import { MetricsRefreshService } from './metrics.ts';
 import { ProviderService } from './providers.ts';
@@ -17,6 +18,7 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
   const sync = new SyncService(ctx);
   const providers = new ProviderService(ctx);
   const metrics = new MetricsRefreshService(ctx);
+  const discovery = new DiscoveryService(ctx);
 
   const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
     const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
@@ -69,6 +71,28 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
           errorMessage: r.error?.message ?? null,
         });
         await log('info', 'finish', `${r.status}: ${r.postsUpdated} updated, ${r.postsUnavailable} unavailable of ${r.postsDue} due`);
+        return;
+      }
+      if (name === JOB_NAMES.DISCOVER) {
+        const p = discoverPayload.parse(payload);
+        const r = await discovery.discover({
+          projectId: p.projectId,
+          keywordIds: p.keywordIds,
+          platforms: p.platforms,
+          jobId,
+          signal,
+          isCancelled: () => jobs.isCancelRequested(jobId),
+          onProgress: (pct) => jobs.progress(jobId, pct),
+          onLog: log,
+        });
+        await jobs.finish(jobId, r.status, {
+          result: r,
+          warnings: r.warnings,
+          errorCode: r.error?.code ?? (r.status === 'CANCELLED' ? 'CANCELLED' : null),
+          errorMessage: r.error?.message ?? null,
+        });
+        const c = r.candidates;
+        await log('info', 'finish', `${r.status}: ${c.new} new, ${c.updated} updated candidate(s), ${c.autoApproved} auto-approved; ${r.coverage.filter((x) => x.status === 'ERROR').length} search error(s)`);
         return;
       }
       if (name === JOB_NAMES.PROVIDER_HEALTH) {

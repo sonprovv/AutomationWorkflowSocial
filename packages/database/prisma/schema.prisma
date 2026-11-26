@@ -43,6 +43,28 @@ enum PostStatus {
   UNAVAILABLE
 }
 
+enum KeywordStatus {
+  SUGGESTED
+  ACTIVE
+  PAUSED
+  REJECTED
+}
+
+enum KeywordOrigin {
+  MANUAL
+  RULE
+  AI
+}
+
+enum CandidateClass {
+  DIRECT_COMPETITOR
+  ADJACENT_COMPETITOR
+  CREATOR
+  PUBLISHER
+  IRRELEVANT
+  UNKNOWN
+}
+
 enum JobStatus {
   QUEUED
   RUNNING
@@ -70,6 +92,9 @@ model Project {
   updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   accounts         ProjectAccount[]
   jobs             Job[]
+  keywords         Keyword[]
+  candidates       DiscoveryCandidate[]
+  searchResults    SearchResult[]
 
   @@map("projects")
 }
@@ -123,6 +148,7 @@ model SocialAccount {
   posts            Post[]
   metrics          AccountMetric[]
   cursors          SyncCursor[]
+  candidates       DiscoveryCandidate[]
 
   @@unique([platform, externalId])
   @@map("social_accounts")
@@ -399,4 +425,75 @@ model AuditLog {
 
   @@index([targetType, targetId])
   @@map("audit_logs")
+}
+
+/// Project keywords (Master Plan §6.2, §7.3). One row per normalized text per project.
+model Keyword {
+  id             String         @id @default(uuid()) @db.Uuid
+  projectId      String         @map("project_id") @db.Uuid
+  text           String
+  /// NFKC, lower-case, single spaces, no leading '#'. Dedup key.
+  normalizedText String         @map("normalized_text")
+  language       String?
+  origin         KeywordOrigin  @default(MANUAL)
+  /// SUGGESTED keywords (from expansion) are not searched until the user activates them.
+  status         KeywordStatus  @default(ACTIVE)
+  priority       Int            @default(0)
+  /// Keyword this one was expanded from (rule/AI expansion).
+  parentId       String?        @map("parent_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  searchResults  SearchResult[]
+
+  @@unique([projectId, normalizedText])
+  @@index([projectId, status])
+  @@map("keywords")
+}
+
+/// Discovery review queue (WF02). Nothing is tracked until a user approves (auto-track is opt-in).
+model DiscoveryCandidate {
+  id                String         @id @default(uuid()) @db.Uuid
+  projectId         String         @map("project_id") @db.Uuid
+  accountId         String         @map("account_id") @db.Uuid
+  /// Relevance 0-100 (rule version in evidence.scoreVersion).
+  score             Float
+  classification    CandidateClass @default(UNKNOWN)
+  /// Matched keywords, sources, sample post URLs, reasons, confidence.
+  evidence          Json           @default("{}")
+  approvalStatus    ApprovalStatus @default(PENDING) @map("approval_status")
+  decidedAt         DateTime?      @map("decided_at") @db.Timestamptz(3)
+  /// local-user | auto (auto-track rule)
+  decidedBy         String?        @map("decided_by")
+  discoveredByJobId String?        @map("discovered_by_job_id") @db.Uuid
+  firstSeenAt       DateTime       @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt        DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account           SocialAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, accountId])
+  @@index([projectId, approvalStatus, score(sort: Desc)])
+  @@map("discovery_candidates")
+}
+
+/// Raw search hits per keyword/provider/run (coverage + audit). Post hits keep the external ID/URL only.
+model SearchResult {
+  id                BigInt   @id @default(autoincrement())
+  projectId         String   @map("project_id") @db.Uuid
+  keywordId         String?  @map("keyword_id") @db.Uuid
+  jobId             String?  @map("job_id") @db.Uuid
+  providerId        String   @map("provider_id")
+  /// account | post
+  kind              String
+  rank              Int
+  accountExternalId String   @map("account_external_id")
+  postExternalId    String?  @map("post_external_id")
+  url               String?
+  collectedAt       DateTime @map("collected_at") @db.Timestamptz(3)
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keyword           Keyword? @relation(fields: [keywordId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, collectedAt(sort: Desc)])
+  @@index([keywordId])
+  @@map("search_results")
 }

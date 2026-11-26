@@ -12,6 +12,7 @@ export const JOB_NAMES = {
   ACCOUNT_SYNC: 'account.sync',
   PROVIDER_HEALTH: 'provider.health',
   METRICS_REFRESH: 'post.metrics_refresh',
+  DISCOVER: 'project.discover',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -19,6 +20,7 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'account.sync': 'collection',
   'provider.health': 'maintenance',
   'post.metrics_refresh': 'collection',
+  'project.discover': 'discovery',
 };
 
 export const accountSyncPayload = z.object({
@@ -39,10 +41,20 @@ export const metricsRefreshPayload = z.object({
 });
 export type MetricsRefreshPayload = z.infer<typeof metricsRefreshPayload>;
 
+/** WF02 market discovery. keywordIds/platforms null = all ACTIVE keywords / the project's platforms. */
+export const discoverPayload = z.object({
+  projectId: z.uuid(),
+  keywordIds: z.array(z.uuid()).max(500).nullable(),
+  platforms: z.array(z.string().max(20)).max(10).nullable(),
+  trigger: z.enum(['manual', 'schedule', 'retry']),
+});
+export type DiscoverPayload = z.infer<typeof discoverPayload>;
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
   'post.metrics_refresh': metricsRefreshPayload,
+  'project.discover': discoverPayload,
 } as const;
 
 /**

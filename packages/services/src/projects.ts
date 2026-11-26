@@ -7,6 +7,10 @@ import { dec } from './serialize.ts';
 /** project_defaults (Master Plan §9.1). Stored per project in `settings`; all user-configurable. */
 export const DEFAULT_PROJECT_SETTINGS = {
   auto_track: false,
+  /** Auto-track (opt-in) only approves candidates at or above this rule score… */
+  auto_track_min_score: 70,
+  /** …and at most this many per discovery run. */
+  auto_track_max_per_run: 5,
   max_accounts: 50,
   max_keywords_per_run: 20,
   max_results_per_search: 30,
@@ -21,6 +25,8 @@ export const DEFAULT_PROJECT_SETTINGS = {
 
 const settingsShape = {
   auto_track: z.boolean(),
+  auto_track_min_score: z.number().min(0).max(100),
+  auto_track_max_per_run: z.number().int().min(0).max(100),
   max_accounts: z.number().int().min(1).max(10_000),
   max_keywords_per_run: z.number().int().min(1).max(500),
   max_results_per_search: z.number().int().min(1).max(500),
