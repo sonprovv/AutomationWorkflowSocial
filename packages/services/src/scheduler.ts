@@ -15,6 +15,9 @@ export const WORKFLOW_KEYS = [
   'WF02_MARKET_DISCOVERY',
   'WF04_NEW_POST_DETECTION',
   'WF05_POST_MONITORING',
+  'WF07_VIRAL_DETECTION',
+  'WF08_AI_ANALYSIS',
+  'WF09_TREND_DETECTION',
   'WF13_PROVIDER_HEALTH_CHECK',
   'WF14_POLICY_CLEANUP',
 ] as const;
@@ -24,6 +27,9 @@ export const WORKFLOW_DESCRIPTIONS: Record<WorkflowKey, string> = {
   WF02_MARKET_DISCOVERY: 'Runs discovery for projects with settings.discovery_every_hours > 0 whose last discovery is older than that.',
   WF04_NEW_POST_DETECTION: 'Queues account syncs (profile + new posts) for tracked, approved accounts whose next_sync_at is due (settings.sync_interval_minutes).',
   WF05_POST_MONITORING: 'Queues a metrics refresh for all tracked accounts; the job refreshes only posts due by age tier (WF05 hot / WF06 normal).',
+  WF07_VIRAL_DETECTION: 'Scores recent posts of every ACTIVE project (viral-v1); only providers whose policy allows derived metrics are scored.',
+  WF08_AI_ANALYSIS: 'Analyses the top posts with AI for projects with settings.ai_analysis_daily (needs ANTHROPIC_API_KEY; policy-gated; capped per day).',
+  WF09_TREND_DETECTION: 'Computes 7-day topic signals for every ACTIVE project from the collected sample (policy-gated).',
   WF13_PROVIDER_HEALTH_CHECK: 'Checks health and credentials of every enabled provider.',
   WF14_POLICY_CLEANUP: 'Deletes data the policy says must go (provider-deleted posts after a grace period, expired retention) and purges housekeeping rows.',
 };
@@ -34,6 +40,9 @@ export function builtinSchedules(config: AppConfig) {
     { id: 'wf04-account-sync', workflowKey: 'WF04_NEW_POST_DETECTION', everyMs: 5 * 60_000, cron: null, config: {} },
     { id: 'wf05-metrics-refresh', workflowKey: 'WF05_POST_MONITORING', everyMs: 60 * 60_000, cron: null, config: {} },
     { id: 'wf02-discovery', workflowKey: 'WF02_MARKET_DISCOVERY', everyMs: 60 * 60_000, cron: null, config: {} },
+    { id: 'wf07-viral', workflowKey: 'WF07_VIRAL_DETECTION', everyMs: 60 * 60_000, cron: null, config: {} },
+    { id: 'wf08-ai-analysis', workflowKey: 'WF08_AI_ANALYSIS', everyMs: null, cron: '0 7 * * *', config: {} },
+    { id: 'wf09-trends', workflowKey: 'WF09_TREND_DETECTION', everyMs: 6 * 60 * 60_000, cron: null, config: { windowDays: 7 } },
     { id: 'wf13-provider-health', workflowKey: 'WF13_PROVIDER_HEALTH_CHECK', everyMs: config.PROVIDER_HEALTH_EVERY_MINUTES * 60_000, cron: null, config: { providerId: null } },
     { id: 'wf14-policy-cleanup', workflowKey: 'WF14_POLICY_CLEANUP', everyMs: null, cron: '0 3 * * *', config: {} },
   ] satisfies { id: string; workflowKey: WorkflowKey; everyMs: number | null; cron: string | null; config: object }[];
@@ -176,6 +185,15 @@ export class SchedulerService {
         return this.single(JOB_NAMES.CLEANUP, { trigger: 'schedule' }, 'all', null);
       case 'WF02_MARKET_DISCOVERY':
         return this.wf02();
+      case 'WF07_VIRAL_DETECTION':
+        return this.perProject(JOB_NAMES.VIRAL, (projectId) => ({ projectId, trigger: 'schedule' }));
+      case 'WF09_TREND_DETECTION': {
+        const windowDays = Number((s.config as { windowDays?: number }).windowDays ?? 7);
+        return this.perProject(JOB_NAMES.TRENDS, (projectId) => ({ projectId, windowDays, trigger: 'schedule' }));
+      }
+      case 'WF08_AI_ANALYSIS':
+        if (!this.ctx.config.ANTHROPIC_API_KEY) return { status: 'SKIPPED', jobIds: [], notes: ['ANTHROPIC_API_KEY not configured'] };
+        return this.perProject(JOB_NAMES.AI_ANALYZE, (projectId) => ({ projectId, postIds: null, trigger: 'schedule' }), (settings) => settings.ai_analysis_daily === true);
       default:
         return { status: 'SKIPPED', jobIds: [], notes: [`Unknown workflow ${s.workflowKey}`] };
     }
@@ -231,6 +249,24 @@ export class SchedulerService {
     }
     if (due.length === max) notes.push(`Per-tick cap ${max} reached; remaining accounts run on the next tick.`);
     return { status: jobIds.length ? 'ENQUEUED' : 'SKIPPED', jobIds, notes };
+  }
+
+  /** One job per ACTIVE project with at least one approved account (optionally filtered by settings). */
+  private async perProject(name: (typeof JOB_NAMES)[keyof typeof JOB_NAMES], payload: (projectId: string) => unknown, when?: (settings: ReturnType<typeof mergeSettings>) => boolean): Promise<RunOutcome> {
+    const projects = await this.ctx.db.project.findMany({ where: { status: 'ACTIVE', accounts: { some: { approvalStatus: 'APPROVED' } } } });
+    const jobIds: string[] = [];
+    const notes: string[] = [];
+    for (const p of projects) {
+      if (when && !when(mergeSettings(p.settings as object))) continue;
+      try {
+        const j = await this.jobs.create({ name, payload: payload(p.id), idempotencyKey: idempotencyKey({ op: name, resource: p.id, projectId: p.id }), projectId: p.id, resourceType: 'project', resourceId: p.id });
+        jobIds.push(j.id);
+      } catch (e) {
+        if (!(e instanceof AppError && e.code === 'CONFLICT')) throw e;
+        notes.push(`project ${p.id}: already running`);
+      }
+    }
+    return { status: jobIds.length ? 'ENQUEUED' : 'NOTHING_DUE', jobIds, notes };
   }
 
   /** WF02: projects that opted into scheduled discovery and are due. */

@@ -1,0 +1,139 @@
+{
+  "schema": "sss.phase6-analytics/v1",
+  "kind": "REAL DATA — live Bluesky calls; analytics computed on collected posts",
+  "startedAt": "2026-11-26T17:12:58.662Z",
+  "finishedAt": "2026-11-26T17:13:31.870Z",
+  "testControls": [
+    "The script approves the 5 best-scored candidates.",
+    "allowDerivedMetrics=true for Bluesky in the throwaway database only (step B). The product stays deny-by-default until the Product Owner approves the policy."
+  ],
+  "privateArtifacts": ".data/evidence/phase6/ (git-ignored): full viral/trends JSON and the Insights screenshot.",
+  "steps": [
+    {
+      "step": "real data: discover → approve top 5 + track 2 active accounts → sync",
+      "ok": true,
+      "summary": {
+        "discovery": "SUCCEEDED",
+        "approved": 5,
+        "posts": 50
+      }
+    },
+    {
+      "step": "default policy: viral, trends and AI blocked (nothing scored, nothing sent to the AI provider)",
+      "ok": true,
+      "summary": {
+        "viral": {
+          "status": "SKIPPED",
+          "blocked": [
+            {
+              "posts": 33,
+              "policyId": "bluesky-public-v0-unverified",
+              "providerId": "bluesky-appview"
+            }
+          ]
+        },
+        "trends": {
+          "blocked": [
+            {
+              "posts": 43,
+              "reason": "Derived analytics not allowed by the provider policy",
+              "providerId": "bluesky-appview"
+            }
+          ]
+        },
+        "ai": {
+          "status": "SKIPPED",
+          "blocked": [
+            {
+              "posts": 50,
+              "policyId": "bluesky-public-v0-unverified",
+              "providerId": "bluesky-appview"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": "viral-v1 on real posts (test control: derived metrics allowed)",
+      "ok": true,
+      "summary": {
+        "result": {
+          "notes": [
+            "Velocity/acceleration need metric history, which the provider policy does not allow: scores use engagement, baseline deviation and relevance only (weights renormalized).",
+            "Thresholds 60/80/90 are experimental and uncalibrated."
+          ],
+          "scored": 33,
+          "version": "viral-v1",
+          "windowDays": 30,
+          "blockedByPolicy": [],
+          "postsConsidered": 33,
+          "insufficientData": 0
+        },
+        "scoreDistribution": [
+          100,
+          100,
+          100,
+          96.6,
+          88,
+          85.6,
+          77.6,
+          77.6,
+          73.1,
+          71.6
+        ],
+        "labels": {
+          "breakout": 4,
+          "viral": 2,
+          "trending": 6,
+          "SCORED": 21
+        },
+        "featuresAvailable": [
+          "engagement",
+          "baseline",
+          "relevance"
+        ]
+      }
+    },
+    {
+      "step": "trends-v1 on real posts (30-day windows)",
+      "ok": true,
+      "summary": {
+        "sampleSize": 33,
+        "topics": 2,
+        "bySignal": {
+          "new": 2
+        },
+        "confidence": [
+          "low"
+        ]
+      }
+    },
+    {
+      "step": "AI analysis without a key → AUTH_REQUIRED (expected until the key is provided)",
+      "ok": true,
+      "summary": {
+        "status": "FAILED",
+        "error": {
+          "code": "AUTH_REQUIRED",
+          "message": "ANTHROPIC_API_KEY is not configured; AI analysis is off. Add it to .env and restart."
+        },
+        "result": null
+      }
+    },
+    {
+      "step": "Insights page rendered",
+      "ok": true,
+      "summary": {
+        "bytes": 231352
+      }
+    }
+  ],
+  "checks": {
+    "real data: discover → approve top 5 + track 2 active accounts → sync": true,
+    "default policy: viral, trends and AI blocked (nothing scored, nothing sent to the AI provider)": true,
+    "viral-v1 on real posts (test control: derived metrics allowed)": true,
+    "trends-v1 on real posts (30-day windows)": true,
+    "AI analysis without a key → AUTH_REQUIRED (expected until the key is provided)": true,
+    "Insights page rendered": true
+  }
+}

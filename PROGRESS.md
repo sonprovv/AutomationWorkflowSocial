@@ -16,9 +16,25 @@
 | 3 | Project, keyword, discovery, review, tracking, incremental sync | ✅ **Gate passed with real Bluesky data** (seed keyword → candidates → approved account → posts). YouTube discovery waits for the key |
 | 4 | Scheduled workflows, reliability, policy & budget guards, job monitor | ✅ **Done and tested** (also in a real native run without Redis). Open: BullMQ-mode verification of the scheduler process and worker stall handling (needs Redis) |
 | 5 | Web dashboard, content explorer, exports | ✅ **Gate passed with real data**: UI rendered in a real browser, real Excel file validated by openpyxl. Bluesky rows are withheld from exports until the Product Owner approves the policy |
-| 6–9 | See Master Plan §16 | ⬜ |
+| 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
+| 7–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 6 — Analytics, AI, trends (started 2026-11-26 16:50 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P6-01 | Policy gate for all derived analytics (`allowDerivedMetrics`); blocked data counted, never scored as 0, never sent to AI | ✅ | `tests/integration/analytics-ai.test.ts`; real run step A |
+| P6-02 | WF07 viral-v1: cohorts, velocity/acceleration (history), engagement, baseline, relevance; renormalized weights; INSUFFICIENT_DATA; NEGATIVE_DELTA flag | ✅ | `packages/services/test/analytics.test.ts`; real run: 33/33 real posts scored |
+| P6-03 | WF09 trends-v1: equal windows, accounts diversity, confidence, "collected sample only" coverage | ✅ | tests; real run |
+| P6-04 | WF08 AI analysis via official SDK: structured output, untrusted-input isolation, dedup by input hash, per-day/project caps, project USD budget, refusal handling, token+cost usage | ✅ (fake API) / 🟡 live | tests against a local fake Messages API; live run needs `ANTHROPIC_API_KEY` |
+| P6-05 | Scheduler WF07 (hourly), WF09 (6 h), WF08 (07:00, opt-in); API; Insights UI; Viral/Trends/AI_Analysis export sheets | ✅ | tests; Insights screenshot (private) |
+| P6-06 | Real-data run | ✅ | `npm run phase6:analytics` → `docs/phase6/2026-11-26T17-12-58-662Z.json`: 6/6 PASS |
+
+**Finding:** with history denied by policy (no velocity), viral labels skew high on real data (4 breakout / 2 viral / 6 trending of 33). The thresholds must be recalibrated once history is allowed (ADR-0014).
+
+Tests: `npm test` **166 passed, 1 skipped**.
 
 ## Phase 5 — Dashboard, Content Explorer, exports (started 2026-11-26 16:20 UTC)
 
@@ -210,6 +226,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-27 ~00:15 (UTC+7) — Phase 6: viral-v1, trends-v1, AI analysis (Claude SDK), Insights UI; real-data run 6/6. 166 tests passing.
 - 2026-11-26 ~16:45 — Phase 5: exports with policy guard, dashboard API, full web UI; real-data E2E 8/8. 156 tests passing.
 - 2026-11-26 16:07 — Product Owner: build all phases in order; keys and Redis will be provided later.
 - 2026-11-26 ~16:20 — Phase 4: DB scheduler, workflows API, reservations budget guard, WF14 cleanup, job monitor. 141 tests passing.

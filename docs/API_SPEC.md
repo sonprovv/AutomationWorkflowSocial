@@ -117,6 +117,21 @@ The discovery job result has `coverage`: one entry per platform/keyword/operatio
 | GET | `/exports/:id` | One export |
 | GET | `/exports/:id/download` | The file (`content-disposition: attachment`). 409 while not finished; 404 once expired |
 
+## Analytics and AI (Phase 6)
+
+All of these are policy-gated: posts whose provider policy denies derived metrics are reported under `blockedByPolicy`.
+
+| Method | Route | Description |
+|---|---|---|
+| POST | `/projects/:id/analytics/viral` | WF07 viral-v1 scoring → 202 job |
+| GET | `/analytics/viral?projectId=` | Scores (or `INSUFFICIENT_DATA`) with features, missing features, cohort and flags |
+| POST | `/projects/:id/analytics/trends` | WF09 `{windowDays=7}` → 202 job |
+| GET | `/analytics/trends?projectId=` | Latest snapshot: topics (signal, posts now/prev, accounts, confidence, reasons, supporting posts) and coverage |
+| POST | `/projects/:id/analyze` | WF08 AI analysis of `{postIds?}` or the project's top posts → 202 job. Needs `ANTHROPIC_API_KEY` |
+| POST | `/posts/:id/analyze` | AI analysis of one post → 202 job |
+| GET | `/analytics/ai?projectId=` | Recent AI analyses for the project |
+| GET | `/posts/:id/analysis` | AI analyses of one post |
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |

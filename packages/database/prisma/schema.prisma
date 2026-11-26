@@ -426,6 +426,68 @@ model AppSetting {
   @@map("app_settings")
 }
 
+/// WF07 viral scores (policy-gated derived metrics). One row per (project, post, formula version).
+model ViralScore {
+  id         BigInt   @id @default(autoincrement())
+  projectId  String   @map("project_id") @db.Uuid
+  postId     String   @map("post_id") @db.Uuid
+  /// SCORED | INSUFFICIENT_DATA
+  status     String
+  /// 0-100, null when INSUFFICIENT_DATA.
+  score      Float?
+  /// trending (>=60) | viral (>=80) | breakout (>=90) | null — experimental, uncalibrated thresholds.
+  label      String?
+  version    String
+  /// Normalized features (0-100 or null) + raw inputs + which features were available.
+  features   Json
+  policyId   String   @map("policy_id")
+  scoredAt   DateTime @map("scored_at") @db.Timestamptz(3)
+
+  @@unique([projectId, postId, version])
+  @@index([projectId, score(sort: Desc)])
+  @@map("viral_scores")
+}
+
+/// WF08 AI content analysis (metadata-only unless media processing is allowed).
+model ContentAnalysis {
+  id            String   @id @default(uuid()) @db.Uuid
+  postId        String   @map("post_id") @db.Uuid
+  projectId     String?  @map("project_id") @db.Uuid
+  model         String
+  promptVersion String   @map("prompt_version")
+  /// sha256 of the exact input sent; with model + prompt version it prevents duplicate analysis.
+  inputHash     String   @map("input_hash")
+  /// SUCCEEDED | REFUSED | FAILED
+  status        String
+  result        Json?
+  confidence    Float?
+  scope         String   @default("metadata")
+  inputTokens   Int      @default(0) @map("input_tokens")
+  outputTokens  Int      @default(0) @map("output_tokens")
+  costUsd       Decimal  @default(0) @map("cost_usd") @db.Decimal(12, 6)
+  error         String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([postId, model, promptVersion, inputHash])
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("content_analysis")
+}
+
+/// WF09 trend snapshots: topic signals inside the COLLECTED sample only.
+model TrendSnapshot {
+  id         String   @id @default(uuid()) @db.Uuid
+  projectId  String   @map("project_id") @db.Uuid
+  windowDays Int      @map("window_days")
+  version    String
+  sampleSize Int      @map("sample_size")
+  topics     Json
+  coverage   Json
+  computedAt DateTime @map("computed_at") @db.Timestamptz(3)
+
+  @@index([projectId, computedAt(sort: Desc)])
+  @@map("trend_snapshots")
+}
+
 /// Generated export files (WF17, Master Plan §12). The file lives under EXPORT_DIR; the row keeps provenance.
 model Export {
   id         String    @id @default(uuid()) @db.Uuid

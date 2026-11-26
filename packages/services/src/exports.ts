@@ -154,6 +154,47 @@ export class ExportService {
     }
   }
 
+  /** Phase 6 sheets, limited to exported posts whose policy also allows derived analytics. */
+  private async analyticsSheets(projectId: string, postIds: Set<string>): Promise<Sheet[]> {
+    const { db } = this.ctx;
+    const ids = [...postIds];
+    const scores = await db.viralScore.findMany({ where: { projectId, postId: { in: ids } }, orderBy: { score: { sort: 'desc', nulls: 'last' } } });
+    const analyses = await db.contentAnalysis.findMany({ where: { postId: { in: ids }, status: 'SUCCEEDED' }, orderBy: { createdAt: 'desc' } });
+    const urls = new Map((await db.post.findMany({ where: { id: { in: ids } }, select: { id: true, url: true } })).map((p) => [p.id, p.url]));
+    // Trend topics summarise post data: only included when some exported posts are cleared for derived analytics.
+    const trend = ids.length ? await db.trendSnapshot.findFirst({ where: { projectId }, orderBy: { computedAt: 'desc' } }) : null;
+    const t = (x: unknown) => (typeof x === 'string' ? neutralizeFormula(x) : x === null || x === undefined ? null : neutralizeFormula(JSON.stringify(x)));
+    return [
+      {
+        name: 'Viral',
+        rows: [
+          ['url', 'status', 'score', 'label', 'version', 'available_features', 'missing_features', 'policy_id', 'scored_at'],
+          ...scores.map((v): Cell[] => {
+            const f = v.features as { available?: string[]; missing?: string[] };
+            return [{ url: urls.get(v.postId) ?? '' }, v.status, v.score, v.label, v.version, (f.available ?? []).join(' '), (f.missing ?? []).join(' '), v.policyId, iso(v.scoredAt)];
+          }),
+        ],
+      },
+      {
+        name: 'Trends',
+        rows: [
+          ['topic', 'kind', 'signal', 'posts_now', 'posts_prev', 'accounts_now', 'growth', 'confidence', 'reasons'],
+          ...((trend?.topics ?? []) as { topic: string; kind: string; signal: string; postsNow: number; postsPrev: number; accountsNow: number; growth: number | null; confidence: string; reasons: string[] }[]).map((x): Cell[] => [t(x.topic), x.kind, x.signal, x.postsNow, x.postsPrev, x.accountsNow, x.growth, x.confidence, t(x.reasons.join('; '))]),
+        ],
+      },
+      {
+        name: 'AI_Analysis',
+        rows: [
+          ['url', 'model', 'prompt_version', 'scope', 'confidence', 'category', 'hook', 'key_message', 'cta', 'limitations', 'created_at'],
+          ...analyses.map((a): Cell[] => {
+            const r = (a.result ?? {}) as Record<string, unknown>;
+            return [{ url: urls.get(a.postId) ?? '' }, a.model, a.promptVersion, a.scope, a.confidence, t(r.category), t(r.hook), t(r.keyMessage), t(r.cta), t((r.limitations as string[] | undefined)?.join('; ')), iso(a.createdAt)];
+          }),
+        ],
+      },
+    ];
+  }
+
   /** WF14: delete expired export files and rows. */
   async purgeExpired(): Promise<number> {
     const now = nowOf(this.ctx);
@@ -302,7 +343,7 @@ export class ExportService {
       ['Missing values', 'Empty cells mean missing/not supported (see missing_reason); they are never 0.'],
       ['Coverage', providers.map((p) => `${p.id}: ${p.status}${p.enabled ? '' : ' (not enabled)'}`).join('; ')],
       ...withheldList.map((w): Cell[] => [`Withheld: ${w.providerId}`, `${w.posts} post(s), ${w.accounts} account(s) — ${w.reason} [${w.policyId}]`]),
-      ['Not included', 'Metrics_History (policy does not allow history), Viral / Trends / AI_Analysis (Phase 6, policy-gated)'],
+      ['Not included', 'Metrics_History unless the provider policy allows history. Viral / Trends / AI_Analysis contain only rows whose provider policy allows both export and derived analytics.'],
       ...warnings.map((w): Cell[] => ['Warning', w]),
     ];
     const sheets: Sheet[] = [
@@ -315,6 +356,7 @@ export class ExportService {
         rows: [['started_at', 'provider', 'operation', 'status', 'requests', 'records', 'quota_units', 'latency_ms', 'error_code'], ...runs.map((r): Cell[] => [iso(r.startedAt), r.providerId, r.operation, r.status, r.requestCount, r.recordCount, r.quotaUnits, r.latencyMs, r.errorCode])],
       },
       { name: 'Usage', rows: [['day (UTC)', 'provider', 'unit', 'quantity'], ...usage.map((u): Cell[] => [u.day.toISOString().slice(0, 10), u.providerId, u.unit, u._sum.quantity ?? 0])] },
+      ...(e.projectId ? await this.analyticsSheets(e.projectId, new Set(posts.filter((p) => policies.get(p.providerId)?.allowDerivedMetrics).map((p) => p.id))) : []),
       { name: 'Data_Dictionary', rows: [['sheet', 'column', 'meaning', 'source', 'when empty'], ...DICTIONARY], widths: [16, 36, 80, 14, 50] },
     ];
     return { buffer: buildXlsx(sheets), rowCounts, withheld: withheldList, warnings };

@@ -31,6 +31,7 @@
     "phase2:sync": "tsx tools/local/src/phase2-sync.ts",
     "phase3:discover": "tsx tools/local/src/phase3-discovery.ts",
     "phase5:e2e": "tsx tools/local/src/phase5-e2e.ts",
+    "phase6:analytics": "tsx tools/local/src/phase6-analytics.ts",
     "doctor": "tsx tools/local/src/doctor.ts",
     "start:native": "tsx tools/local/src/start.ts",
     "stop:native": "tsx tools/local/src/stop.ts",

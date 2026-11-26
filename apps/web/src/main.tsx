@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { AccountPage, Accounts } from './pages/Accounts.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Explorer } from './pages/Explorer.tsx';
+import { Insights } from './pages/Insights.tsx';
 import { Exports, Jobs, Sources, Workflows } from './pages/Ops.tsx';
 import { ProjectPage, Projects } from './pages/Projects.tsx';
 import './styles.css';
@@ -20,12 +21,13 @@ type Route =
   | { page: 'accounts' }
   | { page: 'account'; id: string }
   | { page: 'explore' }
+  | { page: 'insights' }
   | { page: 'jobs' }
   | { page: 'workflows' }
   | { page: 'exports' }
   | { page: 'sources' };
 
-const SIMPLE = ['projects', 'accounts', 'explore', 'jobs', 'workflows', 'exports', 'sources'] as const;
+const SIMPLE = ['projects', 'accounts', 'explore', 'insights', 'jobs', 'workflows', 'exports', 'sources'] as const;
 
 function parseHash(): Route {
   const [path] = location.hash.replace(/^#\/?/, '').split('?');
@@ -51,6 +53,7 @@ function App() {
     ['projects', 'Projects', ['project']],
     ['accounts', 'Accounts', ['account']],
     ['explore', 'Content Explorer', []],
+    ['insights', 'Insights', []],
     ['jobs', 'Job Monitor', []],
     ['workflows', 'Automations', []],
     ['exports', 'Exports', []],
@@ -78,6 +81,7 @@ function App() {
         {route.page === 'accounts' && <Accounts />}
         {route.page === 'account' && <AccountPage id={route.id} />}
         {route.page === 'explore' && <Explorer />}
+        {route.page === 'insights' && <Insights />}
         {route.page === 'jobs' && <Jobs />}
         {route.page === 'workflows' && <Workflows />}
         {route.page === 'exports' && <Exports />}

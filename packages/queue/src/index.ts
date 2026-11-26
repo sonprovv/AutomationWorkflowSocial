@@ -15,6 +15,9 @@ export const JOB_NAMES = {
   DISCOVER: 'project.discover',
   CLEANUP: 'maintenance.cleanup',
   EXPORT: 'export.generate',
+  VIRAL: 'analytics.viral',
+  TRENDS: 'analytics.trends',
+  AI_ANALYZE: 'ai.analyze',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -25,6 +28,9 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'project.discover': 'discovery',
   'maintenance.cleanup': 'maintenance',
   'export.generate': 'report',
+  'analytics.viral': 'analytics',
+  'analytics.trends': 'analytics',
+  'ai.analyze': 'ai',
 };
 
 export const accountSyncPayload = z.object({
@@ -60,6 +66,13 @@ export const cleanupPayload = z.object({ trigger: z.enum(['manual', 'schedule', 
 /** WF17 export: the export row holds format and filters. */
 export const exportPayload = z.object({ exportId: z.uuid() });
 
+/** WF07 viral scoring for one project. */
+export const projectAnalyticsPayload = z.object({ projectId: z.uuid(), trigger: z.enum(['manual', 'schedule', 'retry']) });
+/** WF09 trends for one project over a window. */
+export const trendsPayload = z.object({ projectId: z.uuid(), windowDays: z.number().int().min(1).max(90), trigger: z.enum(['manual', 'schedule', 'retry']) });
+/** WF08 AI analysis: given posts, or the project's top posts (postIds null). */
+export const aiAnalyzePayload = z.object({ projectId: z.uuid().nullable(), postIds: z.array(z.uuid()).max(100).nullable(), trigger: z.enum(['manual', 'schedule', 'retry']) });
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
@@ -67,6 +80,9 @@ export const PAYLOAD_SCHEMAS = {
   'project.discover': discoverPayload,
   'maintenance.cleanup': cleanupPayload,
   'export.generate': exportPayload,
+  'analytics.viral': projectAnalyticsPayload,
+  'analytics.trends': trendsPayload,
+  'ai.analyze': aiAnalyzePayload,
 } as const;
 
 /**

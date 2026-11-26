@@ -15,6 +15,8 @@ export const DEFAULT_PROJECT_SETTINGS = {
   sync_interval_minutes: 120,
   /** WF02: hours between scheduled discovery runs; 0 = off (manual only). */
   discovery_every_hours: 0,
+  /** WF08: analyse the top posts with AI once a day (opt-in; capped by max_ai_analysis_per_day). */
+  ai_analysis_daily: false,
   max_accounts: 50,
   max_keywords_per_run: 20,
   max_results_per_search: 30,
@@ -33,6 +35,7 @@ const settingsShape = {
   auto_track_max_per_run: z.number().int().min(0).max(100),
   sync_interval_minutes: z.number().int().min(15).max(10_080),
   discovery_every_hours: z.number().int().min(0).max(720),
+  ai_analysis_daily: z.boolean(),
   max_accounts: z.number().int().min(1).max(10_000),
   max_keywords_per_run: z.number().int().min(1).max(500),
   max_results_per_search: z.number().int().min(1).max(500),

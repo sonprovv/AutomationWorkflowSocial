@@ -85,8 +85,10 @@ describe('scheduler (DB-driven tick)', () => {
       'wf02-discovery:NOTHING_DUE',
       'wf04-account-sync:ENQUEUED',
       'wf05-metrics-refresh:ENQUEUED',
+      'wf07-viral:ENQUEUED',
+      'wf09-trends:ENQUEUED',
       'wf13-provider-health:ENQUEUED',
-    ]); // WF14 is a cron (03:00) schedule and waits for its slot
+    ]); // WF08 (07:00) and WF14 (03:00) are cron schedules and wait for their slot
     await h.dispatcher.drain();
     expect(await h.db.job.count({ where: { name: 'account.sync', status: 'SUCCEEDED' } })).toBe(1);
     const link = await h.db.projectAccount.findFirstOrThrow();
@@ -127,7 +129,7 @@ describe('scheduler (DB-driven tick)', () => {
 
     const list = json(await app!.inject({ method: 'GET', url: '/api/v1/workflows' }));
     expect(list.paused).toBe(false);
-    expect(list.items.map((w: { id: string }) => w.id)).toEqual(['wf02-discovery', 'wf04-account-sync', 'wf05-metrics-refresh', 'wf13-provider-health', 'wf14-policy-cleanup']);
+    expect(list.items.map((w: { id: string }) => w.id)).toEqual(['wf02-discovery', 'wf04-account-sync', 'wf05-metrics-refresh', 'wf07-viral', 'wf08-ai-analysis', 'wf09-trends', 'wf13-provider-health', 'wf14-policy-cleanup']);
     const bad = await app!.inject({ method: 'PATCH', url: '/api/v1/workflows/wf14-policy-cleanup', payload: { cron: 'not a cron' } });
     expect(bad.statusCode).toBe(400);
     const ok = json(await app!.inject({ method: 'PATCH', url: '/api/v1/workflows/wf05-metrics-refresh', payload: { everyMinutes: 30 } }));

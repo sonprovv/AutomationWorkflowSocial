@@ -39,7 +39,12 @@ Done (ADR-0012). Schedules now also run without Redis (inside the API). Open: on
 ## Phase 5 status
 Done (ADR-0013). Bluesky rows are withheld from exports until the policy proposal is approved: set `policyProposal.status` to `"APPROVED"` in `docs/feasibility/capabilities/bluesky.json` and restart.
 
-**Next: Phase 6** (Master Plan §16): allowed analytics, AI analysis, trend engine, with evidence and confidence, policy gates and fixture tests.
+## Phase 6 status
+Done (ADR-0014). Waiting on:
+- **The Product Owner**, to approve `allowDerivedMetrics` in the Bluesky policy proposal. Until then viral, trends and AI report "blocked by policy".
+- **`ANTHROPIC_API_KEY`** in `.env`. Then run `npm run phase6:analytics` again, or click "Analyse top posts" on the Insights page.
+
+**Next: Phase 7** (Master Plan §16): MCP server, Telegram/email notifications, daily/weekly reports, n8n templates. Gate: agent tool call → job → export/report.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

@@ -49,6 +49,19 @@ export const configSchema = z
     EXPORT_DIR: z.string().default('.data/exports'),
     EXPORT_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(7),
     EXPORT_MAX_POSTS: z.coerce.number().int().min(1).max(500_000).default(50_000),
+    /** WF08 AI analysis (Claude Messages API). Without a key the AI job reports AUTH_REQUIRED. */
+    ANTHROPIC_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
+    AI_MODEL: z.string().default('claude-opus-5-5'),
+    AI_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
+    /** Server-side refusal fallback (beta) — on by default. */
+    AI_FALLBACKS: bool.default(true),
+    /** Tests only: point the SDK at a local fake API. */
+    AI_BASE_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
+    /** Price per million tokens used for cost accounting/budgets (configurable; check current pricing). */
+    AI_INPUT_USD_PER_MTOK: z.coerce.number().min(0).default(4),
+    AI_OUTPUT_USD_PER_MTOK: z.coerce.number().min(0).default(20),
+    /** Hard cap on AI analyses per UTC day across all projects. */
+    AI_DAILY_MAX_ANALYSES: z.coerce.number().int().min(0).max(10_000).default(50),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
     BLUESKY_IDENTIFIER: z.preprocess(emptyToUndef, z.string().optional()),
@@ -90,7 +103,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: { reload?
     const msg = r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${msg}`);
   }
-  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD]) globalSecrets.add(s);
+  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD, r.data.ANTHROPIC_API_KEY]) globalSecrets.add(s);
   // Database URLs may embed passwords.
   const pw = r.data.DATABASE_URL ? safePassword(r.data.DATABASE_URL) : undefined;
   globalSecrets.add(pw);

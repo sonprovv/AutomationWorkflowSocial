@@ -1,8 +1,11 @@
 import { CollectorError, toCollectorError } from '@sss/collector-core';
-import { accountSyncPayload, discoverPayload, exportPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { accountSyncPayload, aiAnalyzePayload, discoverPayload, exportPayload, projectAnalyticsPayload, trendsPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
+import { AiAnalysisService } from './ai.ts';
 import { CleanupService } from './cleanup.ts';
+import { TrendService } from './trends.ts';
+import { ViralService } from './viral.ts';
 import { ExportService } from './exports.ts';
 import { DiscoveryService } from './discovery.ts';
 import { JobService } from './jobs.ts';
@@ -23,6 +26,9 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
   const discovery = new DiscoveryService(ctx);
   const cleanup = new CleanupService(ctx);
   const exportsSvc = new ExportService(ctx);
+  const viral = new ViralService(ctx);
+  const trends = new TrendService(ctx);
+  const ai = new AiAnalysisService(ctx);
 
   const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
     const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
@@ -75,6 +81,31 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
           errorMessage: r.error?.message ?? null,
         });
         await log('info', 'finish', `${r.status}: ${r.postsUpdated} updated, ${r.postsUnavailable} unavailable of ${r.postsDue} due`);
+        return;
+      }
+      if (name === JOB_NAMES.VIRAL) {
+        const p = projectAnalyticsPayload.parse(payload);
+        const r = await viral.scoreProject(p.projectId);
+        const blocked = r.blockedByPolicy.length > 0;
+        await jobs.finish(jobId, r.scored + r.insufficientData === 0 && blocked ? 'SKIPPED' : 'SUCCEEDED', {
+          result: r,
+          warnings: [...r.notes as string[], ...r.blockedByPolicy.map((b) => `${b.posts} post(s) from ${b.providerId} not scored: derived metrics not allowed by policy ${b.policyId}`)],
+        });
+        await log('info', 'finish', `viral: ${r.scored} scored, ${r.insufficientData} insufficient data, ${r.blockedByPolicy.reduce((a, b) => a + b.posts, 0)} blocked by policy`);
+        return;
+      }
+      if (name === JOB_NAMES.TRENDS) {
+        const p = trendsPayload.parse(payload);
+        const r = await trends.compute(p.projectId, p.windowDays);
+        await jobs.finish(jobId, 'SUCCEEDED', { result: r, warnings: r.coverage.blockedByPolicy.map((b) => `${b.posts} post(s) from ${b.providerId} excluded: ${b.reason}`) });
+        return;
+      }
+      if (name === JOB_NAMES.AI_ANALYZE) {
+        const p = aiAnalyzePayload.parse(payload);
+        const r = await ai.run({ projectId: p.projectId, postIds: p.postIds, jobId, isCancelled: () => jobs.isCancelRequested(jobId), onProgress: (pct) => jobs.progress(jobId, pct) });
+        const status = r.stoppedBy === 'CANCELLED' ? 'CANCELLED' : r.failed > 0 || r.stoppedBy ? (r.analyzed > 0 ? 'PARTIAL_SUCCESS' : r.failed > 0 ? 'FAILED' : 'SKIPPED') : r.analyzed + r.skippedExisting + r.refused === 0 ? 'SKIPPED' : 'SUCCEEDED';
+        await jobs.finish(jobId, status, { result: r, warnings: [...r.warnings, ...(r.stoppedBy ? [`Stopped: ${r.stoppedBy}`] : [])], errorCode: status === 'FAILED' ? 'AI_FAILED' : null, errorMessage: status === 'FAILED' ? r.stoppedBy : null });
+        await log('info', 'finish', `ai: ${r.analyzed} analysed, ${r.skippedExisting} cached, ${r.refused} refused, ${r.failed} failed; ${r.inputTokens}+${r.outputTokens} tokens, $${r.costUsd}`);
         return;
       }
       if (name === JOB_NAMES.EXPORT) {

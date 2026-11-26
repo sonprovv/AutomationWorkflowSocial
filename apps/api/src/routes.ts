@@ -12,6 +12,9 @@ import {
   discoverRequestSchema,
   enqueueDiscovery,
   KeywordService,
+  ViralService,
+  TrendService,
+  AiAnalysisService,
   DashboardService,
   ExportService,
   exportRequestSchema,
@@ -34,6 +37,7 @@ import {
   type Runtime,
 } from '@sss/services';
 import { JOB_STATUSES } from '@sss/shared';
+import { idempotencyKey } from '@sss/queue';
 
 type Api = FastifyInstance & { withTypeProvider<T>(): FastifyInstance };
 
@@ -58,6 +62,9 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   const scheduler = new SchedulerService(ctx);
   const exportsSvc = new ExportService(ctx);
   const dashboard = new DashboardService(ctx);
+  const viral = new ViralService(ctx);
+  const trends = new TrendService(ctx);
+  const ai = new AiAnalysisService(ctx);
 
   /* ---------------- health ---------------- */
   api.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok', time: new Date().toISOString() }));
@@ -209,11 +216,37 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     return reply.send(createReadStream(f.path));
   });
 
+  /* ---------------- analytics & AI (Phase 6) ---------------- */
+  const queue = async (reply: FastifyReply, name: 'analytics.viral' | 'analytics.trends' | 'ai.analyze', payload: Record<string, unknown>, projectId: string | null, resource: string) => {
+    const job = await jobs.create({ name, payload, idempotencyKey: idempotencyKey({ op: name, resource, projectId }), projectId, resourceType: projectId ? 'project' : 'post', resourceId: resource });
+    return accepted(reply, toJobView(job));
+  };
+  const projectExists = async (id: string) => {
+    await projects.get(id);
+  };
+  api.post('/projects/:id/analytics/viral', { schema: { tags: ['analytics'], params: idParam, description: 'WF07: score recent posts (viral-v1). Policy-gated: providers without allowDerivedMetrics are not scored.' } }, async (req, reply) => {
+    await projectExists(req.params.id);
+    return queue(reply, 'analytics.viral', { projectId: req.params.id, trigger: 'manual' }, req.params.id, req.params.id);
+  });
+  api.get('/analytics/viral', { schema: { tags: ['analytics'], querystring: z.object({ projectId: z.uuid(), limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => viral.list(req.query.projectId, req.query.limit));
+  api.post('/projects/:id/analytics/trends', { schema: { tags: ['analytics'], params: idParam, body: z.object({ windowDays: z.number().int().min(1).max(90).default(7) }).strict().nullish() } }, async (req, reply) => {
+    await projectExists(req.params.id);
+    return queue(reply, 'analytics.trends', { projectId: req.params.id, windowDays: req.body?.windowDays ?? 7, trigger: 'manual' }, req.params.id, req.params.id);
+  });
+  api.get('/analytics/trends', { schema: { tags: ['analytics'], querystring: z.object({ projectId: z.uuid() }) } }, async (req) => (await trends.latest(req.query.projectId)) ?? { topics: [], note: 'No trend snapshot yet — run POST /projects/:id/analytics/trends.' });
+  api.post('/projects/:id/analyze', { schema: { tags: ['analytics'], params: idParam, body: z.object({ postIds: z.array(z.uuid()).min(1).max(100).optional() }).strict().nullish(), description: 'WF08: AI analysis of the given posts, or of the project top posts. Needs ANTHROPIC_API_KEY; policy-gated; capped per day.' } }, async (req, reply) => {
+    await projectExists(req.params.id);
+    return queue(reply, 'ai.analyze', { projectId: req.params.id, postIds: req.body?.postIds ?? null, trigger: 'manual' }, req.params.id, req.params.id);
+  });
+  api.post('/posts/:id/analyze', { schema: { tags: ['analytics'], params: idParam } }, async (req, reply) => {
+    await posts.get(req.params.id);
+    return queue(reply, 'ai.analyze', { projectId: null, postIds: [req.params.id], trigger: 'manual' }, null, req.params.id);
+  });
+  api.get('/analytics/ai', { schema: { tags: ['analytics'], querystring: z.object({ projectId: z.uuid(), limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => ai.forProject(req.query.projectId, req.query.limit));
+  api.get('/posts/:id/analysis', { schema: { tags: ['analytics'], params: idParam } }, async (req) => ({ items: await ai.forPost(req.params.id) }));
+
   /* ---------------- planned routes (later phases) ---------------- */
   const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
-    ['/posts/:id/analyze', 'post', 'AI content analysis (WF08)', 6],
-    ['/analytics/viral', 'get', 'Viral results (policy-gated, WF07)', 6],
-    ['/analytics/trends', 'get', 'Trend results (WF09)', 6],
     ['/reports', 'post', 'Generate report', 7],
   ];
   for (const [url, method, what, phase] of planned) {
