@@ -80,6 +80,7 @@ Work in this order, and commit after each item so that work can resume from here
   2. Translate the shell, the setup guide and the shared UI first, then every page.
   3. Theme: System, Light or Dark, using a `data-theme` attribute on `<html>`, kept in localStorage. CSS tokens follow `[data-theme]`, with `prefers-color-scheme` as the System default.
   4. Switches in the sidebar footer.
+- **Status (~02:05):** done: i18n infra (`apps/web/src/i18n.tsx`), theme tokens and switch, shell, ui.tsx, SetupGuide, and pages Builder, Dashboard, Projects, Reports, Accounts, Explorer, Insights. Still in progress: Ops.tsx and Apps.tsx. Then: build, restart, screenshots in VI and dark, full tests, commit.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**
