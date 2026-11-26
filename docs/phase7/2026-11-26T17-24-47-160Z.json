@@ -1,0 +1,117 @@
+{
+  "schema": "sss.phase7-mcp/v1",
+  "kind": "REAL DATA — MCP stdio client → MCP server → REST API → jobs (live Bluesky)",
+  "startedAt": "2026-11-26T17:24:47.160Z",
+  "finishedAt": "2026-11-26T17:25:13.035Z",
+  "testControls": [
+    "The agent approves the 2 best-scored candidates.",
+    "No notification channel is configured in this run."
+  ],
+  "steps": [
+    {
+      "step": "MCP server lists tools (mutations enabled)",
+      "ok": true,
+      "summary": {
+        "count": 29,
+        "tools": [
+          "analyze_content",
+          "approve_candidates",
+          "cancel_job",
+          "compare_competitors",
+          "create_project",
+          "discover_competitors",
+          "expand_keywords",
+          "export_excel",
+          "find_trends",
+          "find_viral_posts",
+          "generate_creative_ideas",
+          "generate_report",
+          "get_dashboard",
+          "get_export",
+          "get_growth_history",
+          "get_job_status",
+          "get_post_detail",
+          "get_post_metrics",
+          "get_posts",
+          "get_profile",
+          "get_provider_capabilities",
+          "get_report",
+          "get_usage",
+          "list_candidates",
+          "list_projects",
+          "list_reports",
+          "list_workflows",
+          "run_workflow",
+          "track_account"
+        ]
+      }
+    },
+    {
+      "step": "discover_competitors → job (real Bluesky)",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "candidates": {
+          "new": 35,
+          "updated": 0,
+          "notEnriched": 17,
+          "autoApproved": 0,
+          "alreadyTracked": 0
+        }
+      }
+    },
+    {
+      "step": "approve_candidates + track_account → syncs → get_posts",
+      "ok": true,
+      "summary": {
+        "approved": 2,
+        "postsReturned": 5
+      }
+    },
+    {
+      "step": "generate_report → job → report + Excel",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "reportStatus": "SUCCEEDED",
+        "postsCollected": 24,
+        "actions": 2
+      }
+    },
+    {
+      "step": "export_excel → job → downloadable workbook",
+      "ok": true,
+      "summary": {
+        "status": "SUCCEEDED",
+        "rowCounts": {
+          "posts": 0,
+          "accounts": 0,
+          "keywords": 1,
+          "collectionRuns": 4
+        },
+        "withheld": [
+          {
+            "posts": 24,
+            "reason": "Effective data policy does not allow export (allowExport=false; deny-by-default until the policy is approved)",
+            "accounts": 3,
+            "policyId": "bluesky-public-v0-unverified",
+            "providerId": "bluesky-appview"
+          }
+        ],
+        "bytes": 9359
+      }
+    },
+    {
+      "step": "read-only tool through MCP",
+      "ok": true
+    }
+  ],
+  "checks": {
+    "MCP server lists tools (mutations enabled)": true,
+    "discover_competitors → job (real Bluesky)": true,
+    "approve_candidates + track_account → syncs → get_posts": true,
+    "generate_report → job → report + Excel": true,
+    "export_excel → job → downloadable workbook": true,
+    "read-only tool through MCP": true
+  }
+}

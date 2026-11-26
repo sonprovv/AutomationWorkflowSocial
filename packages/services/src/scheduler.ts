@@ -18,6 +18,8 @@ export const WORKFLOW_KEYS = [
   'WF07_VIRAL_DETECTION',
   'WF08_AI_ANALYSIS',
   'WF09_TREND_DETECTION',
+  'WF11_DAILY_REPORT',
+  'WF12_WEEKLY_REPORT',
   'WF13_PROVIDER_HEALTH_CHECK',
   'WF14_POLICY_CLEANUP',
 ] as const;
@@ -30,6 +32,8 @@ export const WORKFLOW_DESCRIPTIONS: Record<WorkflowKey, string> = {
   WF07_VIRAL_DETECTION: 'Scores recent posts of every ACTIVE project (viral-v1); only providers whose policy allows derived metrics are scored.',
   WF08_AI_ANALYSIS: 'Analyses the top posts with AI for projects with settings.ai_analysis_daily (needs ANTHROPIC_API_KEY; policy-gated; capped per day).',
   WF09_TREND_DETECTION: 'Computes 7-day topic signals for every ACTIVE project from the collected sample (policy-gated).',
+  WF11_DAILY_REPORT: 'Builds the daily report (+ Excel) for projects with settings.daily_report and sends it to the configured channels.',
+  WF12_WEEKLY_REPORT: 'Builds the weekly report for projects with settings.weekly_report and sends it to the configured channels.',
   WF13_PROVIDER_HEALTH_CHECK: 'Checks health and credentials of every enabled provider.',
   WF14_POLICY_CLEANUP: 'Deletes data the policy says must go (provider-deleted posts after a grace period, expired retention) and purges housekeeping rows.',
 };
@@ -43,6 +47,8 @@ export function builtinSchedules(config: AppConfig) {
     { id: 'wf07-viral', workflowKey: 'WF07_VIRAL_DETECTION', everyMs: 60 * 60_000, cron: null, config: {} },
     { id: 'wf08-ai-analysis', workflowKey: 'WF08_AI_ANALYSIS', everyMs: null, cron: '0 7 * * *', config: {} },
     { id: 'wf09-trends', workflowKey: 'WF09_TREND_DETECTION', everyMs: 6 * 60 * 60_000, cron: null, config: { windowDays: 7 } },
+    { id: 'wf11-daily-report', workflowKey: 'WF11_DAILY_REPORT', everyMs: null, cron: '0 6 * * *', config: {} },
+    { id: 'wf12-weekly-report', workflowKey: 'WF12_WEEKLY_REPORT', everyMs: null, cron: '0 8 * * 1', config: {} },
     { id: 'wf13-provider-health', workflowKey: 'WF13_PROVIDER_HEALTH_CHECK', everyMs: config.PROVIDER_HEALTH_EVERY_MINUTES * 60_000, cron: null, config: { providerId: null } },
     { id: 'wf14-policy-cleanup', workflowKey: 'WF14_POLICY_CLEANUP', everyMs: null, cron: '0 3 * * *', config: {} },
   ] satisfies { id: string; workflowKey: WorkflowKey; everyMs: number | null; cron: string | null; config: object }[];
@@ -191,6 +197,10 @@ export class SchedulerService {
         const windowDays = Number((s.config as { windowDays?: number }).windowDays ?? 7);
         return this.perProject(JOB_NAMES.TRENDS, (projectId) => ({ projectId, windowDays, trigger: 'schedule' }));
       }
+      case 'WF11_DAILY_REPORT':
+        return this.perProject(JOB_NAMES.REPORT, (projectId) => ({ projectId, kind: 'daily', notify: true, trigger: 'schedule' }), (st) => st.daily_report === true);
+      case 'WF12_WEEKLY_REPORT':
+        return this.perProject(JOB_NAMES.REPORT, (projectId) => ({ projectId, kind: 'weekly', notify: true, trigger: 'schedule' }), (st) => st.weekly_report === true, 'weekly');
       case 'WF08_AI_ANALYSIS':
         if (!this.ctx.config.ANTHROPIC_API_KEY) return { status: 'SKIPPED', jobIds: [], notes: ['ANTHROPIC_API_KEY not configured'] };
         return this.perProject(JOB_NAMES.AI_ANALYZE, (projectId) => ({ projectId, postIds: null, trigger: 'schedule' }), (settings) => settings.ai_analysis_daily === true);
@@ -252,14 +262,14 @@ export class SchedulerService {
   }
 
   /** One job per ACTIVE project with at least one approved account (optionally filtered by settings). */
-  private async perProject(name: (typeof JOB_NAMES)[keyof typeof JOB_NAMES], payload: (projectId: string) => unknown, when?: (settings: ReturnType<typeof mergeSettings>) => boolean): Promise<RunOutcome> {
+  private async perProject(name: (typeof JOB_NAMES)[keyof typeof JOB_NAMES], payload: (projectId: string) => unknown, when?: (settings: ReturnType<typeof mergeSettings>) => boolean, window?: string): Promise<RunOutcome> {
     const projects = await this.ctx.db.project.findMany({ where: { status: 'ACTIVE', accounts: { some: { approvalStatus: 'APPROVED' } } } });
     const jobIds: string[] = [];
     const notes: string[] = [];
     for (const p of projects) {
       if (when && !when(mergeSettings(p.settings as object))) continue;
       try {
-        const j = await this.jobs.create({ name, payload: payload(p.id), idempotencyKey: idempotencyKey({ op: name, resource: p.id, projectId: p.id }), projectId: p.id, resourceType: 'project', resourceId: p.id });
+        const j = await this.jobs.create({ name, payload: payload(p.id), idempotencyKey: idempotencyKey({ op: name, resource: p.id, projectId: p.id, window }), projectId: p.id, resourceType: 'project', resourceId: p.id });
         jobIds.push(j.id);
       } catch (e) {
         if (!(e instanceof AppError && e.code === 'CONFLICT')) throw e;

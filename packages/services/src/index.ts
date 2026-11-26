@@ -16,6 +16,8 @@ export * from './dashboard.ts';
 export * from './viral.ts';
 export * from './trends.ts';
 export * from './ai.ts';
+export * from './notify.ts';
+export * from './reports.ts';
 export * from './scheduler.ts';
 export * from './usage.ts';
 export * from './processor.ts';

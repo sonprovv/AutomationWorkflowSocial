@@ -2,7 +2,7 @@
   "name": "social-spy-automation",
   "version": "0.0.0",
   "private": true,
-  "description": "Social Intelligence Automation \u2014 local-first competitor & content research (see SOCIAL_SPY_AUTOMATION_PLAN.md)",
+  "description": "Social Intelligence Automation — local-first competitor & content research (see SOCIAL_SPY_AUTOMATION_PLAN.md)",
   "type": "module",
   "engines": {
     "node": ">=22.12 <25"
@@ -32,6 +32,8 @@
     "phase3:discover": "tsx tools/local/src/phase3-discovery.ts",
     "phase5:e2e": "tsx tools/local/src/phase5-e2e.ts",
     "phase6:analytics": "tsx tools/local/src/phase6-analytics.ts",
+    "phase7:mcp": "tsx tools/local/src/phase7-mcp.ts",
+    "mcp": "tsx apps/mcp/src/main.ts",
     "doctor": "tsx tools/local/src/doctor.ts",
     "start:native": "tsx tools/local/src/start.ts",
     "stop:native": "tsx tools/local/src/stop.ts",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@types/node": "22.20.7",
+    "@types/nodemailer": "8.0.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.1.2"

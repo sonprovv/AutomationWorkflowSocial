@@ -44,7 +44,13 @@ Done (ADR-0014). Waiting on:
 - **The Product Owner**, to approve `allowDerivedMetrics` in the Bluesky policy proposal. Until then viral, trends and AI report "blocked by policy".
 - **`ANTHROPIC_API_KEY`** in `.env`. Then run `npm run phase6:analytics` again, or click "Analyse top posts" on the Insights page.
 
-**Next: Phase 7** (Master Plan §16): MCP server, Telegram/email notifications, daily/weekly reports, n8n templates. Gate: agent tool call → job → export/report.
+## Phase 7 status
+Done (ADR-0015, `docs/MCP.md`). To receive reports, set the channel settings in `.env` (any of them), then click "Send test notification" on the Reports page:
+- **Telegram:** `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (use a dedicated report bot or chat);
+- **Email:** `SMTP_URL`, `EMAIL_FROM` and `EMAIL_TO`;
+- **Webhook:** `WEBHOOK_URL` and `WEBHOOK_SECRET`.
+
+**Next: Phase 8** (Master Plan §16): security, scale, backup/restore test, observability, deployment.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

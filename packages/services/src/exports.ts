@@ -113,6 +113,16 @@ export class ExportService {
     return { export: toExportView(updated), job };
   }
 
+  /** Create and build an export in the current job (used by reports). */
+  async generateNow(input: unknown) {
+    const v = exportRequestSchema.parse(input ?? {});
+    const now = nowOf(this.ctx);
+    const row = await this.ctx.db.export.create({
+      data: { projectId: v.projectId ?? null, format: v.format, filters: { ...v.filters, timezone: this.ctx.config.APP_TIMEZONE } as Prisma.InputJsonValue, expiresAt: new Date(now.getTime() + this.ctx.config.EXPORT_TTL_DAYS * 86400_000) },
+    });
+    return (await this.generate(row.id)).export;
+  }
+
   async list(limit = 50) {
     const rows = await this.ctx.db.export.findMany({ orderBy: { createdAt: 'desc' }, take: Math.min(limit, 200) });
     return rows.map(toExportView);

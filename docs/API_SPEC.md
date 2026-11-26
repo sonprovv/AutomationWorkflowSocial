@@ -132,6 +132,18 @@ All of these are policy-gated: posts whose provider policy denies derived metric
 | GET | `/analytics/ai?projectId=` | Recent AI analyses for the project |
 | GET | `/posts/:id/analysis` | AI analyses of one post |
 
+## Reports and notifications (Phase 7)
+
+| Method | Route | Description |
+|---|---|---|
+| POST | `/reports` | `{projectId, kind: daily\|weekly, notify=false}` → 202 job. Builds the report and attached Excel; `notify` also sends it |
+| GET | `/reports` | Report list (`projectId`, `limit`) |
+| GET | `/reports/:id` | Summary, markdown, Excel download URL |
+| GET | `/notifications` | Configured channels and the delivery log |
+| POST | `/notifications/test` | Send a test message to each configured channel |
+
+The MCP server (`apps/mcp`) wraps these routes for agents; see `docs/MCP.md`.
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |

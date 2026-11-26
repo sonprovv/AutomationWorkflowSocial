@@ -17,6 +17,11 @@ export const DEFAULT_PROJECT_SETTINGS = {
   discovery_every_hours: 0,
   /** WF08: analyse the top posts with AI once a day (opt-in; capped by max_ai_analysis_per_day). */
   ai_analysis_daily: false,
+  /** WF11 daily report (06:00) and WF12 weekly report (Monday 08:00), sent to the configured channels. */
+  daily_report: true,
+  weekly_report: true,
+  /** Alerts when a post reaches the viral label threshold (needs derived metrics allowed). */
+  viral_alerts: false,
   max_accounts: 50,
   max_keywords_per_run: 20,
   max_results_per_search: 30,
@@ -36,6 +41,9 @@ const settingsShape = {
   sync_interval_minutes: z.number().int().min(15).max(10_080),
   discovery_every_hours: z.number().int().min(0).max(720),
   ai_analysis_daily: z.boolean(),
+  daily_report: z.boolean(),
+  weekly_report: z.boolean(),
+  viral_alerts: z.boolean(),
   max_accounts: z.number().int().min(1).max(10_000),
   max_keywords_per_run: z.number().int().min(1).max(500),
   max_results_per_search: z.number().int().min(1).max(500),

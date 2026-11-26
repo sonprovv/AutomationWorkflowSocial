@@ -17,9 +17,23 @@
 | 4 | Scheduled workflows, reliability, policy & budget guards, job monitor | ✅ **Done and tested** (also in a real native run without Redis). Open: BullMQ-mode verification of the scheduler process and worker stall handling (needs Redis) |
 | 5 | Web dashboard, content explorer, exports | ✅ **Gate passed with real data**: UI rendered in a real browser, real Excel file validated by openpyxl. Bluesky rows are withheld from exports until the Product Owner approves the policy |
 | 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
-| 7–9 | See Master Plan §16 | ⬜ |
+| 7 | MCP, Telegram/email, reports, n8n templates | ✅ **Gate passed with real data** (agent tool call → job → export/report). Real Telegram/email delivery needs the user's channel settings; n8n templates written and unit-tested, not run inside n8n |
+| 8–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 7 — MCP, notifications, reports (started 2026-11-26 17:15 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P7-01 | Daily/weekly reports (WF11/12): new accounts/posts, standout posts, topics, failed sources (→ PARTIAL_SUCCESS), cost, actions, links; Excel attached; URLs only where export is allowed | ✅ | `tests/integration/mcp-reports.test.ts` |
+| P7-02 | Notifications: Telegram, email (SMTP), HMAC-signed webhook; dedup; bounded retries; SKIPPED when unconfigured | ✅ (fake endpoints) / 🟡 live | tests; live needs `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, SMTP or `WEBHOOK_URL` |
+| P7-03 | MCP server `apps/mcp` (stdio) over the REST API: 21 read-only tools, 10 opt-in mutation tools; no quota/policy/credential tools | ✅ | real MCP client in tests; `docs/MCP.md` |
+| P7-04 | n8n templates (scheduled report, signed-webhook receiver) | ⚠ | structure + signature code unit-tested; not run inside n8n |
+| P7-05 | Reports page (history, text, Excel, notification log, test send) | ✅ | build + typecheck |
+| P7-06 | Gate with real data | ✅ | `npm run phase7:mcp` → `docs/phase7/2026-11-26T17-24-47-160Z.json`: 6/6 PASS |
+
+Tests: `npm test` **171 passed, 1 skipped**.
 
 ## Phase 6 — Analytics, AI, trends (started 2026-11-26 16:50 UTC)
 
@@ -226,6 +240,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-27 ~00:30 (UTC+7) — Phase 7: reports, notifications, MCP server, n8n templates; real-data MCP gate 6/6. 171 tests passing.
 - 2026-11-27 ~00:15 (UTC+7) — Phase 6: viral-v1, trends-v1, AI analysis (Claude SDK), Insights UI; real-data run 6/6. 166 tests passing.
 - 2026-11-26 ~16:45 — Phase 5: exports with policy guard, dashboard API, full web UI; real-data E2E 8/8. 156 tests passing.
 - 2026-11-26 16:07 — Product Owner: build all phases in order; keys and Redis will be provided later.

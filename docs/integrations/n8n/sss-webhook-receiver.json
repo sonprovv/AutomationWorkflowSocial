@@ -1,0 +1,30 @@
+{
+  "name": "SSS — receive signed notifications",
+  "nodes": [
+    { "parameters": { "httpMethod": "POST", "path": "sss", "responseMode": "onReceived", "options": { "rawBody": true } }, "name": "Webhook /sss", "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0], "webhookId": "sss" },
+    {
+      "parameters": {
+        "jsCode": "// Verifies X-SSS-Signature = sha256=HMAC_SHA256(secret, timestamp + '.' + rawBody) and rejects stale timestamps.\n// Needs NODE_FUNCTION_ALLOW_BUILTIN=crypto and SSS_WEBHOOK_SECRET in the n8n environment.\nconst crypto = require('crypto');\nconst out = [];\nfor (const item of $input.all()) {\n  const h = item.json.headers || {};\n  const ts = String(h['x-sss-timestamp'] || '');\n  const raw = item.binary && item.binary.data ? Buffer.from(item.binary.data.data, 'base64').toString('utf8') : JSON.stringify(item.json.body);\n  const expected = 'sha256=' + crypto.createHmac('sha256', $env.SSS_WEBHOOK_SECRET).update(ts + '.' + raw).digest('hex');\n  const given = String(h['x-sss-signature'] || '');\n  const fresh = Math.abs(Date.now() / 1000 - Number(ts)) < 300;\n  const valid = fresh && given.length === expected.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));\n  out.push({ json: { valid, event: h['x-sss-event'], delivery: h['x-sss-delivery'], payload: valid ? JSON.parse(raw) : null } });\n}\nreturn out;"
+      },
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": { "conditions": { "options": { "caseSensitive": true, "typeValidation": "loose" }, "combinator": "and", "conditions": [{ "leftValue": "={{ $json.valid }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }] } },
+      "name": "Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    { "parameters": {}, "name": "Handle event (report / viral_alert / …)", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [660, -100] },
+    { "parameters": {}, "name": "Drop: bad or stale signature", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [660, 100] }
+  ],
+  "connections": {
+    "Webhook /sss": { "main": [[{ "node": "Verify signature", "type": "main", "index": 0 }]] },
+    "Verify signature": { "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]] },
+    "Valid?": { "main": [[{ "node": "Handle event (report / viral_alert / …)", "type": "main", "index": 0 }], [{ "node": "Drop: bad or stale signature", "type": "main", "index": 0 }]] }
+  },
+  "settings": {}
+}

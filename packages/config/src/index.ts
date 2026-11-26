@@ -62,6 +62,23 @@ export const configSchema = z
     AI_OUTPUT_USD_PER_MTOK: z.coerce.number().min(0).default(20),
     /** Hard cap on AI analyses per UTC day across all projects. */
     AI_DAILY_MAX_ANALYSES: z.coerce.number().int().min(0).max(10_000).default(50),
+    /** Notifications (WF11/12 reports, alerts). Each channel is off until configured. */
+    TELEGRAM_BOT_TOKEN: z.preprocess(emptyToUndef, z.string().optional()),
+    TELEGRAM_CHAT_ID: z.preprocess(emptyToUndef, z.string().optional()),
+    /** Tests only. */
+    TELEGRAM_API_BASE: z.string().url().default('https://api.telegram.org'),
+    /** smtp(s)://user:pass@host:port */
+    SMTP_URL: z.preprocess(emptyToUndef, z.string().startsWith('smtp').optional()),
+    EMAIL_FROM: z.preprocess(emptyToUndef, z.string().optional()),
+    EMAIL_TO: z.preprocess(emptyToUndef, z.string().optional()),
+    /** Outgoing webhook (e.g. n8n). Payloads are signed with HMAC-SHA256 when WEBHOOK_SECRET is set. */
+    WEBHOOK_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
+    WEBHOOK_SECRET: z.preprocess(emptyToUndef, z.string().min(16).optional()),
+    /** Links in notifications point here (the local app). */
+    PUBLIC_APP_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
+    /** MCP server: base URL of this app's REST API, and whether tools that change data are allowed. */
+    MCP_API_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
+    MCP_ALLOW_MUTATIONS: bool.default(false),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
     BLUESKY_IDENTIFIER: z.preprocess(emptyToUndef, z.string().optional()),
@@ -103,7 +120,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: { reload?
     const msg = r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${msg}`);
   }
-  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD, r.data.ANTHROPIC_API_KEY]) globalSecrets.add(s);
+  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD, r.data.ANTHROPIC_API_KEY, r.data.TELEGRAM_BOT_TOKEN, r.data.WEBHOOK_SECRET]) globalSecrets.add(s);
+  if (r.data.SMTP_URL) {
+    try {
+      const pw = decodeURIComponent(new URL(r.data.SMTP_URL).password);
+      if (pw) globalSecrets.add(pw);
+    } catch {
+      /* invalid URL is reported when used */
+    }
+  }
   // Database URLs may embed passwords.
   const pw = r.data.DATABASE_URL ? safePassword(r.data.DATABASE_URL) : undefined;
   globalSecrets.add(pw);

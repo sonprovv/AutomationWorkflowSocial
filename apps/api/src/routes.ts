@@ -12,6 +12,8 @@ import {
   discoverRequestSchema,
   enqueueDiscovery,
   KeywordService,
+  ReportService,
+  NotificationService,
   ViralService,
   TrendService,
   AiAnalysisService,
@@ -245,9 +247,31 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   api.get('/analytics/ai', { schema: { tags: ['analytics'], querystring: z.object({ projectId: z.uuid(), limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => ai.forProject(req.query.projectId, req.query.limit));
   api.get('/posts/:id/analysis', { schema: { tags: ['analytics'], params: idParam } }, async (req) => ({ items: await ai.forPost(req.params.id) }));
 
+  /* ---------------- reports & notifications (Phase 7) ---------------- */
+  const reportsSvc = new ReportService(ctx);
+  const notifier = new NotificationService(ctx);
+  api.post('/reports', { schema: { tags: ['reports'], body: z.object({ projectId: z.uuid(), kind: z.enum(['daily', 'weekly']).default('daily'), notify: z.boolean().default(false) }).strict(), description: 'WF11/WF12: build a report (+ Excel) for the last day/week; notify=true also sends it to the configured channels. Returns 202 + job.' } }, async (req, reply) => {
+    await projects.get(req.body.projectId);
+    const job = await jobs.create({
+      name: 'report.generate',
+      payload: { projectId: req.body.projectId, kind: req.body.kind, notify: req.body.notify, trigger: 'manual' },
+      idempotencyKey: idempotencyKey({ op: 'report.generate', resource: req.body.projectId, projectId: req.body.projectId, window: req.body.kind }),
+      projectId: req.body.projectId,
+      resourceType: 'project',
+      resourceId: req.body.projectId,
+    });
+    return accepted(reply, toJobView(job));
+  });
+  api.get('/reports', { schema: { tags: ['reports'], querystring: z.object({ projectId: z.uuid().optional(), limit: z.coerce.number().int().min(1).max(100).optional() }) } }, async (req) => ({ items: await reportsSvc.list(req.query.projectId, req.query.limit) }));
+  api.get('/reports/:id', { schema: { tags: ['reports'], params: idParam } }, async (req) => reportsSvc.get(req.params.id));
+  api.get('/notifications', { schema: { tags: ['reports'], querystring: z.object({ limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => ({ channels: notifier.configured(), items: await notifier.list(req.query.limit) }));
+  api.post('/notifications/test', { schema: { tags: ['reports'], description: 'Send a test message to every configured channel.' } }, async () => ({
+    results: await notifier.send({ projectId: null, type: 'test', dedupKey: `test:${new Date().toISOString()}`, title: 'Social Spy Automation — test notification', body: 'If you can read this, the channel works.' }),
+  }));
+
   /* ---------------- planned routes (later phases) ---------------- */
   const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
-    ['/reports', 'post', 'Generate report', 7],
+    ['/workflows/:id/graph', 'get', 'Visual workflow DAG (workflow builder)', 9],
   ];
   for (const [url, method, what, phase] of planned) {
     api[method](url, { schema: { tags: ['planned'], description: `${what} — planned for Phase ${phase} (Master Plan §16)` } }, async (_req, reply) =>

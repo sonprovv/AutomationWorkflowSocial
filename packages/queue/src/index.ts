@@ -18,6 +18,7 @@ export const JOB_NAMES = {
   VIRAL: 'analytics.viral',
   TRENDS: 'analytics.trends',
   AI_ANALYZE: 'ai.analyze',
+  REPORT: 'report.generate',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -31,6 +32,7 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'analytics.viral': 'analytics',
   'analytics.trends': 'analytics',
   'ai.analyze': 'ai',
+  'report.generate': 'report',
 };
 
 export const accountSyncPayload = z.object({
@@ -73,6 +75,9 @@ export const trendsPayload = z.object({ projectId: z.uuid(), windowDays: z.numbe
 /** WF08 AI analysis: given posts, or the project's top posts (postIds null). */
 export const aiAnalyzePayload = z.object({ projectId: z.uuid().nullable(), postIds: z.array(z.uuid()).max(100).nullable(), trigger: z.enum(['manual', 'schedule', 'retry']) });
 
+/** WF11/WF12 report for a project; notify=false only builds it. */
+export const reportPayload = z.object({ projectId: z.uuid(), kind: z.enum(['daily', 'weekly']), notify: z.boolean(), trigger: z.enum(['manual', 'schedule', 'retry']) });
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
@@ -83,6 +88,7 @@ export const PAYLOAD_SCHEMAS = {
   'analytics.viral': projectAnalyticsPayload,
   'analytics.trends': trendsPayload,
   'ai.analyze': aiAnalyzePayload,
+  'report.generate': reportPayload,
 } as const;
 
 /**

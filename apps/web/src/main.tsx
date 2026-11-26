@@ -6,6 +6,7 @@ import { Explorer } from './pages/Explorer.tsx';
 import { Insights } from './pages/Insights.tsx';
 import { Exports, Jobs, Sources, Workflows } from './pages/Ops.tsx';
 import { ProjectPage, Projects } from './pages/Projects.tsx';
+import { Reports } from './pages/Reports.tsx';
 import './styles.css';
 
 /*
@@ -25,9 +26,10 @@ type Route =
   | { page: 'jobs' }
   | { page: 'workflows' }
   | { page: 'exports' }
+  | { page: 'reports' }
   | { page: 'sources' };
 
-const SIMPLE = ['projects', 'accounts', 'explore', 'insights', 'jobs', 'workflows', 'exports', 'sources'] as const;
+const SIMPLE = ['projects', 'accounts', 'explore', 'insights', 'jobs', 'workflows', 'exports', 'reports', 'sources'] as const;
 
 function parseHash(): Route {
   const [path] = location.hash.replace(/^#\/?/, '').split('?');
@@ -57,6 +59,7 @@ function App() {
     ['jobs', 'Job Monitor', []],
     ['workflows', 'Automations', []],
     ['exports', 'Exports', []],
+    ['reports', 'Reports', []],
     ['sources', 'Data Sources', []],
   ];
   return (
@@ -85,6 +88,7 @@ function App() {
         {route.page === 'jobs' && <Jobs />}
         {route.page === 'workflows' && <Workflows />}
         {route.page === 'exports' && <Exports />}
+        {route.page === 'reports' && <Reports />}
         {route.page === 'sources' && <Sources />}
       </main>
     </>
