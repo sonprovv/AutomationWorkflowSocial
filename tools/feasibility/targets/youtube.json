@@ -1,0 +1,18 @@
+{
+  "_comment": "Public channels and keywords used for the Phase 0 PoC. Searches cost quota: budget is enforced by YOUTUBE_POC_MAX_UNITS.",
+  "accounts": [
+    "https://www.youtube.com/@GoogleDevelopers",
+    "https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw",
+    "@YouTube",
+    "https://www.youtube.com/user/Google",
+    "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+  ],
+  "invalidAccounts": ["@this-handle-should-not-exist-zz91x"],
+  "missingPost": "AAAAAAAAAAA",
+  "keywords": ["live wallpaper", "depth wallpaper", "30 day workout challenge"],
+  "searchLanguage": "en",
+  "searchRegion": "US",
+  "searchPages": 2,
+  "accountsToSync": 3,
+  "postsPerAccount": 20
+}

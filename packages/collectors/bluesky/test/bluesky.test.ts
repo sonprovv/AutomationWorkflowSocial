@@ -126,4 +126,21 @@ describe('BlueskyAdapter contract (local fake AppView)', () => {
     srv = await startFakeServer({});
     expect((await adapter().validateCredentials()).state).toBe('NOT_REQUIRED');
   });
+
+  it('unauthenticated search pagination 403 becomes an actionable typed error (observed live 2026-11-26)', async () => {
+    srv = await startFakeServer({
+      '/xrpc/app.bsky.feed.searchPosts': ({ url }) =>
+        url.searchParams.get('cursor')
+          ? { status: 403, raw: '<html><body><h1>403 Forbidden</h1>Request forbidden by administrative rules.</body></html>', headers: { 'content-type': 'text/html' } }
+          : { body: { posts: [], cursor: 'c1' } },
+    });
+    const a = adapter();
+    const p1 = await a.searchPosts({ query: 'x' });
+    expect(p1.nextCursor).toBe('c1');
+    await expect(a.searchPosts({ query: 'x', cursor: 'c1' })).rejects.toMatchObject({
+      code: 'PERMISSION_DENIED',
+      providerReason: 'UNAUTH_SEARCH_PAGINATION_BLOCKED',
+      message: expect.stringMatching(/BLUESKY_APP_PASSWORD/),
+    });
+  });
 });

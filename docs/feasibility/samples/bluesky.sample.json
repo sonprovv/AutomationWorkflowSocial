@@ -1,0 +1,114 @@
+{
+  "_sample": {
+    "kind": "REAL normalized records from the latest PoC run (truncated). Not a fixture.",
+    "platform": "bluesky",
+    "collectedAt": "2026-11-26T08:27:21.565Z",
+    "deleteBy": null,
+    "policyNote": "Public Bluesky content: remove on author deletion."
+  },
+  "account": {
+    "platform": "bluesky",
+    "externalId": "did:plc:z72i7hdynmk6r22z27h6tvur",
+    "username": "bsky.app",
+    "displayName": "Bluesky",
+    "profileUrl": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur",
+    "bio": "official Bluesky account (check username👆)\n\nBugs, feature requests, feedback: support@bsky.app",
+    "avatarUrl": "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
+    "createdAt": "2023-04-12T04:53:57.057Z",
+    "metrics": {
+      "followers": 35857847,
+      "following": 44,
+      "postsCount": 928,
+      "extra": {},
+      "missing": {},
+      "collectedAt": "2026-11-26T08:27:21.818Z"
+    },
+    "provenance": {
+      "providerId": "bluesky-appview",
+      "policyId": "bluesky-public-v0-unverified",
+      "schemaVersion": "bluesky-appview@2026-11-26",
+      "source": "app.bsky.actor.getProfile",
+      "collectedAt": "2026-11-26T08:27:21.818Z"
+    }
+  },
+  "posts": [
+    {
+      "platform": "bluesky",
+      "externalId": "at://did:plc:iusdrawyeuqoq5we7mhbgcmt/app.bsky.feed.post/3n374wj63is2j",
+      "accountExternalId": "did:plc:iusdrawyeuqoq5we7mhbgcmt",
+      "url": "https://bsky.app/profile/did:plc:iusdrawyeuqoq5we7mhbgcmt/post/3n374wj63is2j",
+      "contentType": "image",
+      "title": null,
+      "caption": "Live your life like a desktop wallpaper \n\n#ffxiv #GPOSER #finalfantasyxiv #idk #midlander",
+      "hashtags": [
+        "ffxiv",
+        "gposer",
+        "finalfantasyxiv",
+        "idk",
+        "midlander"
+      ],
+      "language": "en",
+      "thumbnailUrl": "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:iusdrawyeuqoq5we7mhbgcmt/bafkreiekzeomjpr5xjg35zj6q7lgvrfhauwksjhhrfe2vya5nmdwcabdwi",
+      "durationSeconds": null,
+      "publishedAt": "2026-11-26T07:16:29.717Z",
+      "metrics": {
+        "postExternalId": "at://did:plc:iusdrawyeuqoq5we7mhbgcmt/app.bsky.feed.post/3n374wj63is2j",
+        "views": null,
+        "likes": 1,
+        "comments": 0,
+        "shares": 0,
+        "saves": 0,
+        "extra": {
+          "quotes": 0
+        },
+        "missing": {
+          "views": "NOT_SUPPORTED"
+        },
+        "collectedAt": "2026-11-26T08:27:24.217Z"
+      },
+      "provenance": {
+        "providerId": "bluesky-appview",
+        "policyId": "bluesky-public-v0-unverified",
+        "schemaVersion": "bluesky-appview@2026-11-26",
+        "source": "app.bsky.feed.searchPosts",
+        "collectedAt": "2026-11-26T08:27:24.217Z"
+      }
+    },
+    {
+      "platform": "bluesky",
+      "externalId": "at://did:plc:lrkvtfoqzvfhkq3yi7iijsf4/app.bsky.feed.post/3n36vyeir3k2h",
+      "accountExternalId": "did:plc:lrkvtfoqzvfhkq3yi7iijsf4",
+      "url": "https://bsky.app/profile/did:plc:lrkvtfoqzvfhkq3yi7iijsf4/post/3n36vyeir3k2h",
+      "contentType": "link",
+      "title": null,
+      "caption": "pin.it/2PV2awYnZ\n\nSweet dreams 😴 ✨️",
+      "hashtags": [],
+      "language": "en",
+      "thumbnailUrl": "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:lrkvtfoqzvfhkq3yi7iijsf4/bafkreighnmjmqbcly6bd7fxx36nyoi3zgqk4nezca2wuaiuycdgpiymibu",
+      "durationSeconds": null,
+      "publishedAt": "2026-11-26T05:12:15.743Z",
+      "metrics": {
+        "postExternalId": "at://did:plc:lrkvtfoqzvfhkq3yi7iijsf4/app.bsky.feed.post/3n36vyeir3k2h",
+        "views": null,
+        "likes": 1,
+        "comments": 0,
+        "shares": 0,
+        "saves": 0,
+        "extra": {
+          "quotes": 0
+        },
+        "missing": {
+          "views": "NOT_SUPPORTED"
+        },
+        "collectedAt": "2026-11-26T08:27:24.217Z"
+      },
+      "provenance": {
+        "providerId": "bluesky-appview",
+        "policyId": "bluesky-public-v0-unverified",
+        "schemaVersion": "bluesky-appview@2026-11-26",
+        "source": "app.bsky.feed.searchPosts",
+        "collectedAt": "2026-11-26T08:27:24.217Z"
+      }
+    }
+  ]
+}

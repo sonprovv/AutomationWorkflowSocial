@@ -1,0 +1,99 @@
+{
+  "schema": "sss.feasibility-run/v1",
+  "runId": "youtube-2026-11-26T08-28-14-979Z",
+  "label": "run1",
+  "platform": "youtube",
+  "provider": "youtube-data-api-v3",
+  "status": "AUTH_REQUIRED",
+  "startedAt": "2026-11-26T08:28:14.979Z",
+  "endedAt": "2026-11-26T08:28:15.300Z",
+  "environment": {
+    "node": "v22.16.0",
+    "os": "win32 10.0.26200 x64"
+  },
+  "credentialsConfigured": false,
+  "usage": {
+    "requests": 1,
+    "quotaUnits": 1,
+    "costUsd": 0,
+    "records": 0,
+    "reservedQuotaUnits": 0,
+    "reservedCostUsd": 0,
+    "limits": {
+      "maxQuotaUnits": 1500,
+      "maxRequests": 400
+    },
+    "costNote": "No monetary cost; quota units only (upper-bound accounting for search)."
+  },
+  "summary": {
+    "tests": 2,
+    "pass": 1,
+    "fail": 0,
+    "skip": 1,
+    "requests": {
+      "total": 1,
+      "success2xx": 0,
+      "successRate": 0,
+      "latencyMs": {
+        "p50": 317,
+        "p95": 317,
+        "max": 317
+      },
+      "errors": {
+        "AUTH_REQUIRED": 1
+      },
+      "byEndpoint": {
+        "www.googleapis.com/youtube/v3/videos": {
+          "n": 1,
+          "p50": 317,
+          "p95": 317
+        }
+      },
+      "retries": 0
+    }
+  },
+  "tests": [
+    {
+      "id": "TC02a",
+      "name": "validateCredentials (configured)",
+      "status": "SKIP",
+      "durationMs": 0,
+      "message": "YOUTUBE_API_KEY is not set",
+      "data": {
+        "state": "MISSING"
+      }
+    },
+    {
+      "id": "TC02b",
+      "name": "validateCredentials (deliberately invalid) is classified",
+      "status": "PASS",
+      "durationMs": 318,
+      "message": "AUTH_REQUIRED [API_KEY_INVALID,badRequest]: Invalid API key: API key not valid. Please pass a valid API key.",
+      "data": {
+        "state": "INVALID"
+      }
+    }
+  ],
+  "idsObserved": {
+    "resolved": {},
+    "postsByAccount": {},
+    "searchPostIds": {}
+  },
+  "media": [],
+  "requestLog": [
+    {
+      "ts": "2026-11-26T08:28:15.300Z",
+      "providerId": "youtube-data-api-v3",
+      "method": "GET",
+      "url": "https://www.googleapis.com/youtube/v3/videos?part=id&id=jNQXAC9IVRw",
+      "status": 400,
+      "latencyMs": 317,
+      "attempt": 1,
+      "quotaUnits": 1,
+      "errorCode": "AUTH_REQUIRED",
+      "providerReason": "API_KEY_INVALID,badRequest"
+    }
+  ],
+  "dataHandling": "Contains YouTube Non-Authorized Data identifiers/stats. Per Developer Policies III.E.4: delete or refresh within 30 days of startedAt.",
+  "deleteBy": "2026-12-26T08:28:14.979Z"
+}

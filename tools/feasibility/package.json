@@ -1,0 +1,12 @@
+{
+  "name": "@sss/feasibility",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 0 data-source feasibility harness (PoC CLI). Runs the Master Plan section 4.2 test cases against REAL providers.",
+  "dependencies": {
+    "@sss/collector-core": "0.0.0",
+    "@sss/collector-bluesky": "0.0.0",
+    "@sss/collector-youtube": "0.0.0"
+  }
+}

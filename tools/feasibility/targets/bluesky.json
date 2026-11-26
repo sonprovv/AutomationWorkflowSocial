@@ -1,0 +1,17 @@
+{
+  "_comment": "Public accounts and keywords used for the Phase 0 PoC. Mix of brand/org accounts and use-case keywords from the Master Plan section 1.3.",
+  "accounts": [
+    "https://bsky.app/profile/bsky.app",
+    "@atproto.com",
+    "did:plc:z72i7hdynmk6r22z27h6tvur",
+    "https://bsky.app/profile/nytimes.com",
+    "theverge.com"
+  ],
+  "invalidAccounts": ["this-handle-should-not-exist-zz91.bsky.social"],
+  "missingPost": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3zzzzzzzzzzzz",
+  "keywords": ["live wallpaper", "depth wallpaper", "workout challenge"],
+  "searchLanguage": "en",
+  "searchPages": 2,
+  "accountsToSync": 3,
+  "postsPerAccount": 20
+}

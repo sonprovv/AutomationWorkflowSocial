@@ -261,10 +261,23 @@ export class BlueskyAdapter implements PlatformAdapter {
       warnings.push(
         `Unauthenticated searchPosts via ${new URL(this.urls.appView).hostname} (undocumented; may start requiring auth). Configure BLUESKY_APP_PASSWORD for the documented path.`,
       );
-      r = await this.get('app.bsky.feed.searchPosts', query, searchPostsResponse, {
-        signal: input.signal,
-        baseUrl: this.urls.appView,
-      });
+      try {
+        r = await this.get('app.bsky.feed.searchPosts', query, searchPostsResponse, {
+          signal: input.signal,
+          baseUrl: this.urls.appView,
+        });
+      } catch (e) {
+        // Observed 2026-11-26: unauthenticated page 1 → 200, any request with a cursor → 403
+        // "Request forbidden by administrative rules". Surface an actionable error instead of raw HTML.
+        if (e instanceof CollectorError && e.code === 'PERMISSION_DENIED' && v.cursor) {
+          throw new CollectorError(
+            'PERMISSION_DENIED',
+            'Unauthenticated searchPosts pagination is blocked by the AppView (HTTP 403). Only page 1 (≤100 results) is available without auth; configure BLUESKY_IDENTIFIER + BLUESKY_APP_PASSWORD to paginate.',
+            { httpStatus: e.httpStatus, providerReason: 'UNAUTH_SEARCH_PAGINATION_BLOCKED', cause: e },
+          );
+        }
+        throw e;
+      }
     }
     const items = r.posts.map((p) => normalizePost(p, 'app.bsky.feed.searchPosts', collectedAt));
     if (r.cursor) warnings.push('searchPosts cursor may not page through the entire result set (per API docs).');
