@@ -1,0 +1,54 @@
+{
+  "platform": "pinterest",
+  "provider": "pinterest-api-v5",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "UNKNOWN",
+    "searchAccounts": "UNKNOWN",
+    "searchPosts": "AUTH_REQUIRED",
+    "getProfile": "UNKNOWN",
+    "listPosts": "UNKNOWN",
+    "getPostDetail": "UNKNOWN",
+    "getPostMetrics": "UNKNOWN",
+    "listComments": "UNKNOWN"
+  },
+  "policy": {
+    "policyId": "pinterest-unverified",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Apps registered after 2026-09-14 may get PINNER_DATA_ACCESS_DENIED for non-business users' data.",
+      "Partner keyword search is beta-gated (NOT VERIFIED on the official site)."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.pinterest.com/docs/key-concepts/access-tiers/",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.pinterest.com/docs/reference/rate-limits/",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "requests",
+    "dailyLimit": 1000,
+    "notes": [
+      "Trial tier 1,000/day; Standard 100 rps per user per app."
+    ]
+  },
+  "credentialsRequired": [
+    "Pinterest app at Standard access + OAuth",
+    "beta approval for partner search"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Reading other accounts' pins/metrics NOT VERIFIED."
+  ]
+}

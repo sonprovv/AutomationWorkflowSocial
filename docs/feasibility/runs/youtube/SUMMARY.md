@@ -1,6 +1,6 @@
 # PoC run summary — youtube
 
-Generated: 2026-11-26T08:28:49.407Z by `npm run poc:summary`. Source: the JSON run files in this folder (real provider calls, secrets redacted).
+Generated: 2026-11-26T08:36:56.087Z by `npm run poc:summary`. Source: the JSON run files in this folder (real provider calls, secrets redacted).
 
 ## Runs
 

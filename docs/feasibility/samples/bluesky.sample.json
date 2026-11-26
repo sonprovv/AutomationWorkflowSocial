@@ -2,7 +2,7 @@
   "_sample": {
     "kind": "REAL normalized records from the latest PoC run (truncated). Not a fixture.",
     "platform": "bluesky",
-    "collectedAt": "2026-11-26T08:27:21.565Z",
+    "collectedAt": "2026-11-26T08:34:04.952Z",
     "deleteBy": null,
     "policyNote": "Public Bluesky content: remove on author deletion."
   },
@@ -16,19 +16,19 @@
     "avatarUrl": "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
     "createdAt": "2023-04-12T04:53:57.057Z",
     "metrics": {
-      "followers": 35857847,
+      "followers": 35857927,
       "following": 44,
       "postsCount": 928,
       "extra": {},
       "missing": {},
-      "collectedAt": "2026-11-26T08:27:21.818Z"
+      "collectedAt": "2026-11-26T08:34:06.045Z"
     },
     "provenance": {
       "providerId": "bluesky-appview",
       "policyId": "bluesky-public-v0-unverified",
       "schemaVersion": "bluesky-appview@2026-11-26",
       "source": "app.bsky.actor.getProfile",
-      "collectedAt": "2026-11-26T08:27:21.818Z"
+      "collectedAt": "2026-11-26T08:34:06.045Z"
     }
   },
   "posts": [
@@ -64,14 +64,14 @@
         "missing": {
           "views": "NOT_SUPPORTED"
         },
-        "collectedAt": "2026-11-26T08:27:24.217Z"
+        "collectedAt": "2026-11-26T08:34:08.493Z"
       },
       "provenance": {
         "providerId": "bluesky-appview",
         "policyId": "bluesky-public-v0-unverified",
         "schemaVersion": "bluesky-appview@2026-11-26",
         "source": "app.bsky.feed.searchPosts",
-        "collectedAt": "2026-11-26T08:27:24.217Z"
+        "collectedAt": "2026-11-26T08:34:08.493Z"
       }
     },
     {
@@ -100,14 +100,14 @@
         "missing": {
           "views": "NOT_SUPPORTED"
         },
-        "collectedAt": "2026-11-26T08:27:24.217Z"
+        "collectedAt": "2026-11-26T08:34:08.493Z"
       },
       "provenance": {
         "providerId": "bluesky-appview",
         "policyId": "bluesky-public-v0-unverified",
         "schemaVersion": "bluesky-appview@2026-11-26",
         "source": "app.bsky.feed.searchPosts",
-        "collectedAt": "2026-11-26T08:27:24.217Z"
+        "collectedAt": "2026-11-26T08:34:08.493Z"
       }
     }
   ]

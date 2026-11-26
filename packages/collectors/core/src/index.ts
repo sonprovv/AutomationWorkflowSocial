@@ -5,3 +5,4 @@ export * from './meter.ts';
 export * from './http.ts';
 export * from './validate.ts';
 export * from './env.ts';
+export * from './capability.ts';

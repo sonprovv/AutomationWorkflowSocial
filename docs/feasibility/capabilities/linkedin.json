@@ -1,0 +1,58 @@
+{
+  "platform": "linkedin",
+  "provider": "linkedin-marketing-api",
+  "status": "BLOCKED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "NOT_SUPPORTED",
+    "searchPosts": "NOT_SUPPORTED",
+    "getProfile": "PARTIAL",
+    "listPosts": "BLOCKED",
+    "getPostDetail": "BLOCKED",
+    "getPostMetrics": "BLOCKED",
+    "listComments": "BLOCKED"
+  },
+  "policy": {
+    "policyId": "linkedin-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "r_organization_social is restricted to organizations where the member has an admin/poster role: competitors' posts are not readable.",
+      "Only basic organization lookup fields + follower count (networkSizes) for other organizations."
+    ],
+    "sources": [
+      {
+        "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/organization-lookup-api",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://learn.microsoft.com/en-us/linkedin/marketing/increasing-access",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "calls",
+    "dailyLimit": 500,
+    "notes": [
+      "Development tier 500 calls/app/day."
+    ]
+  },
+  "credentialsRequired": [
+    "LinkedIn app approved for Community Management API",
+    "member 3-legged OAuth token"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Competitor post monitoring is not possible through official APIs."
+  ]
+}

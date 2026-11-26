@@ -1,0 +1,53 @@
+{
+  "platform": "reddit",
+  "provider": "reddit-data-api",
+  "status": "UNVERIFIED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "UNKNOWN",
+    "searchAccounts": "UNKNOWN",
+    "searchPosts": "UNKNOWN",
+    "getProfile": "UNKNOWN",
+    "listPosts": "UNKNOWN",
+    "getPostDetail": "UNKNOWN",
+    "getPostMetrics": "UNKNOWN",
+    "listComments": "UNKNOWN"
+  },
+  "policy": {
+    "policyId": "reddit-unverified",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Official pages returned HTTP 403 to the research fetcher; all facts NOT VERIFIED.",
+      "Secondary sources: 100 QPM per OAuth client on the free tier; commercial use requires a separate agreement."
+    ],
+    "sources": [
+      {
+        "url": "https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://redditinc.com/policies/data-api-terms",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "requests/minute",
+    "dailyLimit": null,
+    "notes": [
+      "NOT VERIFIED."
+    ]
+  },
+  "credentialsRequired": [
+    "Reddit OAuth client (and likely a commercial agreement)"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Terms must be verified manually in a browser."
+  ]
+}

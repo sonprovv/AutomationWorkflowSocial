@@ -1,0 +1,83 @@
+{
+  "platform": "bluesky",
+  "provider": "bluesky-appview",
+  "status": "VERIFIED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "SUPPORTED",
+    "searchAccounts": "SUPPORTED",
+    "searchPosts": "PARTIAL",
+    "getProfile": "SUPPORTED",
+    "listPosts": "SUPPORTED",
+    "getPostDetail": "SUPPORTED",
+    "getPostMetrics": "SUPPORTED",
+    "listComments": "PARTIAL"
+  },
+  "policy": {
+    "policyId": "bluesky-public-v0-unverified",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Effective policy is deny-by-default until the Product Owner approves policyProposal.",
+      "Developer Guidelines: services must be able to delete content a user asked to delete.",
+      "atproto account spec: content of deleted/deactivated accounts should not be redistributed.",
+      "No published restriction found on storing public posts, derived metrics or commercial use (absence of a rule is not a permission)."
+    ],
+    "sources": [
+      {
+        "url": "https://bsky.network/docs/developer-guidelines",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://atproto.com/specs/account",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://bsky.social/about/support/tos",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://bsky.network/docs/rate-limits",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "policyProposal": {
+    "status": "PENDING_PRODUCT_OWNER_APPROVAL",
+    "allowHistoricalSnapshots": true,
+    "allowDerivedMetrics": true,
+    "allowMediaProcessing": false,
+    "allowExport": true,
+    "retentionDays": 365,
+    "refreshDays": 30,
+    "conditions": [
+      "Re-check stored posts/accounts at least every refreshDays; delete records whose author deleted them or whose account is deactivated/taken down.",
+      "Store public post metadata and counts only; no media files; comment text not stored.",
+      "Exports for internal research only, always with source URLs."
+    ]
+  },
+  "quota": {
+    "unit": "requests",
+    "dailyLimit": null,
+    "notes": [
+      "AppView limits not published (\"generous\"); PDS 3000 req/5 min/IP; createSession 30/5 min and 300/day per account.",
+      "Observed: no HTTP 429 during PoC runs."
+    ]
+  },
+  "credentialsRequired": [],
+  "credentialsOptional": [
+    "BLUESKY_IDENTIFIER + BLUESKY_APP_PASSWORD (enables search pagination via the authenticated path)"
+  ],
+  "limitations": [
+    "No view/impression counts.",
+    "Unauthenticated searchPosts: page 1 only (<=100 results); requests with a cursor return HTTP 403 (observed 2026-11-26).",
+    "searchActors has no language/region filter and returns no follower counts (enrich with getProfile).",
+    "listComments: top-level replies only, no pagination.",
+    "record.createdAt is author-supplied and can be backdated; indexedAt is server time.",
+    "No country/market field."
+  ]
+}

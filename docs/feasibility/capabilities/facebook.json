@@ -1,0 +1,66 @@
+{
+  "platform": "facebook",
+  "provider": "meta-graph-api",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "AUTH_REQUIRED",
+    "searchPosts": "NOT_SUPPORTED",
+    "getProfile": "AUTH_REQUIRED",
+    "listPosts": "AUTH_REQUIRED",
+    "getPostDetail": "AUTH_REQUIRED",
+    "getPostMetrics": "AUTH_REQUIRED",
+    "listComments": "AUTH_REQUIRED"
+  },
+  "policy": {
+    "policyId": "meta-platform-terms-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Page Public Content Access (PPCA) is required for other Pages' posts/engagement; needs App Review + Business Verification.",
+      "Meta Platform Terms 3.d.i: delete data when no longer needed or on request; 3.a: no surveillance tools."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.facebook.com/docs/features-reference/page-public-content-access",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/docs/features-reference/page-public-metadata-access",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/terms/",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/docs/graph-api/overview/rate-limiting",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "BUC calls",
+    "dailyLimit": null,
+    "notes": [
+      "4800 x engaged users / 24h for Page tokens (system user token advised for PPCA)."
+    ]
+  },
+  "credentialsRequired": [
+    "META_APP_ID",
+    "META_APP_SECRET",
+    "Business Verification",
+    "PPCA approved in App Review",
+    "system user access token"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Pages Search API covers Pages only (searchAccounts); there is no public post keyword search.",
+    "Personal profiles and groups are out of scope."
+  ]
+}

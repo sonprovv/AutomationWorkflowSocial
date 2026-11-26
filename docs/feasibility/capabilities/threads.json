@@ -1,0 +1,59 @@
+{
+  "platform": "threads",
+  "provider": "threads-api",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "NOT_SUPPORTED",
+    "searchPosts": "AUTH_REQUIRED",
+    "getProfile": "AUTH_REQUIRED",
+    "listPosts": "UNKNOWN",
+    "getPostDetail": "UNKNOWN",
+    "getPostMetrics": "UNKNOWN",
+    "listComments": "UNKNOWN"
+  },
+  "policy": {
+    "policyId": "meta-platform-terms-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "keyword_search without threads_keyword_search approval returns only the user's own posts; 2,200 queries / 24h.",
+      "profile_lookup needs threads_profile_discovery; public profiles with >=100 followers; 1,000 requests / 24h.",
+      "Insights only for own posts; other users' per-post metrics NOT VERIFIED."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.facebook.com/docs/threads/keyword-search",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/docs/threads/threads-profiles",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/docs/threads/insights",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "requests",
+    "dailyLimit": 2200,
+    "notes": [
+      "keyword_search 2,200 / 24h; profile_lookup 1,000 / 24h."
+    ]
+  },
+  "credentialsRequired": [
+    "Threads app with Advanced Access to threads_keyword_search and threads_profile_discovery (App Review)",
+    "Threads user OAuth token"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Per-post public metrics of other users not verified."
+  ]
+}

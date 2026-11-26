@@ -1,0 +1,61 @@
+{
+  "platform": "instagram",
+  "provider": "instagram-graph-api",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "NOT_SUPPORTED",
+    "searchPosts": "PARTIAL",
+    "getProfile": "AUTH_REQUIRED",
+    "listPosts": "AUTH_REQUIRED",
+    "getPostDetail": "AUTH_REQUIRED",
+    "getPostMetrics": "AUTH_REQUIRED",
+    "listComments": "NOT_SUPPORTED"
+  },
+  "policy": {
+    "policyId": "meta-platform-terms-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Business Discovery: Business/Creator target accounts only; username must be known.",
+      "Hashtag search: 30 unique hashtags per rolling 7 days; recent_media covers the last 24h only."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-hashtag-search",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.facebook.com/terms/",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "calls",
+    "dailyLimit": null,
+    "notes": [
+      "4800 x impressions / 24h."
+    ]
+  },
+  "credentialsRequired": [
+    "Own IG Business/Creator account linked to a Facebook Page",
+    "Meta app with Advanced Access: instagram_basic, instagram_manage_insights, pages_read_engagement",
+    "Instagram Public Content Access (hashtags)"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "No keyword search of accounts/posts; hashtag search only (PARTIAL).",
+    "Personal accounts cannot be read.",
+    "Hidden like counts are omitted."
+  ]
+}

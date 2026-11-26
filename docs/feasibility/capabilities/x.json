@@ -1,0 +1,62 @@
+{
+  "platform": "x",
+  "provider": "x-api-v2",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "UNKNOWN",
+    "searchPosts": "AUTH_REQUIRED",
+    "getProfile": "AUTH_REQUIRED",
+    "listPosts": "AUTH_REQUIRED",
+    "getPostDetail": "AUTH_REQUIRED",
+    "getPostMetrics": "AUTH_REQUIRED",
+    "listComments": "UNKNOWN"
+  },
+  "policy": {
+    "policyId": "x-developer-policy-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Stored content must be kept current; deleted/protected content removed (within 24h on request)."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.x.com/x-api/getting-started/pricing",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://docs.x.com/x-api/posts/search/introduction",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://docs.x.com/x-api/fundamentals/rate-limits",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://docs.x.com/developer-terms/policy",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "USD credits",
+    "dailyLimit": null,
+    "notes": [
+      "Pay-per-use: post read $0.005, user read $0.010; cap 3M post reads per billing cycle.",
+      "Recent search: last 7 days, 100 per request."
+    ]
+  },
+  "credentialsRequired": [
+    "X developer app Bearer token",
+    "prepaid credits"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "Paid per resource read; not in MVP scope."
+  ]
+}

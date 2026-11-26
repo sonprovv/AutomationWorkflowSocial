@@ -1,0 +1,71 @@
+{
+  "platform": "tiktok",
+  "provider": "tiktok-official-apis",
+  "status": "BLOCKED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "BLOCKED",
+    "searchAccounts": "BLOCKED",
+    "searchPosts": "BLOCKED",
+    "getProfile": "BLOCKED",
+    "listPosts": "BLOCKED",
+    "getPostDetail": "BLOCKED",
+    "getPostMetrics": "BLOCKED",
+    "listComments": "BLOCKED"
+  },
+  "policy": {
+    "policyId": "tiktok-none",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": null,
+    "refreshDays": null,
+    "notes": [
+      "Display API: only the authorizing user's own profile/videos.",
+      "Research API: non-commercial academic/non-profit only (\"independent of commercial interests\").",
+      "Commercial Content API: ads only, EU only.",
+      "TikTok ToS 3.4 prohibits automated scraping without written approval."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.tiktok.com/doc/display-api-overview",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.tiktok.com/products/research-api/",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.tiktok.com/doc/research-api-faq",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.tiktok.com/products/commercial-content-api/",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://www.tiktok.com/legal/page/us/terms-of-service/en",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "alternatives": [
+    {
+      "provider": "apify:clockworks/tiktok-scraper",
+      "status": "LEGAL_RISK",
+      "price": "from $1.70 / 1,000 results (pay-per-event), checked 2026-11-26",
+      "note": "Scraping conflicts with TikTok ToS 3.4; Apify terms place legal responsibility on the customer. Not enabled; requires explicit written Product Owner + legal acceptance."
+    }
+  ],
+  "quota": {
+    "unit": "n/a",
+    "dailyLimit": null,
+    "notes": []
+  },
+  "credentialsRequired": [],
+  "credentialsOptional": [],
+  "limitations": [
+    "No official API grants commercial access to other accounts' organic content."
+  ]
+}

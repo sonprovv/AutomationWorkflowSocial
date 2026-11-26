@@ -1,0 +1,81 @@
+{
+  "platform": "youtube",
+  "provider": "youtube-data-api-v3",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-26",
+  "capabilities": {
+    "resolveAccount": "AUTH_REQUIRED",
+    "searchAccounts": "AUTH_REQUIRED",
+    "searchPosts": "AUTH_REQUIRED",
+    "getProfile": "AUTH_REQUIRED",
+    "listPosts": "AUTH_REQUIRED",
+    "getPostDetail": "AUTH_REQUIRED",
+    "getPostMetrics": "AUTH_REQUIRED",
+    "listComments": "AUTH_REQUIRED"
+  },
+  "policy": {
+    "policyId": "youtube-nonauthorized-v0",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": 30,
+    "refreshDays": 30,
+    "notes": [
+      "Competitor channels are Non-Authorized Data: store limited amounts temporarily, max 30 days, then delete or refresh (III.E.4.d); statistics max 30 days (III.E.4.b).",
+      "Derived/new metrics prohibited (III.E.4.h) unless approved under the III.L derived-metrics policy (audited developers, from 2026-06-01).",
+      "Do not aggregate API data across different content owners (III.E.2.a).",
+      "Do not download/cache audiovisual content (III.E.1.a); YouTube attribution required (III.F.2)."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.google.com/youtube/terms/developer-policies",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.google.com/youtube/terms/derived-metrics-policy",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.google.com/youtube/terms/api-services-terms-of-service",
+        "checkedAt": "2026-11-26"
+      },
+      {
+        "url": "https://developers.google.com/youtube/v3/determine_quota_cost",
+        "checkedAt": "2026-11-26"
+      }
+    ]
+  },
+  "policyProposal": {
+    "status": "PENDING_PRODUCT_OWNER_APPROVAL",
+    "allowHistoricalSnapshots": false,
+    "allowDerivedMetrics": false,
+    "allowMediaProcessing": false,
+    "allowExport": false,
+    "retentionDays": 30,
+    "refreshDays": 30,
+    "conditions": [
+      "Keep deny until a YouTube API compliance audit and III.L derived-metrics approval are obtained.",
+      "Export of current (<30 days) data with YouTube attribution needs legal review before enabling."
+    ]
+  },
+  "quota": {
+    "unit": "quota units",
+    "dailyLimit": 10000,
+    "notes": [
+      "Docs (2026-11-26): search.list uses a separate bucket of 100 calls/day; other read calls cost 1 unit. To be confirmed with a live key; harness reserves 100 units per search (upper bound).",
+      "Invalid requests also cost >=1 unit. Daily reset at midnight Pacific Time."
+    ]
+  },
+  "credentialsRequired": [
+    "YOUTUBE_API_KEY"
+  ],
+  "credentialsOptional": [],
+  "limitations": [
+    "All capabilities implemented and contract-tested; live verification pending an API key.",
+    "No share/save counts; likes may be hidden; comments may be disabled.",
+    "No reliable \"is Short\" flag in the Data API (not inferred).",
+    "Legacy /c/ custom URLs cannot be resolved directly.",
+    "search.list results capped (~500) and approximate."
+  ]
+}
