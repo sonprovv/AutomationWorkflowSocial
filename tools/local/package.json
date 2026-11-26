@@ -1,0 +1,16 @@
+{
+  "name": "@sss/local",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local runtime tooling: native start/stop, doctor, vertical slice",
+  "dependencies": {
+    "@sss/api": "0.0.0",
+    "@sss/config": "0.0.0",
+    "@sss/database": "0.0.0",
+    "@sss/queue": "0.0.0",
+    "@sss/services": "0.0.0",
+    "@sss/collector-core": "0.0.0",
+    "ioredis": "6.1.0"
+  }
+}

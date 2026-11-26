@@ -26,7 +26,8 @@
     "poc:summary": "tsx tools/feasibility/src/summary.ts",
     "postinstall": "npm run generate -w @sss/database --silent",
     "db:generate": "npm run generate -w @sss/database",
-    "db:migrate:new": "npm run migrate:new -w @sss/database --"
+    "db:migrate:new": "npm run migrate:new -w @sss/database --",
+    "slice": "tsx tools/local/src/slice.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.7",

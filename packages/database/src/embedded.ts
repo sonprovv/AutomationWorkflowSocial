@@ -49,6 +49,9 @@ export async function startEmbeddedPostgres(o: EmbeddedPgOptions): Promise<Embed
     onLog: () => {},
     onError: () => {},
     postgresFlags: ['-c', 'listen_addresses=127.0.0.1'],
+    // Force UTF-8 + ICU: on Windows initdb otherwise defaults to WIN1252 (rejects emoji/CJK), and the C
+    // locale cannot case-fold Vietnamese ("TIẾNG" ILIKE "tiếng" = false). Same flags as the Docker image.
+    initdbFlags: ['--encoding=UTF8', '--locale-provider=icu', '--icu-locale=und', '--locale=C'],
   });
   if (fresh) await pg.initialise();
   await pg.start();

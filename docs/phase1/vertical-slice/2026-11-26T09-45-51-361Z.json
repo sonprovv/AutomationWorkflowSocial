@@ -1,0 +1,338 @@
+{
+  "schema": "sss.vertical-slice/v1",
+  "kind": "REAL DATA — Bluesky public AppView",
+  "input": "https://bsky.app/profile/bsky.app",
+  "startedAt": "2026-11-26T09:45:51.361Z",
+  "finishedAt": "2026-11-26T09:46:08.489Z",
+  "environment": {
+    "node": "v22.16.0",
+    "platform": "win32",
+    "db": "embedded PostgreSQL 17 (ephemeral)",
+    "queue": "inline (dev mode)"
+  },
+  "seededProviders": [
+    {
+      "providerId": "bluesky-appview",
+      "enabled": true,
+      "status": "VERIFIED"
+    },
+    {
+      "providerId": "meta-graph-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "instagram-graph-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "linkedin-marketing-api",
+      "enabled": false,
+      "status": "BLOCKED"
+    },
+    {
+      "providerId": "pinterest-api-v5",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "reddit-data-api",
+      "enabled": false,
+      "status": "UNVERIFIED"
+    },
+    {
+      "providerId": "threads-api",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "tiktok-official-apis",
+      "enabled": false,
+      "status": "BLOCKED"
+    },
+    {
+      "providerId": "x-api-v2",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    },
+    {
+      "providerId": "youtube-data-api-v3",
+      "enabled": false,
+      "status": "AUTH_REQUIRED"
+    }
+  ],
+  "steps": [
+    {
+      "step": "create project",
+      "ms": 127,
+      "status": 201
+    },
+    {
+      "step": "track https://bsky.app/profile/bsky.app",
+      "ms": 609,
+      "status": 201,
+      "summary": {
+        "id": "ab8098d3-3036-4ec2-8f73-d877f037a1dd",
+        "platform": "bluesky",
+        "externalId": "did:plc:z72i7hdynmk6r22z27h6tvur",
+        "username": "bsky.app",
+        "displayName": "Bluesky",
+        "profileUrl": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur",
+        "bio": "official Bluesky account (check username👆)\n\nBugs, feature requests, feedback: support@bsky.app",
+        "avatarUrl": "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
+        "accountCreatedAt": "2023-04-12T04:53:57.057Z",
+        "status": "ACTIVE",
+        "provenance": {
+          "providerId": "bluesky-appview",
+          "policyId": "bluesky-public-v0-unverified",
+          "schemaVersion": "bluesky-appview@2026-11-26",
+          "lastCollectedAt": "2026-11-26T09:46:03.924Z"
+        },
+        "firstSeenAt": "2026-11-26T09:46:04.413Z"
+      }
+    },
+    {
+      "step": "initial sync job",
+      "ms": 3192,
+      "status": 200,
+      "summary": {
+        "status": "SUCCEEDED",
+        "result": {
+          "mode": "initial",
+          "error": null,
+          "pages": 8,
+          "usage": {
+            "records": 21,
+            "requests": 9,
+            "quotaUnits": 0
+          },
+          "status": "SUCCEEDED",
+          "postsNew": 20,
+          "warnings": [
+            "Skipped 15 repost(s) of other accounts' content.",
+            "Skipped 12 repost(s) of other accounts' content.",
+            "Skipped 10 repost(s) of other accounts' content.",
+            "Skipped 6 repost(s) of other accounts' content.",
+            "Skipped 3 repost(s) of other accounts' content.",
+            "Skipped 1 repost(s) of other accounts' content."
+          ],
+          "postsSeen": 20,
+          "watermark": "2026-11-19T18:33:36.813Z",
+          "postsUpdated": 0,
+          "profileUpdated": true
+        }
+      }
+    },
+    {
+      "step": "GET /posts (top 5)",
+      "ms": 20,
+      "status": 200,
+      "summary": [
+        {
+          "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n2opitxdyc2j",
+          "publishedAt": "2026-11-19T18:33:36.813Z",
+          "contentType": "video",
+          "metrics": {
+            "views": null,
+            "likes": 2050,
+            "comments": 788,
+            "shares": 348,
+            "saves": 217,
+            "extra": {
+              "quotes": 1173
+            },
+            "missing": {
+              "views": "NOT_SUPPORTED"
+            },
+            "collectedAt": "2026-11-26T09:46:04.787Z",
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified"
+          }
+        },
+        {
+          "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n2m24be4e223",
+          "publishedAt": "2026-11-18T17:05:26.596Z",
+          "contentType": "image",
+          "metrics": {
+            "views": null,
+            "likes": 2580,
+            "comments": 137,
+            "shares": 518,
+            "saves": 507,
+            "extra": {
+              "quotes": 143
+            },
+            "missing": {
+              "views": "NOT_SUPPORTED"
+            },
+            "collectedAt": "2026-11-26T09:46:04.787Z",
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified"
+          }
+        },
+        {
+          "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n27yge3hys24",
+          "publishedAt": "2026-11-13T22:03:20.663Z",
+          "contentType": "text",
+          "metrics": {
+            "views": null,
+            "likes": 7670,
+            "comments": 206,
+            "shares": 673,
+            "saves": 70,
+            "extra": {
+              "quotes": 48
+            },
+            "missing": {
+              "views": "NOT_SUPPORTED"
+            },
+            "collectedAt": "2026-11-26T09:46:04.787Z",
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified"
+          }
+        },
+        {
+          "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n25midjy722x",
+          "publishedAt": "2026-11-12T23:24:22.820Z",
+          "contentType": "text",
+          "metrics": {
+            "views": null,
+            "likes": 2054,
+            "comments": 80,
+            "shares": 266,
+            "saves": 161,
+            "extra": {
+              "quotes": 28
+            },
+            "missing": {
+              "views": "NOT_SUPPORTED"
+            },
+            "collectedAt": "2026-11-26T09:46:04.787Z",
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified"
+          }
+        },
+        {
+          "url": "https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n22yg6lg2k2f",
+          "publishedAt": "2026-11-11T22:19:56.200Z",
+          "contentType": "image",
+          "metrics": {
+            "views": null,
+            "likes": 2813,
+            "comments": 196,
+            "shares": 383,
+            "saves": 151,
+            "extra": {
+              "quotes": 135
+            },
+            "missing": {
+              "views": "NOT_SUPPORTED"
+            },
+            "collectedAt": "2026-11-26T09:46:04.787Z",
+            "providerId": "bluesky-appview",
+            "policyId": "bluesky-public-v0-unverified"
+          }
+        }
+      ]
+    },
+    {
+      "step": "incremental re-sync",
+      "ms": 589,
+      "status": 200,
+      "summary": {
+        "status": "SUCCEEDED",
+        "result": {
+          "mode": "incremental",
+          "error": null,
+          "pages": 1,
+          "usage": {
+            "records": 6,
+            "requests": 2,
+            "quotaUnits": 0
+          },
+          "status": "SUCCEEDED",
+          "postsNew": 0,
+          "warnings": [
+            "Skipped 20 repost(s) of other accounts' content."
+          ],
+          "postsSeen": 5,
+          "watermark": "2026-11-19T18:33:36.813Z",
+          "postsUpdated": 5,
+          "profileUpdated": true
+        }
+      }
+    }
+  ],
+  "dbCounts": {
+    "posts": 20,
+    "postMetrics": 20,
+    "accounts": 1,
+    "accountMetrics": 1,
+    "jobs": 2
+  },
+  "duplicatePosts": 0,
+  "account": {
+    "metrics": {
+      "followers": 35858900,
+      "following": 44,
+      "postsCount": 928,
+      "extra": {},
+      "missing": {},
+      "collectedAt": "2026-11-26T09:46:07.732Z",
+      "providerId": "bluesky-appview",
+      "policyId": "bluesky-public-v0-unverified"
+    },
+    "sync": {
+      "backfillDone": true,
+      "watermark": "2026-11-19T18:33:36.813Z",
+      "lastSuccessAt": "2026-11-26T09:46:08.291Z"
+    },
+    "recentRuns": [
+      {
+        "id": "ec9f9eef-6c5f-48a1-94c6-a231f463c655",
+        "jobId": "f4a2eedd-f7e1-40c9-9257-6801a6ef021b",
+        "operation": "account.sync:incremental",
+        "status": "SUCCEEDED",
+        "requests": 2,
+        "records": 6,
+        "quotaUnits": 0,
+        "latencyMs": 561,
+        "errorCode": null,
+        "warnings": [
+          "Skipped 20 repost(s) of other accounts' content."
+        ],
+        "startedAt": "2026-11-26T09:46:07.732Z",
+        "finishedAt": "2026-11-26T09:46:08.293Z"
+      },
+      {
+        "id": "4d183e1c-fe3e-4e48-babf-ed6723a3319c",
+        "jobId": "f6c3a6b0-3de4-4c76-9578-df42e1a348d5",
+        "operation": "account.sync:initial",
+        "status": "SUCCEEDED",
+        "requests": 9,
+        "records": 21,
+        "quotaUnits": 0,
+        "latencyMs": 3157,
+        "errorCode": null,
+        "warnings": [
+          "Skipped 15 repost(s) of other accounts' content.",
+          "Skipped 12 repost(s) of other accounts' content.",
+          "Skipped 10 repost(s) of other accounts' content.",
+          "Skipped 6 repost(s) of other accounts' content.",
+          "Skipped 3 repost(s) of other accounts' content.",
+          "Skipped 1 repost(s) of other accounts' content."
+        ],
+        "startedAt": "2026-11-26T09:46:04.494Z",
+        "finishedAt": "2026-11-26T09:46:07.651Z"
+      }
+    ]
+  },
+  "checks": {
+    "initialSyncSucceeded": true,
+    "resyncSucceeded": true,
+    "noDuplicatePosts": true,
+    "oneMetricSnapshotPerPost": true,
+    "viewsNullNotZero": true
+  }
+}
