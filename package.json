@@ -27,7 +27,10 @@
     "postinstall": "npm run generate -w @sss/database --silent",
     "db:generate": "npm run generate -w @sss/database",
     "db:migrate:new": "npm run migrate:new -w @sss/database --",
-    "slice": "tsx tools/local/src/slice.ts"
+    "slice": "tsx tools/local/src/slice.ts",
+    "doctor": "tsx tools/local/src/doctor.ts",
+    "start:native": "tsx tools/local/src/start.ts",
+    "stop:native": "tsx tools/local/src/stop.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.7",

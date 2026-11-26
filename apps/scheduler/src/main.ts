@@ -27,8 +27,18 @@ async function tick() {
 
 await tick();
 const timer = setInterval(tick, 60_000);
-for (const sig of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(sig, async () => {
+// Graceful stop requests: OS signals, or an IPC message from the native supervisor (Windows cannot
+// deliver catchable signals to child processes).
+const onStop = (fn: () => void) => {
+  process.on('SIGINT', fn);
+  process.on('SIGTERM', fn);
+  process.on('message', (m: unknown) => {
+    if ((m as { type?: string })?.type === 'shutdown') fn();
+  });
+};
+{
+  const sig = 'stop request';
+  onStop(async () => {
     clearInterval(timer);
     await dispatcher.close();
     await redis.quit().catch(() => redis.disconnect());

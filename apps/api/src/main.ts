@@ -31,8 +31,18 @@ try {
 app.log.info(`API ready on http://${config.API_HOST}:${port}/api/v1 (docs: /api/docs, queue driver: ${config.QUEUE_DRIVER})`);
 
 let closing = false;
-for (const sig of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(sig, async () => {
+// Graceful stop requests: OS signals, or an IPC message from the native supervisor (Windows cannot
+// deliver catchable signals to child processes).
+const onStop = (fn: () => void) => {
+  process.on('SIGINT', fn);
+  process.on('SIGTERM', fn);
+  process.on('message', (m: unknown) => {
+    if ((m as { type?: string })?.type === 'shutdown') fn();
+  });
+};
+{
+  const sig = 'stop request';
+  onStop(async () => {
     if (closing) return;
     closing = true;
     app.log.info(`${sig} received, shutting down`);
