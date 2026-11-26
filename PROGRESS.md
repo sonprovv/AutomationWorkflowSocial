@@ -19,9 +19,41 @@
 | 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
 | 7 | MCP, Telegram/email, reports, n8n templates | ✅ **Gate passed with real data** (agent tool call → job → export/report). Real Telegram/email delivery needs the user's channel settings; n8n templates written and unit-tested, not run inside n8n |
 | 8 | Security, scale, backup, observability, deployment | ✅ **Gate passed**: restore test on the real local DB, security check 7/7, load report (50k synthetic posts). Not run: Docker, macOS, cloud |
-| 9 | Visual workflow editor, additional platforms, App/Ad Spy | 🟡 **P9-01 engine, P9-02 visual editor and P9-03 App Spy done** (App Store VERIFIED with real data; Google Play BLOCKED). P9-04 Ad Spy desk research done. Next: close-out |
+| 9 | Visual workflow editor, additional platforms, App/Ad Spy | ✅ **Done:** workflow DAG engine and visual editor (checked in a browser); App Spy with Apple App Store VERIFIED on real data (Google Play BLOCKED); Ad Spy desk research (Meta AUTH_REQUIRED, Google BLOCKED, TikTok LEGAL_RISK). Close-out below |
 
 ---
+
+## MVP acceptance (Master Plan §17.2), checked 2026-11-27
+
+✅ met, with evidence · ⚠ met with a stated gap · ❌ not met
+
+| # | Criterion | Status | Evidence / gap |
+|---|---|---|---|
+| 1 | Local start/stop and a custom port on Windows/macOS, or the untested OS stated | ⚠ | Windows 11: native start/stop and port settings verified many times (Phases 1–9). **macOS has not been tested** (stated in README) |
+| 2 | At least 2 production adapters with real data and verified capabilities/policy | ❌ | **Only Bluesky is VERIFIED.** YouTube's adapter and contract tests are done, but it waits for `YOUTUBE_API_KEY` (ADR-0007). The Apple App Store (App Spy) is verified, but it is not a social source |
+| 3 | Enter keywords, find accounts/posts on supported sources, import URLs manually | ✅ | Phase 3 gate with real Bluesky data; `POST /accounts` by URL or handle |
+| 4 | Review/approve competitors; tracking on and off | ✅ | Review queue, approve/reject, `PATCH /accounts/:id/tracking` (Phase 3 tests, UI) |
+| 5 | Initial and incremental sync run automatically; no duplicate posts on rerun | ✅ | Phase 2 real sync of 3 accounts; Phase 4 scheduler; unique keys plus watermarks (tests) |
+| 6 | Missing fields shown as null/unknown; a failed source is not shown as 0 results | ✅ | `missing` reason maps; discovery `coverage` OK/ERROR/SKIPPED (tests, UI) |
+| 7 | Queue with retry/backoff, timeout, cancel, pause, checkpoint, DLQ | ⚠ | Done and tested in inline mode. **The BullMQ path with a real Redis has not been run** (no Redis on this machine) |
+| 8 | Scheduler never runs twice; recovers after restart | ⚠ | DB claims plus orphan recovery are tested, and verified in a native run. The separate scheduler process in BullMQ mode is unverified (needs Redis) |
+| 9 | Budget and quota guards hold under concurrent jobs | ✅ | Reservations with an advisory lock (ADR-0012, concurrency tests); Apple daily cap (P9-03) |
+| 10 | Policy guard blocks history, derived metrics, media and export that are not allowed | ✅ | Policy engine tests; Bluesky rows withheld from exports; analytics report "blocked by policy" |
+| 11 | Dashboard and Content Explorer show real data, source URL and collection time | ✅ | Phase 5 gate in a real browser |
+| 12 | Valid Excel/CSV/JSON exports with a data dictionary and provenance | ✅ | Phase 5: Excel validated with openpyxl; dictionary sheet; formula-injection defence |
+| 13 | Daily report, or Telegram/webhook delivery, works with valid settings | ⚠ | Reports and channels are built and tested against fake endpoints; the Phase 7 gate passed. **Real delivery needs your channel settings** in `.env` |
+| 14 | REST/MCP tool calls return a job ID, read its status and fetch the result | ✅ | Phase 7 MCP gate 6/6 with real data |
+| 15 | Backup and restore test, audit log, secret redaction, retention cleanup | ✅ | Phase 8: restore test on the real local DB; audit logs; redaction tests; WF14 cleanup |
+| 16 | README, setup, API docs, troubleshooting, limitations and test report | ✅ | README (status and limits), DEPLOYMENT, RUNBOOK, API_SPEC (+ OpenAPI `/api/docs`), DATABASE, MCP, ADR-0001…0018, this file |
+
+**Verdict:** the MVP is feature-complete. Acceptance is **blocked by #2 only** (the second verified social source). #1, #7, #8 and #13 carry stated gaps that need macOS, Redis, or the user's channel settings.
+
+### Decisions and inputs waiting (summary for the Product Owner)
+1. **`YOUTUBE_API_KEY`**: add it to `.env`, then run `npm run poc -- youtube` three times and `npm run poc:summary`. This closes the Phase 0 gate and MVP #2.
+2. **Bluesky policy proposal** (`docs/feasibility/capabilities/bluesky.json`): it unlocks history, viral/trend analytics, AI and exports.
+3. **Apple App Store policy proposal** (`docs/feasibility/app-stores/apple.json`): daily snapshots for 365 days and internal export.
+4. **Ad Spy** (`docs/feasibility/ad-spy.md`): Meta app plus identity confirmation (EU and political ads only); a Google Cloud project for the reported BigQuery dataset; TikTok only after legal advice.
+5. **Optional:** `ANTHROPIC_API_KEY` (AI analysis); Telegram, email or webhook settings (reports); Redis/Memurai (separate worker and scheduler); TikTok and Meta options from Phase 0 (`docs/feasibility/README.md` §5).
 
 ## Phase 9 — Post-MVP: workflow builder, App/Ad Spy (started 2026-11-27)
 

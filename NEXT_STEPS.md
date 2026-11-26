@@ -1,6 +1,8 @@
 # NEXT STEPS
 
-Updated 2026-11-26 after resuming. The full status and test evidence are in [`PROGRESS.md`](PROGRESS.md).
+Updated 2026-11-27 after Phase 9. The full status and test evidence are in [`PROGRESS.md`](PROGRESS.md).
+
+> **All planned phases (0–9) are built.** The MVP acceptance table is in PROGRESS.md under "MVP acceptance". Acceptance is blocked only by item #2: a second verified social source, which needs `YOUTUBE_API_KEY` (row 1 below). Nothing else is in progress. When resuming, run `npm test` first; the last run had 204 passing and 1 skipped.
 
 ## Where we stopped
 - **Phase 0:** code, tests and docs are done. The **gate is still open** until a YouTube API key is verified (ADR-0007).
@@ -20,7 +22,7 @@ Updated 2026-11-26 after resuming. The full status and test evidence are in [`PR
 | 1 | `YOUTUBE_API_KEY` in `.env` | The user said keys come at the end. Once it is set:<br>1. Run `npm run poc -- youtube` three times at different times.<br>2. Run `npm run poc:summary`.<br>3. Set `docs/feasibility/capabilities/youtube.json` → `"status": "VERIFIED"`, with capabilities based on the run evidence.<br>4. Update `youtube.md`.<br>5. Restart; the seed then enables the provider.<br>Running `npm test` afterwards will fail on the capability drift test until the record and the adapter capabilities match. |
 | 2 | Redis | `winget install Memurai.MemuraiDeveloper` (Windows) or `brew install redis` (macOS). Then run `npm test`; `tests/integration/bullmq.test.ts` runs automatically. Then `start.bat` should report "worker + scheduler mode". |
 | 3 | Bluesky App Password (optional) | Set `BLUESKY_IDENTIFIER` and `BLUESKY_APP_PASSWORD`. Then re-run the PoC; TC06 page 2 should pass. |
-| 4 | Product Owner decisions | Listed in `docs/feasibility/README.md` §5:<br>- Bluesky policy proposal<br>- TikTok option (manual URL + oEmbed is recommended)<br>- Meta App Review<br>- paid sources (X, Apify) |
+| 4 | Product Owner decisions | Listed in `docs/feasibility/README.md` §5:<br>- Bluesky policy proposal<br>- TikTok option (manual URL + oEmbed is recommended)<br>- Meta App Review<br>- paid sources (X, Apify)<br>Phase 9 adds:<br>- the Apple App Store policy proposal (`docs/feasibility/app-stores/apple.json`)<br>- the Ad Spy options (`docs/feasibility/ad-spy.md`) |
 | 5 | Docker (optional) | `start.bat --docker` on a machine with Docker Desktop, to verify `docker-compose.yml`. |
 
 ## Phase 2 status
@@ -65,7 +67,7 @@ Work in this order, and commit after each item so that work can resume from here
 3. ✅ **DONE (2026-11-27; ADR-0018, `docs/feasibility/apple-app-store.md` and `google-play-apps.md`, page `#/apps`; Product Owner: decide the Apple policy proposal in `docs/feasibility/app-stores/apple.json`)** **P9-03 App Spy, Phase 0 first:** a feasibility PoC for the Apple iTunes Search/Lookup API (public and official) for app search, details, developer and website. Google Play has no official search API, so it is BLOCKED (manual URL only) and gets a report.
    - If verified: an adapter, a `apps` table, and app → developer website → social account linking with evidence (never match by name alone).
 4. ✅ **DONE (2026-11-27; `docs/feasibility/ad-spy.md` and `ad-sources/*.json`, schema-tested; Product Owner decisions are listed in ad-spy.md)** **P9-04 Ad Spy, desk research:** Meta Ad Library API (identity verification and token: AUTH_REQUIRED), Google Ads Transparency Center (no API: BLOCKED), TikTok Commercial Content API (application required). Write the report and capability records only. Do not infer spend, revenue or ROAS.
-5. 🟡 **NEXT (started 2026-11-27 ~01:45):** **Close-out:** check the MVP acceptance checklist (§17.2) against PROGRESS; final summary for the Product Owner.
+5. ✅ **DONE (2026-11-27): MVP acceptance table and Product Owner summary in PROGRESS.md (MVP acceptance); README refreshed.** **Close-out:** check the MVP acceptance checklist (§17.2) against PROGRESS; final summary for the Product Owner.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**
