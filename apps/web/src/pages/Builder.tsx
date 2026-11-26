@@ -108,7 +108,7 @@ function BuilderList() {
       <h2>Workflow Builder</h2>
       <p className="muted small">
         Custom workflows chain the existing guarded jobs (discovery, sync, metrics, viral, trends, AI, export, report, notify) with wait and if steps. Graphs must be acyclic; every save is a new
-        version and every run pins one. Recurring runs use a <code>CUSTOM_WORKFLOW</code> schedule on the Automations page.
+        version and every run pins one. Recurring runs use a <code>CUSTOM_WORKFLOW</code> schedule on the Schedules page.
       </p>
       <div className="filters">
         <label>
@@ -133,7 +133,7 @@ function BuilderList() {
             <option value="empty">Empty (start node only)</option>
           </select>
         </label>
-        <button disabled={!name.trim()} onClick={create}>
+        <button className="primary" disabled={!name.trim()} onClick={create}>
           Create workflow
         </button>
       </div>
@@ -355,7 +355,7 @@ function Editor({ id }: { id: string }) {
         <button onClick={save} disabled={!dirty && !viewingOld}>
           Save new version
         </button>
-        <button onClick={runNow} disabled={!canRun || busy} title={runBlocker}>
+        <button className="primary" onClick={runNow} disabled={!canRun || busy} title={runBlocker}>
           {busy ? 'Starting…' : 'Run now'}
         </button>
       </div>

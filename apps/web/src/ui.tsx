@@ -71,7 +71,7 @@ export function ErrorBox({ error }: { error: string | null | undefined }) {
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="muted">{children}</p>;
+  return <div className="empty">{children}</div>;
 }
 
 export function Loading({ on }: { on: boolean }) {

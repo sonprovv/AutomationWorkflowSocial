@@ -46,6 +46,7 @@ These return `202`:
 |---|---|---|
 | GET | `/health/live` | Liveness |
 | GET | `/health/ready` | Database and queue readiness. Includes `queueDriver` (`bullmq` or `inline`) |
+| GET | `/setup/status` | Setup guide checklist: app mode, which keys and channels are configured (**booleans only, never values**), policy proposal statuses, backups, data counts |
 | GET / POST | `/projects` | List (`status`, `limit`, `cursor`) / create (`name`, `niche`, `platforms`, `languages`, `markets`, `timezone`, budgets, `settings`) |
 | GET / PATCH / DELETE | `/projects/:id` | Detail / update (settings are merged) / delete (cascades to project links; shared accounts are kept) |
 | GET | `/accounts` | List (`projectId`, `platform`, `limit`, `cursor`) with the latest metrics |

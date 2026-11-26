@@ -37,7 +37,7 @@ export function Accounts() {
             </option>
           ))}
         </select>
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="primary" disabled={busy}>
           {busy ? 'Resolving…' : 'Track account'}
         </button>
       </form>
@@ -156,7 +156,7 @@ export function AccountPage({ id }: { id: string }) {
             Metrics collected {fmtTime(a.metrics?.collectedAt)} via {a.metrics?.providerId ?? '—'} (policy {a.metrics?.policyId ?? '—'}). Last successful sync {fmtTime(a.sync?.lastSuccessAt)}.
           </p>
           <div className="row">
-            <button onClick={sync} disabled={!!job && ['QUEUED', 'RUNNING'].includes(job.status)}>
+            <button className="primary" onClick={sync} disabled={!!job && ['QUEUED', 'RUNNING'].includes(job.status)}>
               Sync now
             </button>
             <button onClick={refresh} disabled={!!job && ['QUEUED', 'RUNNING'].includes(job.status)}>

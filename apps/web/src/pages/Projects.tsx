@@ -41,7 +41,7 @@ export function Projects() {
             ))}
           </span>
         </label>
-        <button type="submit">Create project</button>
+        <button type="submit" className="primary">Create project</button>
       </form>
       <ErrorBox error={err ?? list.error} />
       <table>
@@ -111,7 +111,7 @@ function Keywords({ projectId }: { projectId: string }) {
       <h3>Keywords</h3>
       <form onSubmit={add} className="row">
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="live wallpaper, depth wallpaper" required />
-        <button type="submit">Add</button>
+        <button type="submit" className="primary">Add</button>
         <button type="button" onClick={expand}>
           Suggest variants (rule-based)
         </button>
@@ -169,7 +169,7 @@ function Discovery({ projectId, onDone }: { projectId: string; onDone: () => voi
     <section>
       <h3>Discovery</h3>
       <div className="row">
-        <button onClick={run} disabled={!!job && ACTIVE.includes(job.status)}>
+        <button className="primary" onClick={run} disabled={!!job && ACTIVE.includes(job.status)}>
           Run discovery
         </button>
         {shown && (
@@ -242,7 +242,7 @@ function Candidates({ projectId, version }: { projectId: string; version: number
           ))}
         </select>
         <input className="narrow" type="number" min={0} max={100} value={minScore} onChange={(e) => (setMinScore(e.target.value), setCursor(null))} placeholder="min score" />
-        <button disabled={!selected.length} onClick={() => decide('approve')}>
+        <button className="primary" disabled={!selected.length} onClick={() => decide('approve')}>
           Approve &amp; track ({selected.length})
         </button>
         <button disabled={!selected.length} onClick={() => decide('reject')}>

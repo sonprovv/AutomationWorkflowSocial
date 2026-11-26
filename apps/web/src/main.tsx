@@ -9,6 +9,8 @@ import { Insights } from './pages/Insights.tsx';
 import { Exports, Jobs, Sources, Workflows } from './pages/Ops.tsx';
 import { ProjectPage, Projects } from './pages/Projects.tsx';
 import { Reports } from './pages/Reports.tsx';
+import { guideSeen, markGuideSeen, SetupGuide, useSetupStatus } from './SetupGuide.tsx';
+import { Icon, type IconName } from './icons.tsx';
 import './styles.css';
 
 /*
@@ -45,6 +47,36 @@ function parseHash(): Route {
   return { page: 'dashboard' };
 }
 
+const NAV: { group: string; items: [string, string, IconName, string[]][] }[] = [
+  { group: 'Overview', items: [['dashboard', 'Dashboard', 'dashboard', []]] },
+  {
+    group: 'Research',
+    items: [
+      ['projects', 'Projects', 'folder', ['project']],
+      ['accounts', 'Accounts', 'users', ['account']],
+      ['explore', 'Content Explorer', 'search', []],
+      ['insights', 'Insights', 'trend', []],
+      ['apps', 'App Spy', 'phone', ['app']],
+    ],
+  },
+  {
+    group: 'Automation',
+    items: [
+      ['builder', 'Workflow Builder', 'workflow', []],
+      ['workflows', 'Schedules', 'clock', []],
+      ['jobs', 'Job Monitor', 'activity', []],
+    ],
+  },
+  {
+    group: 'Output',
+    items: [
+      ['exports', 'Exports', 'download', []],
+      ['reports', 'Reports', 'file', []],
+    ],
+  },
+  { group: 'System', items: [['sources', 'Data Sources', 'database', []]] },
+];
+
 function App() {
   const [route, setRoute] = useState<Route>(parseHash);
   const [key, setKey] = useState(0);
@@ -56,35 +88,64 @@ function App() {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  const nav: [string, string, string[]][] = [
-    ['dashboard', 'Dashboard', []],
-    ['projects', 'Projects', ['project']],
-    ['accounts', 'Accounts', ['account']],
-    ['explore', 'Content Explorer', []],
-    ['insights', 'Insights', []],
-    ['apps', 'App Spy', ['app']],
-    ['jobs', 'Job Monitor', []],
-    ['workflows', 'Automations', []],
-    ['builder', 'Workflow Builder', []],
-    ['exports', 'Exports', []],
-    ['reports', 'Reports', []],
-    ['sources', 'Data Sources', []],
-  ];
+  const [guideOpen, setGuideOpen] = useState(false);
+  const setup = useSetupStatus();
+  // First visit: open the setup guide once.
+  useEffect(() => {
+    if (!guideSeen()) setGuideOpen(true);
+  }, []);
+  const isActive = (p: string, also: string[]) => route.page === p || also.includes(route.page);
   return (
-    <>
-      <header>
-        <b>Social Spy Automation</b>
-        <nav>
-          {nav.map(([p, label, also]) => (
-            <a key={p} href={`#/${p}`} className={route.page === p || also.includes(route.page) ? 'active' : ''}>
-              {label}
-            </a>
-          ))}
-          <a href="/api/docs" target="_blank" rel="noopener noreferrer">
-            API docs
-          </a>
-        </nav>
-      </header>
+    <div className="shell">
+      <aside className="sidebar" aria-label="Main navigation">
+        <a className="brand" href="#/dashboard">
+          <span className="brand-mark" aria-hidden="true">
+            ◎
+          </span>
+          <span>
+            Social Spy
+            <small>Competitor intelligence</small>
+          </span>
+        </a>
+        {NAV.map((g) => (
+          <div key={g.group} style={{ display: 'contents' }}>
+            <div className="nav-group">{g.group}</div>
+            {g.items.map(([p, label, icon, also]) => (
+              <a key={p} href={`#/${p}`} className={`nav-link${isActive(p, also) ? ' active' : ''}`} aria-current={isActive(p, also) ? 'page' : undefined}>
+                <Icon name={icon} />
+                {label}
+              </a>
+            ))}
+          </div>
+        ))}
+        <a className="nav-link" href="/api/docs" target="_blank" rel="noopener noreferrer">
+          <Icon name="code" />
+          API docs
+        </a>
+        <div className="sidebar-foot">
+          <button className="setup-card" onClick={() => setGuideOpen(true)}>
+            <b>
+              Setup guide <span style={{ margin: 0 }}>{setup.data ? `${setup.done}/${setup.total}` : ''}</span>
+            </b>
+            <span>{setup.data ? (setup.done === setup.total ? 'Core setup complete' : 'Finish setting up') : 'Keys, sources, reports'}</span>
+            <div className="progress" aria-hidden="true">
+              <i style={{ width: `${setup.data ? (100 * setup.done) / setup.total : 0}%` }} />
+            </div>
+          </button>
+        </div>
+      </aside>
+      {guideOpen && (
+        <SetupGuide
+          status={setup.data}
+          error={setup.error}
+          onRecheck={setup.reload}
+          onClose={() => {
+            markGuideSeen();
+            setGuideOpen(false);
+            setup.reload();
+          }}
+        />
+      )}
       <main key={key}>
         {route.page === 'dashboard' && <Dashboard />}
         {route.page === 'projects' && <Projects />}
@@ -102,7 +163,7 @@ function App() {
         {route.page === 'reports' && <Reports />}
         {route.page === 'sources' && <Sources />}
       </main>
-    </>
+    </div>
   );
 }
 

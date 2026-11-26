@@ -143,7 +143,7 @@ export function Explorer() {
             <input type="checkbox" checked={draft.includeUnavailable} onChange={(e) => set('includeUnavailable', e.target.checked)} /> show unavailable
           </span>
         </label>
-        <button type="submit">Apply</button>
+        <button type="submit" className="primary">Apply</button>
         <button type="button" onClick={() => (setDraft(EMPTY), setFilters(EMPTY), setCursor(null))}>
           Reset
         </button>

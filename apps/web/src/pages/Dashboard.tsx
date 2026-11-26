@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { api, type Dashboard as D, type Page, type PostFull, type Project } from '../api.ts';
-import { ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, Status, useLoad } from '../ui.tsx';
+import { Empty, ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, Status, useLoad } from '../ui.tsx';
 
+/** Compact post row: text first, then source and times (provenance stays visible), likes on the right. */
 export function PostLine({ p }: { p: PostFull }) {
   return (
     <tr>
-      <td className="small">{fmtTime(p.publishedAt)}</td>
-      <td className="small">
-        {p.platform} · @{p.account.username ?? '—'}
-      </td>
       <td className="caption">
-        <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 120) : '(no text)')}</ExternalLink>
+        <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 140) : '(no text)')}</ExternalLink>
+        <div className="muted small" style={{ marginTop: 3 }}>
+          {p.platform} · @{p.account.username ?? '—'} · published {fmtTime(p.publishedAt)} · collected {fmtTime(p.metrics?.collectedAt ?? p.provenance.lastCollectedAt)}
+        </div>
       </td>
-      <td>{fmtNum(p.metrics?.likes, p.metrics?.missing?.likes)}</td>
-      <td className="small muted">{fmtTime(p.metrics?.collectedAt ?? p.provenance.lastCollectedAt)}</td>
+      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+        <b>{fmtNum(p.metrics?.likes, p.metrics?.missing?.likes)}</b>
+        <div className="muted small">likes</div>
+      </td>
     </tr>
   );
 }
@@ -108,7 +110,7 @@ export function Dashboard() {
                   ))}
                 </tbody>
               </table>
-              {d.data.latestPosts.length === 0 && <p className="muted">No posts yet — track an account or run discovery.</p>}
+              {d.data.latestPosts.length === 0 && <Empty>No posts yet — track an account or run discovery.</Empty>}
               <h3>Most liked (7 days)</h3>
               <p className="muted small">{d.data.topPostsByLikes7d.note}</p>
               {d.data.topPostsByLikes7d.items.length === 0 && <p className="muted">No posts published in the last 7 days have a like count.</p>}

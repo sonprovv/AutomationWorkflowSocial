@@ -129,7 +129,7 @@ export function Workflows() {
   return (
     <>
       <div className="row">
-        <h2 style={{ margin: 0 }}>Automations</h2>
+        <h2 style={{ margin: 0 }}>Schedules</h2>
         {list.data?.paused ? (
           <>
             <Status s="PAUSED" /> <button onClick={() => call('/scheduler/resume', 'POST')}>Resume scheduler</button>

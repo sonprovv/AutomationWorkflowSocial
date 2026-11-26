@@ -16,6 +16,7 @@ import {
   workflowCreateDefSchema,
   workflowUpdateDefSchema,
   AppSpyService,
+  SetupService,
   appSearchSchema,
   appTrackSchema,
   appListSchema,
@@ -99,6 +100,10 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     const ok = Object.values(checks).every((c) => c.ok);
     return reply.status(ok ? 200 : 503).send({ status: ok ? 'ready' : 'not_ready', queueDriver: ctx.dispatcher.driver, checks });
   });
+
+  /* ---------------- setup guide ---------------- */
+  const setup = new SetupService(ctx);
+  api.get('/setup/status', { schema: { tags: ['setup'], description: 'Installation checklist for the setup guide: booleans and counts only, never secret values.' } }, async () => setup.status());
 
   /* ---------------- projects ---------------- */
   api.get('/projects', { schema: { tags: ['projects'], querystring: pageQuery.extend({ status: z.enum(['ACTIVE', 'PAUSED', 'ARCHIVED']).optional() }) } }, async (req) =>

@@ -69,14 +69,17 @@ Work in this order, and commit after each item so that work can resume from here
 4. ✅ **DONE (2026-11-27; `docs/feasibility/ad-spy.md` and `ad-sources/*.json`, schema-tested; Product Owner decisions are listed in ad-spy.md)** **P9-04 Ad Spy, desk research:** Meta Ad Library API (identity verification and token: AUTH_REQUIRED), Google Ads Transparency Center (no API: BLOCKED), TikTok Commercial Content API (application required). Write the report and capability records only. Do not infer spend, revenue or ROAS.
 5. ✅ **DONE (2026-11-27): MVP acceptance table and Product Owner summary in PROGRESS.md (MVP acceptance); README refreshed.** **Close-out:** check the MVP acceptance checklist (§17.2) against PROGRESS; final summary for the Product Owner.
 
-## UI refresh + setup guide (requested 2026-11-27 ~01:45, IN PROGRESS)
-- **Goal:** the user finds the UI ugly. Restyle it, and add a setup-guide dialog.
+## UI refresh + setup guide: DONE (2026-11-27)
+- **New look:** sidebar navigation, card layout, `.primary` buttons, light and dark themes (`apps/web/src/styles.css`, `icons.tsx`).
+- **Setup guide dialog** (`SetupGuide.tsx`) backed by `GET /setup/status`. That endpoint returns booleans and counts only; a test checks that no secret value leaks.
+- "Automations" was renamed "Schedules" in the UI.
+
+## Language EN/VI + theme switch (requested 2026-11-27 ~01:53, IN PROGRESS)
 - **Plan:**
-  1. Left sidebar with grouped navigation instead of 12 top links; card layout; consistent buttons (`.primary`), tables, forms and badges; light and dark tokens. CSS only, no new dependency.
-  2. `GET /api/v1/setup/status`: booleans and counts only, never secrets.
-  3. A `SetupGuide` modal that opens automatically on the first visit (localStorage) and from a sidebar button showing progress.
-  4. Screenshots in headless Edge, tests, docs, commit.
-- **Remember:** after `npm run build:web`, restart the app.
+  1. i18n: `apps/web/src/i18n/` with a `useT()` hook, dictionaries in `en` and `vi`, the choice kept in localStorage, `<html lang>` set.
+  2. Translate the shell, the setup guide and the shared UI first, then every page.
+  3. Theme: System, Light or Dark, using a `data-theme` attribute on `<html>`, kept in localStorage. CSS tokens follow `[data-theme]`, with `prefers-color-scheme` as the System default.
+  4. Switches in the sidebar footer.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

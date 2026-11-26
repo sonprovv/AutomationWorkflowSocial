@@ -42,7 +42,7 @@ export function Reports() {
             </option>
           ))}
         </select>
-        <button disabled={!pid} onClick={() => create('daily', false)}>
+        <button className="primary" disabled={!pid} onClick={() => create('daily', false)}>
           Build daily report
         </button>
         <button disabled={!pid} onClick={() => create('daily', true)}>

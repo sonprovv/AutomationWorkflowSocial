@@ -142,7 +142,7 @@ export function Apps() {
             ))}
           </select>
         </label>
-        <button disabled={!term.trim() || busy} onClick={search}>
+        <button className="primary" disabled={!term.trim() || busy} onClick={search}>
           Search
         </button>
         <span style={{ width: 24 }} />
@@ -161,7 +161,7 @@ export function Apps() {
             ))}
           </select>
         </label>
-        <button disabled={!input.trim() || busy} onClick={() => track(input)}>
+        <button className="primary" disabled={!input.trim() || busy} onClick={() => track(input)}>
           Track app
         </button>
       </div>
