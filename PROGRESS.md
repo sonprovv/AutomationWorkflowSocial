@@ -4,6 +4,8 @@
 - **Decisions:** [`docs/adr/`](docs/adr/)
 - **Repository:** github.com/sonprovv/AutomationWorkflowSocial (branch `main`)
 
+> ⏸ **Paused 2026-11-26.** Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
+
 **Status legend:** ✅ done, with evidence · 🟡 in progress, or blocked waiting on input · ⬜ not started · ⚠ written but not yet run or verified
 
 | Phase | Scope | Status |
@@ -129,4 +131,4 @@
 - 2026-11-26 09:45 — Real-data vertical slice. Found and fixed the UTF-8/ICU bugs.
 - 2026-11-26 09:50 — Native start/stop verified on Windows. Minimal web UI. Docker Compose written (not run).
 - 2026-11-26 ~10:00 — Phase 1 docs (ARCHITECTURE, API_SPEC, DATABASE, DEPLOYMENT, RUNBOOK, COLLECTOR_SPEC, ADR-0007…0009).
-- Scheduled: Bluesky PoC run 3 at 10:13 UTC (17:13 Asia/Ho_Chi_Minh).
+- 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
