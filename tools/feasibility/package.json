@@ -8,6 +8,7 @@
     "@sss/collector-core": "0.0.0",
     "@sss/collector-bluesky": "0.0.0",
     "@sss/collector-youtube": "0.0.0",
-    "@sss/collector-appstore": "0.0.0"
+    "@sss/collector-appstore": "0.0.0",
+    "zod": "4.6.7"
   }
 }

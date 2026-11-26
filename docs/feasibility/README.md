@@ -28,6 +28,16 @@ Machine-readable records are in [`capabilities/*.json`](capabilities/). They are
 | **Apple App Store** (iTunes Search/Lookup API) | ✅ **VERIFIED** (data policy pending the Product Owner) | 2 live PoC runs, 8 PASS / 2 PARTIAL each: [apple-app-store.md](apple-app-store.md) | None | App Spy: track apps, developer apps, website → social links with evidence. Latest listing only, no export, no icons |
 | Google Play | ❌ BLOCKED | Official docs: no public catalogue API ([google-play-apps.md](google-play-apps.md)) | — | iOS only, unless the Product Owner buys a licensed data feed |
 
+### Ad libraries (Ad Spy, P9-04: desk research only, records in [`ad-sources/`](ad-sources/), report [ad-spy.md](ad-spy.md))
+
+| Source | Status | Coverage | Spend |
+|---|---|---|---|
+| Meta Ad Library API | ⏳ AUTH_REQUIRED (identity confirmation) | EU-delivered ads; political/issue ads worldwide | Ranges, political/issue ads only |
+| Google Ads Transparency Center | ❌ BLOCKED (no API; a BigQuery dataset is reported, unverified) | — | None |
+| TikTok Commercial Content API | ⚠ LEGAL_RISK (research-purpose terms) | EU/EEA ads only | None |
+
+Spend, revenue and ROAS are never inferred.
+
 ## 2. Gate status (Master Plan §4.3 / §16: "at least 2 sources verified")
 
 - [x] Test harness with typed errors, quota/budget guard, redaction and contract tests (74 unit/contract tests, 3 live smoke tests).

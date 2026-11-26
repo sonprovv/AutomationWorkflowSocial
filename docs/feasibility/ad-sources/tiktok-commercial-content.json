@@ -1,0 +1,49 @@
+{
+  "source": "tiktok-commercial-content",
+  "status": "LEGAL_RISK",
+  "checkedAt": "2026-11-27",
+  "access": {
+    "official": true,
+    "path": "Commercial Content API: POST open.tiktokapis.com/v2/research/adlib/ad/query/ and /v2/research/adlib/advertiser/query/ (scope research.adlib.basic)",
+    "credential": "Client key and secret of an approved research project (client access token)",
+    "approval": "Apply through a form after creating a TikTok for Developers account with an official email; an answer is expected within 2 working days. The product page says the APIs are for 'the public and researchers'",
+    "cost": "No fee at present (Developer Terms V, which per II.5(a) does not apply to CCL data)"
+  },
+  "coverage": {
+    "regions": ["EU-27 and EEA (NO, IS, LI). GB and CH are listed under 'Continental Europe'; whether they can be queried is unclear"],
+    "adTypes": "VIDEO, IMAGES or TEXT; ACTIVE or INACTIVE",
+    "history": "While the ad runs, and until one year after it was last shown"
+  },
+  "capabilities": {
+    "searchByAdvertiser": "PARTIAL",
+    "searchByKeyword": "PARTIAL",
+    "creativeText": "UNKNOWN",
+    "deliveryDates": "SUPPORTED",
+    "reach": "PARTIAL",
+    "spend": "NOT_SUPPORTED",
+    "targeting": "PARTIAL"
+  },
+  "publishedMetrics": [
+    { "field": "reach (unique_users_seen)", "form": "bucket", "scope": "EU ads, for example '11K'" }
+  ],
+  "neverInfer": ["spend", "revenue", "ROAS"],
+  "dataUse": [
+    "Developer Terms II.5: CCL data may be used only for 'CCL Purposes', which are supervision of, and research into, emerging risks from online advertising. Competitor intelligence does not obviously fit.",
+    "Developer Terms II.1 (personal, non-transferable basis) may still apply. A legal review is needed.",
+    "When access ends, all TikTok information must be deleted (VI)."
+  ],
+  "unverified": [
+    "Rate limits and quotas: not published in the pages read.",
+    "The Ad Library website (library.tiktok.com/ads) returned an empty page to our fetcher.",
+    "The Get Ad Details and Get Ad Report endpoints were not read. Targeting is documented as a filter, not as a returned field."
+  ],
+  "sources": [
+    { "url": "https://developers.tiktok.com/products/commercial-content-api", "checkedAt": "2026-11-27" },
+    { "url": "https://developers.tiktok.com/docs/en/commercial-content-api-getting-started", "checkedAt": "2026-11-27" },
+    { "url": "https://developers.tiktok.com/docs/en/commercial-content-api-query-ads", "checkedAt": "2026-11-27" },
+    { "url": "https://developers.tiktok.com/docs/en/commercial-content-api-query-advertisers", "checkedAt": "2026-11-27" },
+    { "url": "https://developers.tiktok.com/docs/en/commercial-content-api-supported-countries", "checkedAt": "2026-11-27" },
+    { "url": "https://www.tiktok.com/legal/page/global/tik-tok-developer-terms-of-service/en", "checkedAt": "2026-11-27" }
+  ],
+  "decisionForProductOwner": "Do not apply for competitor monitoring without legal advice: the terms limit the data to research into advertising risks. It covers EU ads only and has no spend."
+}

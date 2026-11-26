@@ -1,0 +1,43 @@
+{
+  "source": "google-ads-transparency",
+  "status": "BLOCKED",
+  "checkedAt": "2026-11-27",
+  "access": {
+    "official": false,
+    "path": "No official API found for adstransparency.google.com. Google community forum threads report a BigQuery public dataset (bigquery-public-data.google_ads_transparency_center, tables creative_stats and removed_creative_stats), but we could not read an official page about it",
+    "credential": null,
+    "approval": "To verify the BigQuery dataset, the account owner must create a Google Cloud project with BigQuery",
+    "cost": "BigQuery public datasets: Google pays for storage and the first 1 TB of queries each month is free (official BigQuery docs)"
+  },
+  "coverage": {
+    "regions": ["BigQuery dataset (reported, unverified): advertisers that served ads in the EEA or Turkey", "Website: global, but browse-only"],
+    "adTypes": "Unverified",
+    "history": "Unverified. The dataset is reported to update periodically, later than the website"
+  },
+  "capabilities": {
+    "searchByAdvertiser": "UNKNOWN",
+    "searchByKeyword": "UNKNOWN",
+    "creativeText": "UNKNOWN",
+    "deliveryDates": "UNKNOWN",
+    "reach": "UNKNOWN",
+    "spend": "NOT_SUPPORTED",
+    "targeting": "UNKNOWN"
+  },
+  "publishedMetrics": [],
+  "neverInfer": ["spend", "revenue", "ROAS"],
+  "dataUse": [
+    "The project rules exclude scraping adstransparency.google.com, directly or through third-party scraper actors. This is LEGAL_RISK, as for TikTok in ADR-0006.",
+    "Political ads have a separate BigQuery dataset (the Political Ads Transparency Report). It is not competitor ad data."
+  ],
+  "unverified": [
+    "The Transparency Center pages returned only JavaScript shells to our fetcher. Its FAQ could not be read, and the help article (support.google.com/adspolicy/answer/10284545) returned HTTP 404.",
+    "The BigQuery dataset's official page failed to load (header overflow), so its fields, coverage and terms are unverified. One community thread reports 'Access Denied' on the table."
+  ],
+  "sources": [
+    { "url": "https://adstransparency.google.com/", "checkedAt": "2026-11-27", "note": "JavaScript shell only" },
+    { "url": "https://docs.cloud.google.com/bigquery/public-data", "checkedAt": "2026-11-27" },
+    { "url": "https://discuss.google.dev/t/querying-public-google-ads-transparency-center-table-doesnt-show-all-the-needed-data/177804", "checkedAt": "2026-11-27", "note": "Community forum, not official" },
+    { "url": "https://cloud.google.com/blog/topics/developers-practitioners/how-get-started-political-ads-transparency-report-dataset", "checkedAt": "2026-11-27", "note": "Search result title only; political ads" }
+  ],
+  "decisionForProductOwner": "The website is BLOCKED: there is no API. If EEA and Turkey coverage is enough, create a Google Cloud project so a PoC can verify the BigQuery dataset. Small queries fit in the free 1 TB per month."
+}

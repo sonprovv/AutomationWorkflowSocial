@@ -19,7 +19,7 @@
 | 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
 | 7 | MCP, Telegram/email, reports, n8n templates | ✅ **Gate passed with real data** (agent tool call → job → export/report). Real Telegram/email delivery needs the user's channel settings; n8n templates written and unit-tested, not run inside n8n |
 | 8 | Security, scale, backup, observability, deployment | ✅ **Gate passed**: restore test on the real local DB, security check 7/7, load report (50k synthetic posts). Not run: Docker, macOS, cloud |
-| 9 | Visual workflow editor, additional platforms, App/Ad Spy | 🟡 **P9-01 engine, P9-02 visual editor and P9-03 App Spy done** (App Store VERIFIED with real data; Google Play BLOCKED). Next: P9-04 Ad Spy desk research, close-out |
+| 9 | Visual workflow editor, additional platforms, App/Ad Spy | 🟡 **P9-01 engine, P9-02 visual editor and P9-03 App Spy done** (App Store VERIFIED with real data; Google Play BLOCKED). P9-04 Ad Spy desk research done. Next: close-out |
 
 ---
 
@@ -30,7 +30,7 @@
 | P9-01 | Versioned workflow DAG (`workflow_defs`/`workflow_versions`/`workflow_runs`), validation (whitelist, acyclic, reachable, bounded waits, if-branches), executor over the existing guarded jobs, `/workflow-defs` API | ✅ | `tests/integration/workflow-builder.test.ts`; ADR-0017 |
 | P9-02 | Visual editor (`#/builder`): SVG canvas (move, drag-to-connect, select/delete, true/false if-edges), forms built from each node type's JSON Schema, Validate / Save version / Run, version history (restore = save again), run status on each node, run cancel. API additions: `PATCH` name/project/status, `GET /versions/:version` | ✅ | `apps/web/test/graph-edit.test.ts` (6) + 1 new API test; checked in headless Edge over CDP on the real app: add node → connect → move → edge into the start node refused → validate → saved v2, confirmed via the API. Dependency-free SVG instead of React Flow (ADR-0017) |
 | P9-03 | App Spy: Apple iTunes Search/Lookup feasibility (2 live PoC runs, 8 PASS / 2 PARTIAL / 0 FAIL each); Google Play BLOCKED (official docs). Built: `@sss/collector-appstore` (paced client, SSRF-safe page fetch, link extraction), tables `apps` / `project_apps` / `app_social_links`, `/apps` API, App Spy UI. App → developer website → social profile links with evidence, never by name | ✅ | `docs/feasibility/apple-app-store.md`, `google-play-apps.md`, `app-stores/*.json`; tests: `packages/collectors/appstore/test` (11), `tests/integration/app-spy.test.ts` (2); real-data check in the local app: Goodnotes tracked from its App Store link, website → 5 proposed profiles, all HIGH; ADR-0018 |
-| P9-04 | Ad Spy desk research (Meta Ad Library, Google Ads Transparency, TikTok Commercial Content API) | ⬜ | |
+| P9-04 | Ad Spy desk research: Meta Ad Library API AUTH_REQUIRED (EU and political ads only; spend as ranges, political only); Google Ads Transparency Center BLOCKED (no API; BigQuery dataset reported, unverified); TikTok Commercial Content API LEGAL_RISK (EU only; research-purpose terms). Records only, no adapter; spend, revenue and ROAS are never inferred | ✅ | `docs/feasibility/ad-spy.md`, `ad-sources/*.json`; `tools/feasibility/test/ad-sources.test.ts` (5) |
 
 Notes:
 - **App Spy data policy waits for the Product Owner**: history and export stay off until `policyProposal.status` in `docs/feasibility/app-stores/apple.json` is APPROVED.
@@ -268,6 +268,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-27 ~01:45 (UTC+7) — Phase 9: P9-04 Ad Spy desk research (Meta AUTH_REQUIRED, Google BLOCKED, TikTok LEGAL_RISK).
 - 2026-11-27 ~01:35 (UTC+7) — Phase 9: P9-03 App Spy (Apple VERIFIED with 2 live runs; Google Play BLOCKED), real-data check in the app.
 - 2026-11-27 ~01:15 (UTC+7) — Phase 9: P9-01 workflow DAG engine and P9-02 visual editor (verified in a real browser). 186 tests passing.
 - 2026-11-27 ~00:50 (UTC+7) — Phase 8: backups + restore test, security hardening/check, metrics, load report. 176 tests passing.

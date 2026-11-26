@@ -1,0 +1,50 @@
+{
+  "source": "meta-ad-library",
+  "status": "AUTH_REQUIRED",
+  "checkedAt": "2026-11-27",
+  "access": {
+    "official": true,
+    "path": "Graph API GET /v27.0/ads_archive (Ad Library API)",
+    "credential": "Meta developer app and a user access token (not configured)",
+    "approval": "Meta asks Ad Library API users to confirm their identity and location, but the onboarding page (facebook.com/ads/library/api) refused our fetcher with HTTP 403, so the exact steps are unverified",
+    "cost": "No fee found in the pages read (unverified)"
+  },
+  "coverage": {
+    "regions": ["EU and associated territories: ads on all topics", "Worldwide: only ads about social issues, elections or politics"],
+    "adTypes": "ad_type ALL, EMPLOYMENT_ADS, FINANCIAL_PRODUCTS_AND_SERVICES_ADS, HOUSING_ADS or POLITICAL_AND_ISSUE_ADS. 'Ads that did not reach any location in the EU will only return if they are about social issues, elections or politics'",
+    "history": "EU-delivered ads: archived for one year after the last impression. Political and issue ads: kept 7 years"
+  },
+  "capabilities": {
+    "searchByAdvertiser": "PARTIAL",
+    "searchByKeyword": "PARTIAL",
+    "creativeText": "PARTIAL",
+    "deliveryDates": "PARTIAL",
+    "reach": "PARTIAL",
+    "spend": "PARTIAL",
+    "targeting": "PARTIAL"
+  },
+  "publishedMetrics": [
+    { "field": "spend", "form": "range", "scope": "Political and issue ads only (for example 100-499 or 1K-5K), with currency" },
+    { "field": "impressions", "form": "range", "scope": "Political and issue ads only" },
+    { "field": "eu_total_reach", "form": "exact", "scope": "EU-delivered ads (Meta's estimate)" },
+    { "field": "demographic_distribution, delivery_by_region", "form": "percentage", "scope": "Political and issue ads only" },
+    { "field": "target_ages, target_gender, target_locations", "form": "exact", "scope": "EU and UK ads, and political ads in Brazil" }
+  ],
+  "neverInfer": ["spend", "revenue", "ROAS"],
+  "dataUse": [
+    "ad_snapshot_url shows the ad's images and videos. Meta: 'you must comply with the data storage terms in our Terms of Service'.",
+    "We could not read a separate terms page for the Ad Library API. A legal review is needed before ad copy is stored at scale."
+  ],
+  "unverified": [
+    "The exact identity-confirmation and token steps (facebook.com/ads/library/api returned HTTP 403).",
+    "Rate limits: error 613 is documented, but no numbers are published in the pages read.",
+    "Whether search_page_ids returns a non-EU advertiser's commercial ads. The docs imply it does not: only EU-delivered or political ads are returned."
+  ],
+  "sources": [
+    { "url": "https://developers.facebook.com/docs/graph-api/reference/ads_archive/", "checkedAt": "2026-11-27" },
+    { "url": "https://developers.facebook.com/docs/graph-api/reference/archived-ad/", "checkedAt": "2026-11-27" },
+    { "url": "https://transparency.meta.com/researchtools/ad-library-tools", "checkedAt": "2026-11-27" },
+    { "url": "https://www.facebook.com/ads/library/api/", "checkedAt": "2026-11-27", "note": "HTTP 403 to our fetcher; not read" }
+  ],
+  "decisionForProductOwner": "Worth a PoC only if competitors advertise in the EU or run political or issue ads. It needs a Meta developer app and identity confirmation by the account owner, then a token in .env. Spend is never available for commercial ads."
+}
