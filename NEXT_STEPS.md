@@ -33,7 +33,10 @@ The gate passed with real Bluesky data: seed keyword → candidates → approved
 - **YouTube discovery.** This needs the key. Once the key is in, re-run `npm run phase3:discover`; YouTube search costs 100 quota units per call, so keep `max_keywords_per_run` small.
 - **Web UI** for keywords and the review queue. The API is ready; the UI comes with Phase 5.
 
-**Next: Phase 4** (Master Plan §16): scheduled workflows (WF03/04 sync, WF05/06 metrics refresh, WF02 discovery), reliability (restart, retry, cancel, pause), policy and budget guards (atomic reservations), and a job monitor.
+## Phase 4 status
+Done (ADR-0012). Schedules now also run without Redis (inside the API). Open: once Redis is installed, run `start.bat` and check that it reports "worker + scheduler mode", that `GET /workflows` shows runs, and that `tests/integration/bullmq.test.ts` passes.
+
+**Next: Phase 5** (Master Plan §16): web dashboard, content explorer, exports (Excel/CSV/JSON with data dictionary and provenance).
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

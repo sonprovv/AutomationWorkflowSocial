@@ -54,7 +54,9 @@
 ### Operations
 | Table | Purpose |
 |---|---|
-| `schedules` | Schedules defined in the DB, which the scheduler applies |
+| `schedules` | Workflow schedules. The DB-driven tick claims due rows atomically (ADR-0012); `last_status` / `last_result` record each run |
+| `app_settings` | Runtime switches such as `scheduler = {paused}`. Never secrets |
+| `usage_reservations` | Budget reservations (authorize → reserve → execute → reconcile). They count until they are settled or expire. Granting takes an advisory lock per (provider, unit, day) |
 | `audit_logs` | Actions such as `project.create/update/delete`, `account.track`, `account.tracking` and `candidate.approved/rejected`, with redacted metadata |
 
 **Tables in Master Plan §6.2 that arrive in later phases:**

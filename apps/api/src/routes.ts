@@ -11,6 +11,7 @@ import {
   discoverRequestSchema,
   enqueueDiscovery,
   KeywordService,
+  SchedulerService,
   keywordPatchSchema,
   createProjectSchema,
   JobService,
@@ -21,6 +22,8 @@ import {
   toJobView,
   trackAccountSchema,
   trackingPatchSchema,
+  workflowCreateSchema,
+  workflowPatchSchema,
   updateProjectSchema,
   type JobView,
   type Runtime,
@@ -47,6 +50,7 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   const providers = new ProviderService(ctx);
   const keywords = new KeywordService(ctx);
   const candidates = new CandidateService(ctx);
+  const scheduler = new SchedulerService(ctx);
 
   /* ---------------- health ---------------- */
   api.get('/health/live', { schema: { tags: ['health'] } }, async () => ({ status: 'ok', time: new Date().toISOString() }));
@@ -119,6 +123,9 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   api.get('/jobs', { schema: { tags: ['jobs'], querystring: z.object({ status: z.enum(JOB_STATUSES).optional(), projectId: z.uuid().optional(), limit: z.coerce.number().int().min(1).max(200).optional() }) } }, async (req) => ({
     items: await jobs.list(req.query),
   }));
+  api.get('/jobs/stats', { schema: { tags: ['jobs'], querystring: z.object({ windowHours: z.coerce.number().int().min(1).max(720).default(24) }), description: 'Job monitor: counts, active jobs (stuck flag), dead-letter view of FAILED jobs.' } }, async (req) =>
+    jobs.stats(req.query.windowHours),
+  );
   api.get('/jobs/:id', { schema: { tags: ['jobs'], params: idParam } }, async (req) => jobs.get(req.params.id, { withLogs: true }));
   api.post('/jobs/:id/cancel', { schema: { tags: ['jobs'], params: idParam } }, async (req) => jobs.requestCancel(req.params.id));
   api.post('/jobs/:id/retry', { schema: { tags: ['jobs'], params: idParam } }, async (req, reply) => accepted(reply, toJobView(await jobs.retry(req.params.id))));
@@ -165,15 +172,23 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     return candidates.decide(req.params.id, b.candidateIds, 'REJECTED', 'local-user', { sync: false });
   });
 
+  /* ---------------- workflows & scheduler (Phase 4) ---------------- */
+  const wfId = z.object({ id: z.string().regex(/^[a-z0-9-]{3,64}$/) });
+  api.get('/workflows', { schema: { tags: ['workflows'], description: 'Scheduled workflows with next/last run and the scheduler pause state.' } }, async () => scheduler.list());
+  api.post('/workflows', { schema: { tags: ['workflows'], body: workflowCreateSchema } }, async (req, reply) => reply.status(201).send(await scheduler.create(req.body)));
+  api.patch('/workflows/:id', { schema: { tags: ['workflows'], params: wfId, body: workflowPatchSchema, description: 'Enable/disable, change interval (everyMinutes) or cron + timezone, or config.' } }, async (req) =>
+    scheduler.update(req.params.id, req.body),
+  );
+  api.post('/workflows/:id/run', { schema: { tags: ['workflows'], params: wfId, description: 'Run the workflow now (does not move its next scheduled run).' } }, async (req) => scheduler.runNow(req.params.id));
+  api.get('/scheduler', { schema: { tags: ['workflows'] } }, async () => ({ paused: await scheduler.isPaused(), tickSeconds: ctx.config.SCHEDULER_TICK_SECONDS }));
+  api.post('/scheduler/pause', { schema: { tags: ['workflows'], description: 'Stop firing scheduled workflows (running jobs continue; manual runs still work).' } }, async () => scheduler.setPaused(true));
+  api.post('/scheduler/resume', { schema: { tags: ['workflows'] } }, async () => scheduler.setPaused(false));
+
   /* ---------------- planned routes (later phases) ---------------- */
   const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
     ['/posts/:id/analyze', 'post', 'AI content analysis (WF08)', 6],
     ['/analytics/viral', 'get', 'Viral results (policy-gated, WF07)', 6],
     ['/analytics/trends', 'get', 'Trend results (WF09)', 6],
-    ['/workflows', 'get', 'Workflow configs', 4],
-    ['/workflows', 'post', 'Workflow configs', 4],
-    ['/workflows/:id/run', 'post', 'Start workflow run', 4],
-    ['/workflows/:id', 'patch', 'Schedule/enable/pause workflow', 4],
     ['/reports', 'post', 'Generate report', 7],
     ['/exports', 'post', 'Generate export', 5],
     ['/exports/:id/download', 'get', 'Download export', 5],

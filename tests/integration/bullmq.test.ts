@@ -33,7 +33,7 @@ describe.skipIf(!reachable)(`BullMQ end-to-end (Redis at ${REDIS_URL})`, () => {
 
   afterAll(async () => {
     await Promise.all((workers ?? []).map((w) => w.close()));
-    for (const q of ['collection', 'maintenance']) await (rt?.ctx.dispatcher as BullMqDispatcher | undefined)?.queue(q as 'collection').obliterate({ force: true }).catch(() => {});
+    for (const q of ['collection', 'maintenance', 'discovery']) await (rt?.ctx.dispatcher as BullMqDispatcher | undefined)?.queue(q as 'collection').obliterate({ force: true }).catch(() => {});
     await rt?.close();
     await h?.close();
   });

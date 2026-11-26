@@ -37,6 +37,14 @@ export const configSchema = z
     /** Max posts whose metrics one refresh job updates (WF05/06); the most overdue go first. */
     METRICS_REFRESH_MAX_POSTS: z.coerce.number().int().min(1).max(5000).default(500),
     PROVIDER_HEALTH_EVERY_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
+    /** Run the scheduler tick inside the API process when QUEUE_DRIVER=inline (dev mode without Redis). */
+    SCHEDULER_IN_PROCESS: bool.default(true),
+    SCHEDULER_TICK_SECONDS: z.coerce.number().int().min(10).max(3600).default(60),
+    /** Max account syncs the scheduler queues per WF04 run. */
+    SCHEDULER_MAX_SYNCS_PER_TICK: z.coerce.number().int().min(1).max(500).default(20),
+    /** WF14: delete posts the provider stopped returning after this grace period (Bluesky Developer Guidelines). */
+    CLEANUP_DELETE_UNAVAILABLE: bool.default(true),
+    CLEANUP_UNAVAILABLE_GRACE_HOURS: z.coerce.number().int().min(1).max(8760).default(72),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
     BLUESKY_IDENTIFIER: z.preprocess(emptyToUndef, z.string().optional()),

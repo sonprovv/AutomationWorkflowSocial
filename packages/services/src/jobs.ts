@@ -209,6 +209,41 @@ export class JobService {
     return rows.map((r) => toJobView(r));
   }
 
+  /**
+   * Job monitor (Master Plan §17.2 "job monitor"): counts by status and name over a window, active jobs with
+   * age, suspected stuck jobs (RUNNING longer than 1.5 × JOB_TIMEOUT_SECONDS) and the dead-letter view
+   * (FAILED jobs grouped by error code, newest first).
+   */
+  async stats(windowHours = 24) {
+    const now = nowOf(this.ctx);
+    const since = new Date(now.getTime() - windowHours * 3600_000);
+    const byStatus = await this.ctx.db.job.groupBy({ by: ['status'], where: { createdAt: { gte: since } }, _count: { _all: true } });
+    const byName = await this.ctx.db.job.groupBy({ by: ['name', 'status'], where: { createdAt: { gte: since } }, _count: { _all: true } });
+    const active = await this.ctx.db.job.findMany({ where: { status: { in: ['QUEUED', 'RUNNING'] } }, orderBy: { createdAt: 'asc' }, take: 100 });
+    const stuckAfterMs = this.ctx.config.JOB_TIMEOUT_SECONDS * 1500;
+    const failed = await this.ctx.db.job.findMany({ where: { status: 'FAILED', createdAt: { gte: since } }, orderBy: { finishedAt: 'desc' }, take: 50 });
+    const byError = new Map<string, number>();
+    for (const f of failed) byError.set(f.errorCode ?? 'UNKNOWN', (byError.get(f.errorCode ?? 'UNKNOWN') ?? 0) + 1);
+    return {
+      windowHours,
+      at: now.toISOString(),
+      byStatus: Object.fromEntries(byStatus.map((r) => [r.status, r._count._all])),
+      byName: byName.reduce<Record<string, Record<string, number>>>((acc, r) => ((acc[r.name] ??= {})[r.status] = r._count._all, acc), {}),
+      active: active.map((j) => ({
+        id: j.id,
+        name: j.name,
+        status: j.status,
+        progress: j.progress,
+        ageSeconds: Math.round((now.getTime() - (j.startedAt ?? j.createdAt).getTime()) / 1000),
+        stuck: j.status === 'RUNNING' && j.startedAt !== null && now.getTime() - j.startedAt.getTime() > stuckAfterMs,
+      })),
+      deadLetter: {
+        byErrorCode: Object.fromEntries(byError),
+        recent: failed.slice(0, 20).map((j) => ({ id: j.id, name: j.name, errorCode: j.errorCode, errorMessage: j.errorMessage, finishedAt: iso(j.finishedAt), retryUrl: `/api/v1/jobs/${j.id}/retry` })),
+      },
+    };
+  }
+
   async requestCancel(jobId: string): Promise<JobView> {
     const j = await this.ctx.db.job.findUnique({ where: { id: jobId } });
     if (!j) throw new AppError('NOT_FOUND', `Job ${jobId} not found`);

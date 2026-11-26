@@ -116,7 +116,7 @@ export class DiscoveryService {
       let meter;
       try {
         // Upper bound for this provider in this run: 2 searches per keyword + enrichment.
-        meter = await this.usage.meterFor(descriptor.providerId, keywords.length * 2 + MAX_ENRICH + 5);
+        meter = await this.usage.meterFor(descriptor.providerId, keywords.length * 2 + MAX_ENRICH + 5, { projectId: project.id, jobId: o.jobId });
       } catch (e) {
         const ce = toCollectorError(e);
         res.coverage.push({ platform, providerId: descriptor.providerId, keyword: null, operation: 'provider', status: 'SKIPPED', results: null, reason: `${ce.code}: ${ce.message}`, warnings: [] });
@@ -272,7 +272,7 @@ export class DiscoveryService {
             finishedAt,
           },
         });
-        await this.usage.record(descriptor.providerId, snap, { projectId: project.id, jobId: o.jobId });
+        await this.usage.record(descriptor.providerId, snap, { projectId: project.id, jobId: o.jobId }, meter);
       }
       if (res.status === 'CANCELLED') break;
     }

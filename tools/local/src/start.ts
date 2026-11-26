@@ -77,7 +77,7 @@ const redis = await redisReachable(config.REDIS_URL);
 const queueDriver: 'bullmq' | 'inline' = redis.ok ? 'bullmq' : 'inline';
 if (redis.ok) log(`Redis ${redis.version ?? ''} reachable → worker + scheduler mode.`);
 else {
-  log(`Redis not reachable at ${config.REDIS_URL} → INLINE mode: jobs run inside the API process; scheduled workflows are disabled.`);
+  log(`Redis not reachable at ${config.REDIS_URL} → INLINE mode (dev): jobs and the scheduler tick run inside the API process.`);
   log('  For full mode install a Redis-compatible server, e.g. Windows: winget install Memurai.MemuraiDeveloper · macOS: brew install redis && brew services start redis');
 }
 

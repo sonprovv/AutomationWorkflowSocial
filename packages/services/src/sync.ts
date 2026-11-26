@@ -61,7 +61,7 @@ export class SyncService {
     }
     const descriptor = getProviderDescriptor(account.providerId);
     const policy = await getEffectivePolicy(db, account.providerId);
-    const meter = await this.usage.meterFor(account.providerId, 60);
+    const meter = await this.usage.meterFor(account.providerId, 60, { projectId: o.projectId, jobId: o.jobId });
     const requestLog: RequestLogEntry[] = [];
     const adapter = descriptor.create({ config, meter, onLog: (e) => requestLog.push(e) });
 
@@ -180,7 +180,7 @@ export class SyncService {
           finishedAt,
         },
       });
-      await this.usage.record(account.providerId, snap, { projectId: o.projectId, jobId: o.jobId });
+      await this.usage.record(account.providerId, snap, { projectId: o.projectId, jobId: o.jobId }, meter);
       if (o.projectId) {
         await db.projectAccount.updateMany({
           where: { projectId: o.projectId, accountId: account.id },

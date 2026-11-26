@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { findRepoRoot, loadConfig } from '@sss/config';
-import { createRuntime, JobService } from '@sss/services';
+import { createRuntime, JobService, startSchedulerLoop } from '@sss/services';
 import { buildServer } from './server.ts';
 
 const config = loadConfig();
@@ -22,6 +22,10 @@ const app = await buildServer({
   },
   webDist,
 });
+runtime.ctx.logger = app.log;
+// Inline dev mode has no scheduler process: run the same DB-driven tick here (ADR-0012).
+const stopScheduler = config.QUEUE_DRIVER === 'inline' && config.SCHEDULER_IN_PROCESS ? startSchedulerLoop(runtime.ctx) : null;
+app.addHook('onClose', async () => stopScheduler?.());
 
 const port = config.API_PORT;
 try {

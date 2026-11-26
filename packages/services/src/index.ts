@@ -9,6 +9,8 @@ export * from './metrics.ts';
 export * from './keywords.ts';
 export * from './scoring.ts';
 export * from './discovery.ts';
+export * from './cleanup.ts';
+export * from './scheduler.ts';
 export * from './usage.ts';
 export * from './processor.ts';
 export * from './bootstrap.ts';

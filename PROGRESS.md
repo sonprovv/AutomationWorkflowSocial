@@ -14,9 +14,27 @@
 | 1 | Monorepo, runtime, DB, REST, queue, provider SDK, vertical slice | 🟡 **Core done and tested with real data.** Open: the BullMQ path with a real Redis, Docker mode, and macOS (§Phase 1 open items) |
 | 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | 🟡 **Bluesky done with real data** (contract tests, real-data sync of 3 accounts, metrics refresh, usage + provenance). Open: YouTube live verification (needs the key); TikTok/Meta wait on Product Owner decisions (§Phase 2) |
 | 3 | Project, keyword, discovery, review, tracking, incremental sync | ✅ **Gate passed with real Bluesky data** (seed keyword → candidates → approved account → posts). YouTube discovery waits for the key |
-| 4–9 | See Master Plan §16 | ⬜ |
+| 4 | Scheduled workflows, reliability, policy & budget guards, job monitor | ✅ **Done and tested** (also in a real native run without Redis). Open: BullMQ-mode verification of the scheduler process and worker stall handling (needs Redis) |
+| 5–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 4 — Scheduling, reliability, guards (started 2026-11-26 16:07 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P4-01 | DB-driven scheduler: atomic claim per slot, catch-up = one run, cron with timezone or interval; runs in the scheduler process (BullMQ) or inside the API (inline, no Redis) | ✅ | `tests/integration/scheduler-budget.test.ts` (claim with 2 concurrent runners, 3-day catch-up, pause); ADR-0012 |
+| P4-02 | Built-in workflows WF02 (opt-in per project), WF03/04 (due accounts, `sync_interval_minutes`), WF05/06, WF13, WF14 | ✅ | same tests; native smoke `docs/phase4/native-smoke/2026-11-26T16-18-40Z.json` (real app: health SUCCEEDED, metrics refresh fired, WF14 waits for 03:00 Asia/Ho_Chi_Minh) |
+| P4-03 | `/workflows` (list, create, edit, validate cron, run now), `/scheduler/pause|resume` | ✅ | tests |
+| P4-04 | Budget guard with atomic reservations (advisory lock, expiry, settlement) across all provider calls | ✅ | test: 5 concurrent reservations against a cap of 10 → exactly 10 granted, 2 refused; settlement and expiry release capacity |
+| P4-05 | WF14 policy cleanup: provider-deleted posts after a grace period; retention only when the policy states it; housekeeping; audit | ✅ | tests |
+| P4-06 | Job monitor `GET /jobs/stats` (counts, active + stuck flag, dead-letter view) | ✅ | tests |
+| P4-07 | Restart / retry / cancel | ✅ | Phase 1 review fixes (orphan reconciliation, stall re-delivery, timeout vs cancel) + scheduler catch-up |
+| P4-08 | BullMQ-mode run of scheduler + worker (stalls, failed handler) | 🟡 | needs Redis |
+
+Not in scope / later: monetary project budgets need a provider cost model (all enabled providers cost $0); hot-content tiers need WF07 (Phase 6).
+
+Tests: `npm test` **141 passed, 1 skipped**.
 
 ## Phase 3 — Keywords, discovery and review (started 2026-11-26 15:51 UTC)
 
@@ -176,6 +194,8 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-26 16:07 — Product Owner: build all phases in order; keys and Redis will be provided later.
+- 2026-11-26 ~16:20 — Phase 4: DB scheduler, workflows API, reservations budget guard, WF14 cleanup, job monitor. 141 tests passing.
 - 2026-11-26 15:51 — Product Owner: continue with Phase 3.
 - 2026-11-26 ~16:01 — Phase 3: keywords, rule expansion, discovery job, rule score, review queue; real-data gate run passed. 134 tests passing.
 - 2026-11-26 ~15:50 — Phase 2: metrics refresh, availability fields, shared contract suite, real-data sync of 3 Bluesky accounts. 122 tests passing.

@@ -95,6 +95,18 @@ Errors:
 
 The discovery job result has `coverage`: one entry per platform/keyword/operation with `status` `OK` (searched; 0 results is a real answer), `ERROR` (the call failed, with the typed code) or `SKIPPED` (not possible: no collector, provider disabled, capability missing, budget), so a failed source is never shown as "0 results".
 
+## Workflows, scheduler and job monitor (Phase 4)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/workflows` | Scheduled workflows: `workflowKey`, `enabled`, `everyMinutes` or `cron` + `timezone`, `nextRunAt`, `lastRunAt`, `lastStatus`, `lastResult`; plus `paused` |
+| POST | `/workflows` | Create a schedule `{id, workflowKey, everyMinutes \| cron, timezone?, enabled?, config?}` |
+| PATCH | `/workflows/:id` | `{enabled?, everyMinutes?, cron?, timezone?, config?}`. An invalid cron or timezone returns 400 |
+| POST | `/workflows/:id/run` | Run now; returns `{status, jobIds, notes}`. The next scheduled run does not move |
+| GET | `/scheduler` | `{paused, tickSeconds}` |
+| POST | `/scheduler/pause`, `/scheduler/resume` | Stop or resume firing schedules |
+| GET | `/jobs/stats` | Job monitor (`windowHours`, default 24): `byStatus`, `byName`, `active` (with `ageSeconds`, `stuck`), `deadLetter` (FAILED by error code, recent failures with retry URLs) |
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |
@@ -102,9 +114,6 @@ The discovery job result has `coverage`: one entry per platform/keyword/operatio
 | POST | `/posts/:id/analyze` | 6 |
 | GET | `/analytics/viral` | 6 |
 | GET | `/analytics/trends` | 6 |
-| GET / POST | `/workflows` | 4 |
-| POST | `/workflows/:id/run` | 4 |
-| PATCH | `/workflows/:id` | 4 |
 | POST | `/exports` | 5 |
 | GET | `/exports/:id/download` | 5 |
 | POST | `/reports` | 7 |

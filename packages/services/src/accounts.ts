@@ -101,13 +101,13 @@ export class AccountService {
     if (v.projectId && !(await this.ctx.db.project.findUnique({ where: { id: v.projectId }, select: { id: true } }))) {
       throw new AppError('NOT_FOUND', `Project ${v.projectId} not found`);
     }
-    const meter = await this.usage.meterFor(descriptor.providerId, 5);
+    const meter = await this.usage.meterFor(descriptor.providerId, 5, { projectId: v.projectId ?? null });
     const adapter = descriptor.create({ config: this.ctx.config, meter });
     let resolved;
     try {
       resolved = await adapter.resolveAccount({ input: v.input });
     } finally {
-      await this.usage.record(descriptor.providerId, meter.snapshot(), { projectId: v.projectId ?? null });
+      await this.usage.record(descriptor.providerId, meter.snapshot(), { projectId: v.projectId ?? null }, meter);
     }
     const { id, created } = await this.ctx.db.$transaction(async (tx) => {
       const r = await upsertAccount(tx, resolved, descriptor.providerId);

@@ -113,7 +113,7 @@ export class MetricsRefreshService {
       }
       let meter;
       try {
-        meter = await this.usage.meterFor(providerId, PER_OPERATION_CAP);
+        meter = await this.usage.meterFor(providerId, PER_OPERATION_CAP, { projectId: o.projectId, jobId: o.jobId });
       } catch (e) {
         const ce = toCollectorError(e);
         pr.error = ce.code;
@@ -193,7 +193,7 @@ export class MetricsRefreshService {
             finishedAt,
           },
         });
-        await this.usage.record(providerId, snap, { projectId: o.projectId, jobId: o.jobId });
+        await this.usage.record(providerId, snap, { projectId: o.projectId, jobId: o.jobId }, meter);
       }
       if (res.status === 'CANCELLED') break;
     }

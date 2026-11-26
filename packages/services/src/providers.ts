@@ -63,7 +63,7 @@ export class ProviderService {
       const ce = toCollectorError(e);
       result = { healthy: false, error: { code: ce.code, message: ce.message } };
     } finally {
-      await this.usage.record(providerId, meter.snapshot(), {});
+      await this.usage.record(providerId, meter.snapshot(), {}, meter);
     }
     await this.ctx.db.provider.update({
       where: { id: providerId },

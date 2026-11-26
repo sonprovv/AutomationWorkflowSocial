@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "zod": "4.6.7",
+    "cron-parser": "5.10.6",
     "@sss/collector-core": "0.0.0",
     "@sss/collector-registry": "0.0.0",
     "@sss/database": "0.0.0",

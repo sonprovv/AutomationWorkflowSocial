@@ -2,6 +2,7 @@ import { CollectorError, toCollectorError } from '@sss/collector-core';
 import { accountSyncPayload, discoverPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
+import { CleanupService } from './cleanup.ts';
 import { DiscoveryService } from './discovery.ts';
 import { JobService } from './jobs.ts';
 import { MetricsRefreshService } from './metrics.ts';
@@ -19,6 +20,7 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
   const providers = new ProviderService(ctx);
   const metrics = new MetricsRefreshService(ctx);
   const discovery = new DiscoveryService(ctx);
+  const cleanup = new CleanupService(ctx);
 
   const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
     const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
@@ -71,6 +73,12 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
           errorMessage: r.error?.message ?? null,
         });
         await log('info', 'finish', `${r.status}: ${r.postsUpdated} updated, ${r.postsUnavailable} unavailable of ${r.postsDue} due`);
+        return;
+      }
+      if (name === JOB_NAMES.CLEANUP) {
+        const r = await cleanup.run();
+        await jobs.finish(jobId, r.status, { result: r, warnings: r.warnings });
+        await log('info', 'finish', `cleanup: ${r.unavailablePostsDeleted} unavailable post(s) deleted, ${r.retention.reduce((a, x) => a + x.postsDeleted, 0)} past retention`);
         return;
       }
       if (name === JOB_NAMES.DISCOVER) {
