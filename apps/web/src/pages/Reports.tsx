@@ -1,6 +1,29 @@
 import { useState } from 'react';
 import { api, type Page, type Project } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { Empty, errText, ErrorBox, fmtTime, Status, useLoad } from '../ui.tsx';
+
+const M = defineMessages({
+  title: ['Reports & alerts', 'Báo cáo và cảnh báo'],
+  queued: ['Report queued — refresh in a moment.', 'Đã xếp hàng tạo báo cáo — hãy làm mới sau giây lát.'],
+  buildDaily: ['Build daily report', 'Tạo báo cáo hằng ngày'],
+  buildSendDaily: ['Build & send daily report', 'Tạo và gửi báo cáo hằng ngày'],
+  buildWeekly: ['Build weekly report', 'Tạo báo cáo hằng tuần'],
+  sendTest: ['Send test notification', 'Gửi thông báo thử'],
+  channels: ['Channels configured: {list}', 'Kênh đã cấu hình: {list}'],
+  noChannels: ['none (set TELEGRAM_*, SMTP_URL/EMAIL_*, WEBHOOK_* in .env)', 'chưa có (đặt TELEGRAM_*, SMTP_URL/EMAIL_*, WEBHOOK_* trong .env)'],
+  thCreated: ['Created', 'Ngày tạo'],
+  thKind: ['Kind', 'Loại'],
+  thStatus: ['Status', 'Trạng thái'],
+  thPeriod: ['Period', 'Kỳ báo cáo'],
+  noReports: ['No reports yet.', 'Chưa có báo cáo nào.'],
+  downloadExcel: ['Download Excel', 'Tải file Excel'],
+  selectReport: ['Select a report.', 'Chọn một báo cáo.'],
+  notifLog: ['Notification log', 'Nhật ký thông báo'],
+  thChannel: ['Channel', 'Kênh'],
+  thType: ['Type', 'Loại'],
+  thTitleError: ['Title / error', 'Tiêu đề / lỗi'],
+});
 
 type ReportRow = { id: string; projectId: string; kind: string; status: string; periodStart: string; periodEnd: string; createdAt: string };
 type ReportFull = ReportRow & { markdown: string; exportDownloadUrl: string | null };
@@ -8,6 +31,7 @@ type Notif = { id: string; channel: string; type: string; status: string; attemp
 
 /** Reports & Alerts (Master Plan §10): report history, the report text, Excel link, notification log. */
 export function Reports() {
+  const t = useT(M);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const initialId = new URLSearchParams(location.hash.split('?')[1] ?? '').get('id');
   const [selected, setSelected] = useState<string | null>(initialId);
@@ -20,7 +44,7 @@ export function Reports() {
   async function create(kind: 'daily' | 'weekly', notify: boolean) {
     try {
       await api('/reports', { method: 'POST', body: { projectId: pid, kind, notify } });
-      setMsg('Report queued — refresh in a moment.');
+      setMsg(t('queued'));
       setTimeout(list.reload, 2500);
     } catch (x) {
       setMsg(errText(x));
@@ -33,7 +57,7 @@ export function Reports() {
   }
   return (
     <>
-      <h2>Reports &amp; alerts</h2>
+      <h2>{t('title')}</h2>
       <div className="row">
         <select value={pid} onChange={(e) => setProjectId(e.target.value)}>
           {projects.data?.items.map((p) => (
@@ -43,16 +67,16 @@ export function Reports() {
           ))}
         </select>
         <button className="primary" disabled={!pid} onClick={() => create('daily', false)}>
-          Build daily report
+          {t('buildDaily')}
         </button>
         <button disabled={!pid} onClick={() => create('daily', true)}>
-          Build &amp; send daily report
+          {t('buildSendDaily')}
         </button>
         <button disabled={!pid} onClick={() => create('weekly', false)}>
-          Build weekly report
+          {t('buildWeekly')}
         </button>
-        <button onClick={test}>Send test notification</button>
-        <span className="muted small">Channels configured: {notifs.data?.channels.join(', ') || 'none (set TELEGRAM_*, SMTP_URL/EMAIL_*, WEBHOOK_* in .env)'}</span>
+        <button onClick={test}>{t('sendTest')}</button>
+        <span className="muted small">{t('channels', { list: notifs.data?.channels.join(', ') || t('noChannels') })}</span>
       </div>
       {msg && <p className="small">{msg}</p>}
       <ErrorBox error={list.error ?? notifs.error} />
@@ -61,10 +85,10 @@ export function Reports() {
           <table>
             <thead>
               <tr>
-                <th>Created</th>
-                <th>Kind</th>
-                <th>Status</th>
-                <th>Period</th>
+                <th>{t('thCreated')}</th>
+                <th>{t('thKind')}</th>
+                <th>{t('thStatus')}</th>
+                <th>{t('thPeriod')}</th>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +106,7 @@ export function Reports() {
               ))}
             </tbody>
           </table>
-          {list.data?.items.length === 0 && <Empty>No reports yet.</Empty>}
+          {list.data?.items.length === 0 && <Empty>{t('noReports')}</Empty>}
         </section>
         <section>
           {one.data ? (
@@ -90,22 +114,22 @@ export function Reports() {
               <pre className="tile" style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
                 {one.data.markdown}
               </pre>
-              {one.data.exportDownloadUrl && <a href={one.data.exportDownloadUrl}>Download Excel</a>}
+              {one.data.exportDownloadUrl && <a href={one.data.exportDownloadUrl}>{t('downloadExcel')}</a>}
             </>
           ) : (
-            <Empty>Select a report.</Empty>
+            <Empty>{t('selectReport')}</Empty>
           )}
         </section>
       </div>
-      <h3>Notification log</h3>
+      <h3>{t('notifLog')}</h3>
       <table>
         <thead>
           <tr>
-            <th>Created</th>
-            <th>Channel</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Title / error</th>
+            <th>{t('thCreated')}</th>
+            <th>{t('thChannel')}</th>
+            <th>{t('thType')}</th>
+            <th>{t('thStatus')}</th>
+            <th>{t('thTitleError')}</th>
           </tr>
         </thead>
         <tbody>

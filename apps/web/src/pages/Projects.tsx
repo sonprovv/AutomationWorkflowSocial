@@ -1,8 +1,90 @@
 import { useState, type FormEvent } from 'react';
 import { api, ApiError, type Candidate, type CoverageEntry, type Job, type Keyword, type Page, type Project } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { ACTIVE, Empty, errText, ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, PLATFORMS, Status, useLoad, usePoll } from '../ui.tsx';
 
+const M = defineMessages({
+  // shared table headers
+  thName: ['Name', 'Tên'],
+  thStatus: ['Status', 'Trạng thái'],
+  thPlatform: ['Platform', 'Nền tảng'],
+  thPlatforms: ['Platforms', 'Nền tảng'],
+  thAccount: ['Account', 'Tài khoản'],
+  thAccounts: ['Accounts', 'Tài khoản'],
+  thCreated: ['Created', 'Ngày tạo'],
+  // project list
+  projects: ['Projects', 'Dự án'],
+  namePlaceholder: ['e.g. Depth Clock Wallpaper', 'VD: Depth Clock Wallpaper'],
+  languagesLabel: ['Languages (comma separated)', 'Ngôn ngữ (phân tách bằng dấu phẩy)'],
+  createProject: ['Create project', 'Tạo dự án'],
+  noProjects: ['No projects yet.', 'Chưa có dự án nào.'],
+  // keywords
+  keywords: ['Keywords', 'Từ khóa'],
+  add: ['Add', 'Thêm'],
+  suggestVariants: ['Suggest variants (rule-based)', 'Gợi ý biến thể (theo quy tắc)'],
+  kwAdded: ['{n} added', 'Đã thêm {n}'],
+  kwExisting: [', {n} already existed', ', {n} đã có sẵn'],
+  kwSuggested: ['{n} suggestion(s) — activate the ones you want searched.', 'Có {n} gợi ý — hãy kích hoạt những từ khóa bạn muốn tìm kiếm.'],
+  activate: ['Activate', 'Kích hoạt'],
+  pause: ['Pause', 'Tạm dừng'],
+  reject: ['Reject', 'Từ chối'],
+  noKeywords: ['No keywords — add seed keywords to start discovery.', 'Chưa có từ khóa — hãy thêm từ khóa gốc để bắt đầu khám phá.'],
+  // discovery
+  discovery: ['Discovery', 'Khám phá'],
+  runDiscovery: ['Run discovery', 'Chạy khám phá'],
+  lastRun: ['Last run', 'Lần chạy gần nhất'],
+  thKeyword: ['Keyword', 'Từ khóa'],
+  thOperation: ['Operation', 'Thao tác'],
+  thResults: ['Results', 'Kết quả'],
+  thReason: ['Reason / warnings', 'Lý do / cảnh báo'],
+  na: ['n/a', 'không có'],
+  // candidates
+  reviewQueue: ['Review queue', 'Hàng chờ duyệt'],
+  optPending: ['PENDING', 'Chờ duyệt'],
+  optApproved: ['APPROVED', 'Đã duyệt'],
+  optRejected: ['REJECTED', 'Đã từ chối'],
+  minScore: ['min score', 'điểm tối thiểu'],
+  approveTrack: ['Approve & track ({n})', 'Duyệt và theo dõi ({n})'],
+  rejectN: ['Reject ({n})', 'Từ chối ({n})'],
+  approvedMsg: ['{n} approved and syncing', 'Đã duyệt {n}, đang đồng bộ'],
+  rejectedMsg: ['{n} rejected', 'Đã từ chối {n}'],
+  thScore: ['Score', 'Điểm'],
+  thType: ['Type (rule guess)', 'Loại (đoán theo quy tắc)'],
+  thFollowers: ['Followers', 'Người theo dõi'],
+  thEvidence: ['Evidence', 'Bằng chứng'],
+  decidedBy: ['· decided by {who}', '· quyết định bởi {who}'],
+  confidence: ['confidence {v}', 'độ tin cậy {v}'],
+  reasons: ['{n} reason(s)', '{n} lý do'],
+  noPending: ['No pending candidates. Run discovery with active keywords.', 'Không có ứng viên chờ duyệt. Hãy chạy khám phá với các từ khóa đang hoạt động.'],
+  noApproved: ['No approved candidates. Run discovery with active keywords.', 'Không có ứng viên đã duyệt. Hãy chạy khám phá với các từ khóa đang hoạt động.'],
+  noRejected: ['No rejected candidates. Run discovery with active keywords.', 'Không có ứng viên đã từ chối. Hãy chạy khám phá với các từ khóa đang hoạt động.'],
+  nextPage: ['Next page', 'Trang sau'],
+  firstPage: ['First page', 'Trang đầu'],
+  // project page
+  backToProjects: ['← Projects', '← Dự án'],
+  projectMeta: ['Platforms {platforms} · languages {languages} · timezone {tz} ·', 'Nền tảng {platforms} · ngôn ngữ {languages} · múi giờ {tz} ·'],
+  projectContent: ['Content of this project →', 'Nội dung của dự án này →'],
+  syncEvery: ['Sync every {n} min', 'Đồng bộ mỗi {n} phút'],
+  scheduledDiscovery: ['Scheduled discovery: {v}', 'Khám phá theo lịch: {v}'],
+  everyHours: ['every {n} h', 'mỗi {n} giờ'],
+  off: ['off', 'tắt'],
+  autoTrack: ['Auto-track: {v}', 'Tự động theo dõi: {v}'],
+  autoTrackOn: ['on (score ≥ {min}, ≤ {max}/run)', 'bật (điểm ≥ {min}, ≤ {max}/lần chạy)'],
+  pauseProject: ['Pause project', 'Tạm dừng dự án'],
+  resumeProject: ['Resume project', 'Tiếp tục dự án'],
+  dailyOff: ['Turn off daily discovery', 'Tắt khám phá hằng ngày'],
+  dailyOn: ['Run discovery daily', 'Chạy khám phá hằng ngày'],
+});
+
+const CANDIDATE_STATUSES = {
+  PENDING: { opt: 'optPending', empty: 'noPending' },
+  APPROVED: { opt: 'optApproved', empty: 'noApproved' },
+  REJECTED: { opt: 'optRejected', empty: 'noRejected' },
+} as const;
+type CandidateStatus = keyof typeof CANDIDATE_STATUSES;
+
 export function Projects() {
+  const t = useT(M);
   const list = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const [name, setName] = useState('');
   const [platforms, setPlatforms] = useState<string[]>(['bluesky']);
@@ -21,18 +103,18 @@ export function Projects() {
   }
   return (
     <>
-      <h2>Projects</h2>
+      <h2>{t('projects')}</h2>
       <form onSubmit={create} className="filters">
         <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Depth Clock Wallpaper" required maxLength={200} />
+          {t('thName')}
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('namePlaceholder')} required maxLength={200} />
         </label>
         <label>
-          Languages (comma separated)
+          {t('languagesLabel')}
           <input className="narrow" value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="en, vi" />
         </label>
         <label>
-          Platforms
+          {t('thPlatforms')}
           <span className="row" style={{ margin: 0 }}>
             {PLATFORMS.map((p) => (
               <span key={p} className="small">
@@ -41,17 +123,19 @@ export function Projects() {
             ))}
           </span>
         </label>
-        <button type="submit" className="primary">Create project</button>
+        <button type="submit" className="primary">
+          {t('createProject')}
+        </button>
       </form>
       <ErrorBox error={err ?? list.error} />
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Platforms</th>
-            <th>Accounts</th>
-            <th>Created</th>
+            <th>{t('thName')}</th>
+            <th>{t('thStatus')}</th>
+            <th>{t('thPlatforms')}</th>
+            <th>{t('thAccounts')}</th>
+            <th>{t('thCreated')}</th>
           </tr>
         </thead>
         <tbody>
@@ -70,12 +154,13 @@ export function Projects() {
           ))}
         </tbody>
       </table>
-      {list.data?.items.length === 0 && <Empty>No projects yet.</Empty>}
+      {list.data?.items.length === 0 && <Empty>{t('noProjects')}</Empty>}
     </>
   );
 }
 
 function Keywords({ projectId }: { projectId: string }) {
+  const t = useT(M);
   const list = useLoad(() => api<{ items: Keyword[] }>(`/projects/${projectId}/keywords`), [projectId]);
   const [text, setText] = useState('');
   const [msg, setMsg] = useState<string | null>(null);
@@ -84,9 +169,9 @@ function Keywords({ projectId }: { projectId: string }) {
     try {
       const r = await api<{ created: Keyword[]; existing: Keyword[] }>(`/projects/${projectId}/keywords`, {
         method: 'POST',
-        body: { keywords: text.split(/[\n,]/).map((t) => t.trim()).filter(Boolean).map((t) => ({ text: t })) },
+        body: { keywords: text.split(/[\n,]/).map((s) => s.trim()).filter(Boolean).map((s) => ({ text: s })) },
       });
-      setMsg(`${r.created.length} added${r.existing.length ? `, ${r.existing.length} already existed` : ''}.`);
+      setMsg(`${t('kwAdded', { n: r.created.length })}${r.existing.length ? t('kwExisting', { n: r.existing.length }) : ''}.`);
       setText('');
       list.reload();
     } catch (x) {
@@ -96,7 +181,7 @@ function Keywords({ projectId }: { projectId: string }) {
   async function expand() {
     try {
       const r = await api<{ suggested: Keyword[] }>(`/projects/${projectId}/keywords/expand`, { method: 'POST' });
-      setMsg(`${r.suggested.length} suggestion(s) — activate the ones you want searched.`);
+      setMsg(t('kwSuggested', { n: r.suggested.length }));
       list.reload();
     } catch (x) {
       setMsg(errText(x));
@@ -108,12 +193,14 @@ function Keywords({ projectId }: { projectId: string }) {
   }
   return (
     <section>
-      <h3>Keywords</h3>
+      <h3>{t('keywords')}</h3>
       <form onSubmit={add} className="row">
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="live wallpaper, depth wallpaper" required />
-        <button type="submit" className="primary">Add</button>
+        <button type="submit" className="primary">
+          {t('add')}
+        </button>
         <button type="button" onClick={expand}>
-          Suggest variants (rule-based)
+          {t('suggestVariants')}
         </button>
       </form>
       {msg && <p className="small">{msg}</p>}
@@ -127,20 +214,21 @@ function Keywords({ projectId }: { projectId: string }) {
                 <Status s={k.status} /> <span className="muted small">{k.origin}</span>
               </td>
               <td>
-                {k.status !== 'ACTIVE' && <button onClick={() => setStatus(k, 'ACTIVE')}>Activate</button>}{' '}
-                {k.status === 'ACTIVE' && <button onClick={() => setStatus(k, 'PAUSED')}>Pause</button>}{' '}
-                {k.status === 'SUGGESTED' && <button onClick={() => setStatus(k, 'REJECTED')}>Reject</button>}
+                {k.status !== 'ACTIVE' && <button onClick={() => setStatus(k, 'ACTIVE')}>{t('activate')}</button>}{' '}
+                {k.status === 'ACTIVE' && <button onClick={() => setStatus(k, 'PAUSED')}>{t('pause')}</button>}{' '}
+                {k.status === 'SUGGESTED' && <button onClick={() => setStatus(k, 'REJECTED')}>{t('reject')}</button>}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {list.data?.items.length === 0 && <Empty>No keywords — add seed keywords to start discovery.</Empty>}
+      {list.data?.items.length === 0 && <Empty>{t('noKeywords')}</Empty>}
     </section>
   );
 }
 
 function Discovery({ projectId, onDone }: { projectId: string; onDone: () => void }) {
+  const t = useT(M);
   const [job, setJob] = useState<Job | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const last = useLoad(() => api<{ items: Job[] }>(`/jobs?projectId=${projectId}&limit=20`).then((r) => r.items.find((j) => j.name === 'project.discover') ?? null), [projectId]);
@@ -167,14 +255,14 @@ function Discovery({ projectId, onDone }: { projectId: string; onDone: () => voi
   const coverage = (shown?.result?.coverage ?? []) as CoverageEntry[];
   return (
     <section>
-      <h3>Discovery</h3>
+      <h3>{t('discovery')}</h3>
       <div className="row">
         <button className="primary" onClick={run} disabled={!!job && ACTIVE.includes(job.status)}>
-          Run discovery
+          {t('runDiscovery')}
         </button>
         {shown && (
           <span>
-            Last run <Status s={shown.status} /> {shown.progress}% · {fmtTime(shown.createdAt)}
+            {t('lastRun')} <Status s={shown.status} /> {shown.progress}% · {fmtTime(shown.createdAt)}
             {shown.error && <span className="error-inline"> {shown.error.code}: {shown.error.message}</span>}
           </span>
         )}
@@ -184,12 +272,12 @@ function Discovery({ projectId, onDone }: { projectId: string; onDone: () => voi
         <table>
           <thead>
             <tr>
-              <th>Platform</th>
-              <th>Keyword</th>
-              <th>Operation</th>
-              <th>Status</th>
-              <th>Results</th>
-              <th>Reason / warnings</th>
+              <th>{t('thPlatform')}</th>
+              <th>{t('thKeyword')}</th>
+              <th>{t('thOperation')}</th>
+              <th>{t('thStatus')}</th>
+              <th>{t('thResults')}</th>
+              <th>{t('thReason')}</th>
             </tr>
           </thead>
           <tbody>
@@ -201,7 +289,7 @@ function Discovery({ projectId, onDone }: { projectId: string; onDone: () => voi
                 <td>
                   <Status s={c.status} />
                 </td>
-                <td>{c.results === null ? <span className="muted">n/a</span> : c.results}</td>
+                <td>{c.results === null ? <span className="muted">{t('na')}</span> : c.results}</td>
                 <td className="small">{[c.reason, ...c.warnings].filter(Boolean).join(' · ')}</td>
               </tr>
             ))}
@@ -213,7 +301,8 @@ function Discovery({ projectId, onDone }: { projectId: string; onDone: () => voi
 }
 
 function Candidates({ projectId, version }: { projectId: string; version: number }) {
-  const [status, setStatus] = useState('PENDING');
+  const t = useT(M);
+  const [status, setStatus] = useState<CandidateStatus>('PENDING');
   const [minScore, setMinScore] = useState('');
   const [cursor, setCursor] = useState<string | null>(null);
   const list = useLoad(
@@ -225,7 +314,7 @@ function Candidates({ projectId, version }: { projectId: string; version: number
   async function decide(action: 'approve' | 'reject') {
     try {
       const r = await api<{ approved: unknown[]; rejected: string[]; warnings: string[] }>(`/projects/${projectId}/candidates/${action}`, { method: 'POST', body: { candidateIds: selected } });
-      setMsg(`${action === 'approve' ? `${r.approved.length} approved and syncing` : `${r.rejected.length} rejected`}. ${r.warnings.join(' ')}`);
+      setMsg(`${action === 'approve' ? t('approvedMsg', { n: r.approved.length }) : t('rejectedMsg', { n: r.rejected.length })}. ${r.warnings.join(' ')}`);
       setSelected([]);
       list.reload();
     } catch (x) {
@@ -234,19 +323,21 @@ function Candidates({ projectId, version }: { projectId: string; version: number
   }
   return (
     <section>
-      <h3>Review queue</h3>
+      <h3>{t('reviewQueue')}</h3>
       <div className="row">
-        <select value={status} onChange={(e) => (setStatus(e.target.value), setCursor(null))}>
-          {['PENDING', 'APPROVED', 'REJECTED'].map((s) => (
-            <option key={s}>{s}</option>
+        <select value={status} onChange={(e) => (setStatus(e.target.value as CandidateStatus), setCursor(null))}>
+          {(Object.keys(CANDIDATE_STATUSES) as CandidateStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {t(CANDIDATE_STATUSES[s].opt)}
+            </option>
           ))}
         </select>
-        <input className="narrow" type="number" min={0} max={100} value={minScore} onChange={(e) => (setMinScore(e.target.value), setCursor(null))} placeholder="min score" />
+        <input className="narrow" type="number" min={0} max={100} value={minScore} onChange={(e) => (setMinScore(e.target.value), setCursor(null))} placeholder={t('minScore')} />
         <button className="primary" disabled={!selected.length} onClick={() => decide('approve')}>
-          Approve &amp; track ({selected.length})
+          {t('approveTrack', { n: selected.length })}
         </button>
         <button disabled={!selected.length} onClick={() => decide('reject')}>
-          Reject ({selected.length})
+          {t('rejectN', { n: selected.length })}
         </button>
         <Loading on={list.loading} />
       </div>
@@ -256,11 +347,11 @@ function Candidates({ projectId, version }: { projectId: string; version: number
         <thead>
           <tr>
             <th />
-            <th>Account</th>
-            <th>Score</th>
-            <th>Type (rule guess)</th>
-            <th>Followers</th>
-            <th>Evidence</th>
+            <th>{t('thAccount')}</th>
+            <th>{t('thScore')}</th>
+            <th>{t('thType')}</th>
+            <th>{t('thFollowers')}</th>
+            <th>{t('thEvidence')}</th>
           </tr>
         </thead>
         <tbody>
@@ -272,7 +363,7 @@ function Candidates({ projectId, version }: { projectId: string; version: number
               <td>
                 <ExternalLink href={c.account.profileUrl}>{c.account.displayName ?? c.account.username}</ExternalLink>
                 <div className="muted small">
-                  {c.account.platform} · @{c.account.username} {c.decidedBy && `· decided by ${c.decidedBy}`}
+                  {c.account.platform} · @{c.account.username} {c.decidedBy && t('decidedBy', { who: c.decidedBy })}
                 </div>
               </td>
               <td>
@@ -280,12 +371,12 @@ function Candidates({ projectId, version }: { projectId: string; version: number
               </td>
               <td className="small">
                 {c.classification}
-                <div className="muted">confidence {c.evidence.confidence ?? '—'}</div>
+                <div className="muted">{t('confidence', { v: c.evidence.confidence ?? '—' })}</div>
               </td>
               <td>{fmtNum(c.evidence.profile?.followers ?? null)}</td>
               <td className="small">
                 <details>
-                  <summary>{(c.evidence.reasons ?? []).length} reason(s)</summary>
+                  <summary>{t('reasons', { n: (c.evidence.reasons ?? []).length })}</summary>
                   <ul className="evidence">
                     {(c.evidence.reasons ?? []).map((r, i) => (
                       <li key={i}>{r}</li>
@@ -305,14 +396,15 @@ function Candidates({ projectId, version }: { projectId: string; version: number
           ))}
         </tbody>
       </table>
-      {list.data?.items.length === 0 && <Empty>No {status.toLowerCase()} candidates. Run discovery with active keywords.</Empty>}
-      {list.data?.nextCursor && <button onClick={() => setCursor(list.data!.nextCursor)}>Next page</button>}
-      {cursor && <button onClick={() => setCursor(null)}>First page</button>}
+      {list.data?.items.length === 0 && <Empty>{t(CANDIDATE_STATUSES[status].empty)}</Empty>}
+      {list.data?.nextCursor && <button onClick={() => setCursor(list.data!.nextCursor)}>{t('nextPage')}</button>}
+      {cursor && <button onClick={() => setCursor(null)}>{t('firstPage')}</button>}
     </section>
   );
 }
 
 export function ProjectPage({ id }: { id: string }) {
+  const t = useT(M);
   const p = useLoad(() => api<Project>(`/projects/${id}`), [id]);
   const [version, setVersion] = useState(0);
   async function patch(body: object) {
@@ -323,7 +415,7 @@ export function ProjectPage({ id }: { id: string }) {
   return (
     <>
       <p>
-        <a href="#/projects">← Projects</a>
+        <a href="#/projects">{t('backToProjects')}</a>
       </p>
       <ErrorBox error={p.error} />
       {p.data && (
@@ -332,14 +424,15 @@ export function ProjectPage({ id }: { id: string }) {
             {p.data.name} <Status s={p.data.status} />
           </h2>
           <p className="muted small">
-            Platforms {p.data.platforms.join(', ') || '—'} · languages {p.data.languages.join(', ') || '—'} · timezone {p.data.timezone} ·{' '}
-            <a href={`#/explore?projectId=${id}`}>Content of this project →</a>
+            {t('projectMeta', { platforms: p.data.platforms.join(', ') || '—', languages: p.data.languages.join(', ') || '—', tz: p.data.timezone })}{' '}
+            <a href={`#/explore?projectId=${id}`}>{t('projectContent')}</a>
           </p>
           <div className="row small">
-            <span>Sync every {String(s.sync_interval_minutes)} min</span>·<span>Scheduled discovery: {s.discovery_every_hours ? `every ${String(s.discovery_every_hours)} h` : 'off'}</span>·
-            <span>Auto-track: {s.auto_track ? `on (score ≥ ${String(s.auto_track_min_score)}, ≤ ${String(s.auto_track_max_per_run)}/run)` : 'off'}</span>
-            <button onClick={() => patch({ status: p.data!.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' })}>{p.data.status === 'ACTIVE' ? 'Pause project' : 'Resume project'}</button>
-            <button onClick={() => patch({ settings: { discovery_every_hours: s.discovery_every_hours ? 0 : 24 } })}>{s.discovery_every_hours ? 'Turn off daily discovery' : 'Run discovery daily'}</button>
+            <span>{t('syncEvery', { n: String(s.sync_interval_minutes) })}</span>·
+            <span>{t('scheduledDiscovery', { v: s.discovery_every_hours ? t('everyHours', { n: String(s.discovery_every_hours) }) : t('off') })}</span>·
+            <span>{t('autoTrack', { v: s.auto_track ? t('autoTrackOn', { min: String(s.auto_track_min_score), max: String(s.auto_track_max_per_run) }) : t('off') })}</span>
+            <button onClick={() => patch({ status: p.data!.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' })}>{p.data.status === 'ACTIVE' ? t('pauseProject') : t('resumeProject')}</button>
+            <button onClick={() => patch({ settings: { discovery_every_hours: s.discovery_every_hours ? 0 : 24 } })}>{s.discovery_every_hours ? t('dailyOff') : t('dailyOn')}</button>
           </div>
           <div className="grid2">
             <Keywords projectId={id} />

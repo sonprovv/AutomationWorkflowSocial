@@ -1,6 +1,53 @@
 import { useState } from 'react';
 import { api, type Job, type Page, type Project } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { ACTIVE, Empty, errText, ErrorBox, ExternalLink, fmtTime, Loading, Status, useLoad, usePoll } from '../ui.tsx';
+
+const M = defineMessages({
+  title: ['Insights', 'Phân tích'],
+  policyNotice: [
+    'Derived analytics run only for data sources whose policy allows them (Data Sources → policy). Data from other sources is counted as “blocked by policy”, never scored as 0.',
+    'Phân tích dẫn xuất chỉ chạy cho các nguồn dữ liệu có chính sách cho phép (Nguồn dữ liệu → chính sách). Dữ liệu từ các nguồn khác được tính là “bị chính sách chặn”, không bao giờ bị chấm điểm 0.',
+  ],
+  createProject: ['Create a project first.', 'Hãy tạo dự án trước.'],
+  viralFeed: ['Viral feed', 'Bảng tin lan truyền (viral)'],
+  scoreNow: ['Score now', 'Chấm điểm ngay'],
+  thresholds: ['Thresholds: {list} (experimental).', 'Ngưỡng: {list} (thử nghiệm).'],
+  thPost: ['Post', 'Bài đăng'],
+  thScore: ['Score', 'Điểm'],
+  thLabel: ['Label', 'Nhãn'],
+  thFeaturesUsed: ['Features used', 'Đặc trưng đã dùng'],
+  thMissing: ['Missing', 'Còn thiếu'],
+  thScored: ['Scored', 'Chấm điểm lúc'],
+  noScores: ['No scores yet (or every source is blocked by policy). Click “Score now”.', 'Chưa có điểm nào (hoặc mọi nguồn đều bị chính sách chặn). Bấm “Chấm điểm ngay”.'],
+  trends: ['Trends', 'Xu hướng'],
+  compute7: ['Compute (7 days)', 'Tính toán (7 ngày)'],
+  sample: ['Sample: {n} post(s) in the last {days} d · computed {at}', 'Mẫu: {n} bài đăng trong {days} ngày gần nhất · tính lúc {at}'],
+  blockedByPolicy: [' · blocked by policy: {list}', ' · bị chính sách chặn: {list}'],
+  thTopic: ['Topic', 'Chủ đề'],
+  thSignal: ['Signal', 'Tín hiệu'],
+  thPostsNowBefore: ['Posts (now / before)', 'Bài đăng (hiện tại / trước đó)'],
+  thAccounts: ['Accounts', 'Tài khoản'],
+  thConfidence: ['Confidence', 'Độ tin cậy'],
+  thWhy: ['Why / supporting posts', 'Lý do / bài đăng minh chứng'],
+  post: ['post', 'bài đăng'],
+  noTopic: ['No topic with at least 2 posts in this window.', 'Không có chủ đề nào có ít nhất 2 bài đăng trong khoảng thời gian này.'],
+  aiIntelligence: ['AI intelligence', 'Phân tích AI'],
+  analyseTop: ['Analyse top posts', 'Phân tích các bài đăng nổi bật'],
+  aiOff: ['{key} is not configured — AI analysis is off.', 'Chưa cấu hình {key} — Phân tích AI đang tắt.'],
+  model: ['model {model}', 'mô hình {model}'],
+  confidence: ['confidence {c}', 'độ tin cậy {c}'],
+  hook: ['Hook:', 'Câu mở đầu (hook):'],
+  message: ['Message:', 'Thông điệp:'],
+  cta: ['CTA:', 'CTA:'],
+  evidence: ['Evidence:', 'Bằng chứng:'],
+  audienceHypotheses: ['Audience hypotheses', 'Giả thuyết về khán giả'],
+  notDemographics: ['(not demographics):', '(không phải nhân khẩu học):'],
+  ideasForUs: ['Ideas for us:', 'Ý tưởng cho chúng ta:'],
+  inspiredBy: ['— inspired by {x}', '— lấy cảm hứng từ {x}'],
+  limitations: ['Limitations: {list}', 'Hạn chế: {list}'],
+  noAi: ['No AI analyses yet.', 'Chưa có phân tích AI nào.'],
+});
 
 /*
  * Phase 6 screens (Master Plan §10 Viral Feed, Trends, AI Intelligence). Everything here is derived analytics:
@@ -51,6 +98,7 @@ function RunButton({ label, url, body, onDone }: { label: string; url: string; b
 }
 
 export function Insights() {
+  const t = useT(M);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const initial = new URLSearchParams(location.hash.split('?')[1] ?? '').get('projectId') ?? '';
   const [projectId, setProjectId] = useState(initial);
@@ -61,7 +109,7 @@ export function Insights() {
   return (
     <>
       <div className="row">
-        <h2 style={{ margin: 0 }}>Insights</h2>
+        <h2 style={{ margin: 0 }}>{t('title')}</h2>
         <select value={pid} onChange={(e) => setProjectId(e.target.value)}>
           {projects.data?.items.map((p) => (
             <option key={p.id} value={p.id}>
@@ -70,27 +118,27 @@ export function Insights() {
           ))}
         </select>
       </div>
-      <div className="notice">Derived analytics run only for data sources whose policy allows them (Data Sources → policy). Data from other sources is counted as “blocked by policy”, never scored as 0.</div>
-      {!pid && <Empty>Create a project first.</Empty>}
+      <div className="notice">{t('policyNotice')}</div>
+      {!pid && <Empty>{t('createProject')}</Empty>}
       {pid && (
         <>
           <section>
             <div className="row">
-              <h3 style={{ margin: 0 }}>Viral feed</h3>
-              <RunButton label="Score now" url={`/projects/${pid}/analytics/viral`} onDone={viral.reload} />
+              <h3 style={{ margin: 0 }}>{t('viralFeed')}</h3>
+              <RunButton label={t('scoreNow')} url={`/projects/${pid}/analytics/viral`} onDone={viral.reload} />
               <Loading on={viral.loading} />
             </div>
-            <p className="muted small">{viral.data?.note} Thresholds: {viral.data && Object.entries(viral.data.thresholds).map(([k, v]) => `${k} ≥ ${v}`).join(', ')} (experimental).</p>
+            <p className="muted small">{viral.data?.note} {t('thresholds', { list: viral.data ? Object.entries(viral.data.thresholds).map(([k, v]) => `${k} ≥ ${v}`).join(', ') : '' })}</p>
             <ErrorBox error={viral.error} />
             <table>
               <thead>
                 <tr>
-                  <th>Post</th>
-                  <th>Score</th>
-                  <th>Label</th>
-                  <th>Features used</th>
-                  <th>Missing</th>
-                  <th>Scored</th>
+                  <th>{t('thPost')}</th>
+                  <th>{t('thScore')}</th>
+                  <th>{t('thLabel')}</th>
+                  <th>{t('thFeaturesUsed')}</th>
+                  <th>{t('thMissing')}</th>
+                  <th>{t('thScored')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,53 +159,53 @@ export function Insights() {
                 ))}
               </tbody>
             </table>
-            {viral.data?.items.length === 0 && <Empty>No scores yet (or every source is blocked by policy). Click “Score now”.</Empty>}
+            {viral.data?.items.length === 0 && <Empty>{t('noScores')}</Empty>}
           </section>
 
           <section>
             <div className="row">
-              <h3 style={{ margin: 0 }}>Trends</h3>
-              <RunButton label="Compute (7 days)" url={`/projects/${pid}/analytics/trends`} body={{ windowDays: 7 }} onDone={trends.reload} />
+              <h3 style={{ margin: 0 }}>{t('trends')}</h3>
+              <RunButton label={t('compute7')} url={`/projects/${pid}/analytics/trends`} body={{ windowDays: 7 }} onDone={trends.reload} />
             </div>
             <ErrorBox error={trends.error} />
             {trends.data?.coverage && (
               <p className="muted small">
-                {trends.data.coverage.scope} Sample: {trends.data.sampleSize} post(s) in the last {trends.data.windowDays} d · computed {fmtTime(trends.data.computedAt)}
-                {trends.data.coverage.blockedByPolicy.length > 0 && ` · blocked by policy: ${trends.data.coverage.blockedByPolicy.map((b) => `${b.providerId} ${b.posts}`).join(', ')}`}
+                {trends.data.coverage.scope} {t('sample', { n: trends.data.sampleSize ?? '', days: trends.data.windowDays ?? '', at: fmtTime(trends.data.computedAt) })}
+                {trends.data.coverage.blockedByPolicy.length > 0 && t('blockedByPolicy', { list: trends.data.coverage.blockedByPolicy.map((b) => `${b.providerId} ${b.posts}`).join(', ') })}
               </p>
             )}
             <table>
               <thead>
                 <tr>
-                  <th>Topic</th>
-                  <th>Signal</th>
-                  <th>Posts (now / before)</th>
-                  <th>Accounts</th>
-                  <th>Confidence</th>
-                  <th>Why / supporting posts</th>
+                  <th>{t('thTopic')}</th>
+                  <th>{t('thSignal')}</th>
+                  <th>{t('thPostsNowBefore')}</th>
+                  <th>{t('thAccounts')}</th>
+                  <th>{t('thConfidence')}</th>
+                  <th>{t('thWhy')}</th>
                 </tr>
               </thead>
               <tbody>
-                {trends.data?.topics.map((t) => (
-                  <tr key={t.topic}>
+                {trends.data?.topics.map((tp) => (
+                  <tr key={tp.topic}>
                     <td>
-                      {t.topic} <span className="muted small">{t.kind}</span>
+                      {tp.topic} <span className="muted small">{tp.kind}</span>
                     </td>
                     <td>
-                      <Status s={t.signal} />
+                      <Status s={tp.signal} />
                     </td>
                     <td>
-                      {t.postsNow} / {t.postsPrev}
+                      {tp.postsNow} / {tp.postsPrev}
                     </td>
-                    <td>{t.accountsNow}</td>
-                    <td>{t.confidence}</td>
+                    <td>{tp.accountsNow}</td>
+                    <td>{tp.confidence}</td>
                     <td className="small">
-                      {t.reasons.join(' · ')}
+                      {tp.reasons.join(' · ')}
                       <div>
-                        {t.supportingPosts.slice(0, 3).map((p, i) => (
+                        {tp.supportingPosts.slice(0, 3).map((p, i) => (
                           <span key={p.url}>
                             {i > 0 && ' · '}
-                            <ExternalLink href={p.url}>{p.account ?? 'post'}</ExternalLink>
+                            <ExternalLink href={p.url}>{p.account ?? t('post')}</ExternalLink>
                           </span>
                         ))}
                       </div>
@@ -166,28 +214,28 @@ export function Insights() {
                 ))}
               </tbody>
             </table>
-            {(trends.data?.topics.length ?? 0) === 0 && <Empty>{trends.data?.note ?? 'No topic with at least 2 posts in this window.'}</Empty>}
+            {(trends.data?.topics.length ?? 0) === 0 && <Empty>{trends.data?.note ?? t('noTopic')}</Empty>}
           </section>
 
           <section>
             <div className="row">
-              <h3 style={{ margin: 0 }}>AI intelligence</h3>
-              {ai.data?.configured ? <RunButton label="Analyse top posts" url={`/projects/${pid}/analyze`} onDone={ai.reload} /> : <span className="notice">ANTHROPIC_API_KEY is not configured — AI analysis is off.</span>}
-              <span className="muted small">model {ai.data?.model}</span>
+              <h3 style={{ margin: 0 }}>{t('aiIntelligence')}</h3>
+              {ai.data?.configured ? <RunButton label={t('analyseTop')} url={`/projects/${pid}/analyze`} onDone={ai.reload} /> : <span className="notice">{t('aiOff', { key: 'ANTHROPIC_API_KEY' })}</span>}
+              <span className="muted small">{t('model', { model: ai.data?.model ?? '' })}</span>
             </div>
             <ErrorBox error={ai.error} />
             {ai.data?.items.map((a) => (
               <details key={a.id} className="tile" style={{ marginBottom: 8 }}>
                 <summary>
-                  <Status s={a.status} /> {a.url ? <ExternalLink href={a.url}>{a.account ?? 'post'}</ExternalLink> : '—'} · {a.result?.category ?? a.error} · confidence {a.confidence ?? '—'} · {a.scope} · ${a.costUsd.toFixed(4)} · {fmtTime(a.createdAt)}
+                  <Status s={a.status} /> {a.url ? <ExternalLink href={a.url}>{a.account ?? t('post')}</ExternalLink> : '—'} · {a.result?.category ?? a.error} · {t('confidence', { c: a.confidence ?? '—' })} · {a.scope} · ${a.costUsd.toFixed(4)} · {fmtTime(a.createdAt)}
                 </summary>
                 {a.result && (
                   <div className="small">
                     <p>
-                      <b>Hook:</b> {a.result.hook ?? '—'} · <b>Message:</b> {a.result.keyMessage} · <b>CTA:</b> {a.result.cta ?? '—'}
+                      <b>{t('hook')}</b> {a.result.hook ?? '—'} · <b>{t('message')}</b> {a.result.keyMessage} · <b>{t('cta')}</b> {a.result.cta ?? '—'}
                     </p>
                     <p>
-                      <b>Evidence:</b>
+                      <b>{t('evidence')}</b>
                     </p>
                     <ul className="evidence">
                       {a.result.evidence?.map((e, i) => (
@@ -197,7 +245,7 @@ export function Insights() {
                       ))}
                     </ul>
                     <p>
-                      <b>Audience hypotheses</b> (not demographics):
+                      <b>{t('audienceHypotheses')}</b> {t('notDemographics')}
                     </p>
                     <ul className="evidence">
                       {a.result.audienceHypotheses?.map((x, i) => (
@@ -207,21 +255,21 @@ export function Insights() {
                       ))}
                     </ul>
                     <p>
-                      <b>Ideas for us:</b>
+                      <b>{t('ideasForUs')}</b>
                     </p>
                     <ul className="evidence">
                       {a.result.creativeIdeas?.map((x, i) => (
                         <li key={i}>
-                          {x.idea} <span className="muted">— inspired by {x.inspiredBy}</span>
+                          {x.idea} <span className="muted">{t('inspiredBy', { x: x.inspiredBy })}</span>
                         </li>
                       ))}
                     </ul>
-                    <p className="muted">Limitations: {a.result.limitations?.join(' · ')}</p>
+                    <p className="muted">{t('limitations', { list: a.result.limitations?.join(' · ') ?? '' })}</p>
                   </div>
                 )}
               </details>
             ))}
-            {ai.data?.items.length === 0 && <Empty>No AI analyses yet.</Empty>}
+            {ai.data?.items.length === 0 && <Empty>{t('noAi')}</Empty>}
           </section>
         </>
       )}

@@ -77,6 +77,8 @@ Never paste keys into chat tools.
 | `npm run db:migrate:new -- <name>` | Create a database migration. Uses a throwaway embedded PostgreSQL. |
 | `npm run dev -w @sss/web` | Vite dev server with `/api` proxied to `APP_PORT` |
 
+The UI comes in **English and Vietnamese** and has **System, Light and Dark** themes; switch them at the bottom of the sidebar. The **Setup guide** (also in the sidebar) checks which keys and channels are configured.
+
 API documentation: `/api/docs` when the app is running, or [`docs/API_SPEC.md`](docs/API_SPEC.md).
 
 ## Layout

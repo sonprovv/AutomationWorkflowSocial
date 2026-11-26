@@ -26,8 +26,9 @@
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
+/* Dark tokens: follow the OS unless the user picked a theme (html[data-theme]). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #0b0e14;
     --surface: #121722;
     --card: #171d2a;
@@ -45,6 +46,28 @@
     --shadow: 0 1px 2px rgb(0 0 0 / 40%);
     --shadow-lg: 0 24px 48px -12px rgb(0 0 0 / 60%);
   }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b0e14;
+  --surface: #121722;
+  --card: #171d2a;
+  --fg: #e6e8ee;
+  --fg-soft: #c3c8d4;
+  --muted: #8b93a7;
+  --line: #232a38;
+  --line-strong: #323b4d;
+  --accent: #8b87ff;
+  --accent-hover: #a29fff;
+  --accent-fg: #0b0e14;
+  --ok: #4ade80;
+  --bad: #f87171;
+  --warn: #fbbf24;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-lg: 0 24px 48px -12px rgb(0 0 0 / 60%);
+}
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {
@@ -961,4 +984,44 @@ table:has(> tbody:empty) + .empty {
   border-top: 1px dashed var(--line-strong);
   border-radius: 0 0 var(--radius) var(--radius);
   background: var(--surface);
+}
+
+/* ---------------- preferences (language, theme) ---------------- */
+.prefs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.seg {
+  display: inline-flex;
+  flex: 1;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+.seg button {
+  flex: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.seg button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--fg);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow);
+}
+@media (max-width: 960px) {
+  .prefs {
+    margin: 0 0 0 8px;
+  }
 }

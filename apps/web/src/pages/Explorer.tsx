@@ -1,6 +1,40 @@
 import { useState } from 'react';
 import { api, type ExportRow, type Job, type Page, type PostFull, type Project } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { ACTIVE, Empty, errText, ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, PLATFORMS, Status, useLoad, usePoll } from '../ui.tsx';
+
+const M = defineMessages({
+  exportResults: ['Export these results', 'Xuất dữ liệu các kết quả này'],
+  download: ['Download {file}', 'Tải xuống {file}'],
+  withheld: [
+    '{posts} post(s) / {accounts} account(s) from {provider} withheld: export not allowed by policy {policy}',
+    'Đã giữ lại {posts} bài đăng / {accounts} tài khoản từ {provider}: chính sách {policy} không cho phép xuất dữ liệu',
+  ],
+  title: ['Content Explorer', 'Khám phá nội dung'],
+  project: ['Project', 'Dự án'],
+  platform: ['Platform', 'Nền tảng'],
+  format: ['Format', 'Định dạng'],
+  all: ['All', 'Tất cả'],
+  text: ['Text', 'Văn bản'],
+  textPlaceholder: ['caption/title', 'nội dung/tiêu đề'],
+  hashtag: ['Hashtag', 'Hashtag'],
+  publishedFrom: ['Published from', 'Đăng từ'],
+  to: ['to', 'đến'],
+  showUnavailable: ['show unavailable', 'hiện bài không khả dụng'],
+  apply: ['Apply', 'Áp dụng'],
+  reset: ['Reset', 'Đặt lại'],
+  thPublished: ['Published', 'Đăng lúc'],
+  thAccount: ['Account', 'Tài khoản'],
+  thContent: ['Content', 'Nội dung'],
+  thViews: ['Views', 'Lượt xem'],
+  thLikes: ['Likes', 'Lượt thích'],
+  thComments: ['Comments', 'Bình luận'],
+  thShares: ['Shares', 'Chia sẻ'],
+  thSource: ['Source', 'Nguồn'],
+  noText: ['(no text)', '(không có nội dung)'],
+  noMatch: ['No posts match these filters.', 'Không có bài đăng nào khớp với bộ lọc này.'],
+  loadMore: ['Load more', 'Tải thêm'],
+});
 
 type Filters = { projectId: string; platform: string; contentType: string; hashtag: string; q: string; since: string; until: string; includeUnavailable: boolean };
 const EMPTY: Filters = { projectId: '', platform: '', contentType: '', hashtag: '', q: '', since: '', until: '', includeUnavailable: false };
@@ -20,6 +54,7 @@ function toQuery(f: Filters): Record<string, string> {
 
 /** Export of the current filters (WF17). Polls the job and shows the download link. */
 export function ExportButton({ filters }: { filters: Filters }) {
+  const t = useT(M);
   const [format, setFormat] = useState('xlsx');
   const [job, setJob] = useState<Job | null>(null);
   const [exp, setExp] = useState<ExportRow | null>(null);
@@ -54,12 +89,12 @@ export function ExportButton({ filters }: { filters: Filters }) {
         <option value="json">JSON</option>
       </select>
       <button onClick={run} disabled={!!exp && ACTIVE.includes(exp.status)}>
-        Export these results
+        {t('exportResults')}
       </button>
       {exp && (
         <span className="small">
-          <Status s={exp.status} /> {exp.downloadUrl && <a href={exp.downloadUrl}>Download {exp.fileName}</a>}
-          {exp.withheld.length > 0 && <span className="notice"> {exp.withheld.map((w) => `${w.posts} post(s) / ${w.accounts} account(s) from ${w.providerId} withheld: export not allowed by policy ${w.policyId}`).join('; ')}</span>}
+          <Status s={exp.status} /> {exp.downloadUrl && <a href={exp.downloadUrl}>{t('download', { file: exp.fileName ?? '' })}</a>}
+          {exp.withheld.length > 0 && <span className="notice"> {exp.withheld.map((w) => t('withheld', { posts: w.posts, accounts: w.accounts, provider: w.providerId, policy: w.policyId })).join('; ')}</span>}
           {exp.error && <span className="error-inline"> {exp.error}</span>}
         </span>
       )}
@@ -69,6 +104,7 @@ export function ExportButton({ filters }: { filters: Filters }) {
 }
 
 export function Explorer() {
+  const t = useT(M);
   const initial = { ...EMPTY, ...Object.fromEntries(new URLSearchParams(location.hash.split('?')[1] ?? '')) } as Filters;
   const [draft, setDraft] = useState<Filters>(initial);
   const [filters, setFilters] = useState<Filters>(initial);
@@ -84,7 +120,7 @@ export function Explorer() {
   const set = (k: keyof Filters, v: string | boolean) => setDraft({ ...draft, [k]: v });
   return (
     <>
-      <h2>Content Explorer</h2>
+      <h2>{t('title')}</h2>
       <form
         className="filters"
         onSubmit={(e) => {
@@ -94,9 +130,9 @@ export function Explorer() {
         }}
       >
         <label>
-          Project
+          {t('project')}
           <select value={draft.projectId} onChange={(e) => set('projectId', e.target.value)}>
-            <option value="">All</option>
+            <option value="">{t('all')}</option>
             {projects.data?.items.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -105,47 +141,49 @@ export function Explorer() {
           </select>
         </label>
         <label>
-          Platform
+          {t('platform')}
           <select value={draft.platform} onChange={(e) => set('platform', e.target.value)}>
-            <option value="">All</option>
+            <option value="">{t('all')}</option>
             {PLATFORMS.map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
         </label>
         <label>
-          Format
+          {t('format')}
           <select value={draft.contentType} onChange={(e) => set('contentType', e.target.value)}>
-            <option value="">All</option>
-            {['video', 'short', 'live', 'image', 'text', 'link', 'mixed', 'unknown'].map((t) => (
-              <option key={t}>{t}</option>
+            <option value="">{t('all')}</option>
+            {['video', 'short', 'live', 'image', 'text', 'link', 'mixed', 'unknown'].map((ct) => (
+              <option key={ct}>{ct}</option>
             ))}
           </select>
         </label>
         <label>
-          Text
-          <input className="narrow" value={draft.q} onChange={(e) => set('q', e.target.value)} placeholder="caption/title" />
+          {t('text')}
+          <input className="narrow" value={draft.q} onChange={(e) => set('q', e.target.value)} placeholder={t('textPlaceholder')} />
         </label>
         <label>
-          Hashtag
+          {t('hashtag')}
           <input className="narrow" value={draft.hashtag} onChange={(e) => set('hashtag', e.target.value)} placeholder="#livewallpaper" />
         </label>
         <label>
-          Published from
+          {t('publishedFrom')}
           <input className="narrow" type="date" value={draft.since} onChange={(e) => set('since', e.target.value)} />
         </label>
         <label>
-          to
+          {t('to')}
           <input className="narrow" type="date" value={draft.until} onChange={(e) => set('until', e.target.value)} />
         </label>
         <label>
           <span>
-            <input type="checkbox" checked={draft.includeUnavailable} onChange={(e) => set('includeUnavailable', e.target.checked)} /> show unavailable
+            <input type="checkbox" checked={draft.includeUnavailable} onChange={(e) => set('includeUnavailable', e.target.checked)} /> {t('showUnavailable')}
           </span>
         </label>
-        <button type="submit" className="primary">Apply</button>
+        <button type="submit" className="primary">
+          {t('apply')}
+        </button>
         <button type="button" onClick={() => (setDraft(EMPTY), setFilters(EMPTY), setCursor(null))}>
-          Reset
+          {t('reset')}
         </button>
       </form>
       <div className="row">
@@ -156,14 +194,14 @@ export function Explorer() {
       <table>
         <thead>
           <tr>
-            <th>Published</th>
-            <th>Account</th>
-            <th>Content</th>
-            <th>Views</th>
-            <th>Likes</th>
-            <th>Comments</th>
-            <th>Shares</th>
-            <th>Source</th>
+            <th>{t('thPublished')}</th>
+            <th>{t('thAccount')}</th>
+            <th>{t('thContent')}</th>
+            <th>{t('thViews')}</th>
+            <th>{t('thLikes')}</th>
+            <th>{t('thComments')}</th>
+            <th>{t('thShares')}</th>
+            <th>{t('thSource')}</th>
           </tr>
         </thead>
         <tbody>
@@ -184,7 +222,7 @@ export function Explorer() {
                 </div>
               </td>
               <td className="caption">
-                <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 200) : '(no text)')}</ExternalLink>
+                <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 200) : t('noText'))}</ExternalLink>
                 {p.hashtags.length > 0 && <div className="muted small">#{p.hashtags.join(' #')}</div>}
               </td>
               <td>{fmtNum(p.metrics?.views, p.metrics?.missing?.views)}</td>
@@ -199,8 +237,8 @@ export function Explorer() {
           ))}
         </tbody>
       </table>
-      {!list.loading && pages.length === 0 && !list.error && <Empty>No posts match these filters.</Empty>}
-      {list.data?.nextCursor && <button onClick={() => setCursor(list.data!.nextCursor)}>Load more</button>}
+      {!list.loading && pages.length === 0 && !list.error && <Empty>{t('noMatch')}</Empty>}
+      {list.data?.nextCursor && <button onClick={() => setCursor(list.data!.nextCursor)}>{t('loadMore')}</button>}
     </>
   );
 }

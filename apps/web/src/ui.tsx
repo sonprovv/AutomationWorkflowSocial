@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ApiError } from './api.ts';
+import { currentLocale, getLang } from './i18n.tsx';
 
 /*
  * Shared UI rules (Master Plan §10): every number shows its source and collection time; missing values render
@@ -9,13 +10,13 @@ import { ApiError } from './api.ts';
 
 export const fmtNum = (v: number | null | undefined, reason?: string) =>
   v === null || v === undefined ? (
-    <span className="muted" title={reason ? `Missing: ${reason}` : 'Not provided'}>
+    <span className="muted" title={reason ? `${getLang() === 'vi' ? 'Thiếu dữ liệu' : 'Missing'}: ${reason}` : getLang() === 'vi' ? 'Nguồn không cung cấp' : 'Not provided'}>
       —
     </span>
   ) : (
-    v.toLocaleString()
+    v.toLocaleString(currentLocale())
   );
-export const fmtTime = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString() : '—');
+export const fmtTime = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(currentLocale()) : '—');
 export const errText = (e: unknown) => (e instanceof ApiError ? `${e.code}: ${e.message}` : String(e));
 
 export function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
@@ -75,7 +76,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function Loading({ on }: { on: boolean }) {
-  return on ? <span className="muted small">Loading…</span> : null;
+  return on ? <span className="muted small">{getLang() === 'vi' ? 'Đang tải…' : 'Loading…'}</span> : null;
 }
 
 export const ACTIVE = ['QUEUED', 'RUNNING'];

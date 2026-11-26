@@ -21,6 +21,99 @@ import {
   type NodeTypeInfo,
 } from '../graph-edit.ts';
 import { ACTIVE, Empty, errText, ErrorBox, fmtTime, Loading, Status, usePoll, useLoad } from '../ui.tsx';
+import { currentLocale, defineMessages, useT } from '../i18n.tsx';
+
+const M = defineMessages({
+  // list + create
+  title: ['Workflow Builder', 'Trình tạo quy trình'],
+  intro1: [
+    'Custom workflows chain the existing guarded jobs (discovery, sync, metrics, viral, trends, AI, export, report, notify) with wait and if steps. Graphs must be acyclic; every save is a new version and every run pins one. Recurring runs use a',
+    'Quy trình tùy chỉnh nối các tác vụ có kiểm soát sẵn có (khám phá, đồng bộ, chỉ số, viral, xu hướng, AI, xuất dữ liệu, báo cáo, thông báo) với các bước chờ (wait) và điều kiện (if). Sơ đồ không được có vòng lặp; mỗi lần lưu tạo một phiên bản mới và mỗi lần chạy gắn với một phiên bản. Lần chạy định kỳ dùng lịch',
+  ],
+  intro2: ['schedule on the Schedules page.', 'trên trang Lịch chạy.'],
+  name: ['Name', 'Tên'],
+  namePh: ['Weekly market scan', 'Quét thị trường hàng tuần'],
+  projectNeeded: ['Project (needed to run)', 'Dự án (cần để chạy)'],
+  noneYet: ['— none yet —', '— chưa có —'],
+  startFrom: ['Start from', 'Bắt đầu từ'],
+  tplWeekly: ['Template: weekly market scan', 'Mẫu: quét thị trường hàng tuần'],
+  tplEmpty: ['Empty (start node only)', 'Trống (chỉ có bước Bắt đầu)'],
+  create: ['Create workflow', 'Tạo quy trình'],
+  noWorkflows: ['No custom workflows yet.', 'Chưa có quy trình tùy chỉnh nào.'],
+  colWorkflow: ['Workflow', 'Quy trình'],
+  colProject: ['Project', 'Dự án'],
+  colStatus: ['Status', 'Trạng thái'],
+  colVersion: ['Version', 'Phiên bản'],
+  colUpdated: ['Updated', 'Cập nhật'],
+  // editor
+  savedAs: ['Saved as version {n}.', 'Đã lưu thành phiên bản {n}.'],
+  runQueued: ['Run queued (job {job}, {status}). Node colours follow the newest run.', 'Đã xếp hàng lần chạy (tác vụ {job}, {status}). Màu các bước theo lần chạy mới nhất.'],
+  discardConfirm: ['Discard unsaved changes?', 'Bỏ các thay đổi chưa lưu?'],
+  showingVersion: ['Showing version {n}. Save to make it the current version again.', 'Đang xem phiên bản {n}. Lưu để đặt lại làm phiên bản hiện tại.'],
+  blockSave: ['Save first', 'Hãy lưu trước'],
+  blockOld: ['Showing an old version', 'Đang xem phiên bản cũ'],
+  blockProject: ['Attach a project first', 'Hãy gắn dự án trước'],
+  blockStatus: ['Workflow is {s}', 'Quy trình đang ở trạng thái {s}'],
+  allWorkflows: ['← All workflows', '← Tất cả quy trình'],
+  ariaName: ['Workflow name', 'Tên quy trình'],
+  noProject: ['— no project —', '— không có dự án —'],
+  archiveConfirm: ['Archive this workflow? It disappears from the list.', 'Lưu trữ quy trình này? Quy trình sẽ biến mất khỏi danh sách.'],
+  current: [' (current)', ' (hiện tại)'],
+  unsaved: ['unsaved', 'chưa lưu'],
+  validate: ['Validate', 'Kiểm tra'],
+  saveNew: ['Save new version', 'Lưu phiên bản mới'],
+  starting: ['Starting…', 'Đang khởi chạy…'],
+  runNow: ['Run now', 'Chạy ngay'],
+  runDisabled: ['Run disabled: {r}.', 'Không thể chạy: {r}.'],
+  valid: ['Valid. Execution order: {order}', 'Hợp lệ. Thứ tự thực thi: {order}'],
+  notValid: ['Not valid:', 'Không hợp lệ:'],
+  // canvas
+  ariaGraph: ['Workflow graph editor', 'Trình chỉnh sửa sơ đồ quy trình'],
+  portTitle: ['Drag onto another node to connect', 'Kéo sang bước khác để kết nối'],
+  hint: [
+    'Drag a node to move it · drag from its right-hand port onto another node to connect · click an edge to select it · Delete removes the selection.',
+    'Kéo một bước để di chuyển · kéo từ cổng bên phải của bước sang bước khác để kết nối · nhấp vào một kết nối để chọn · phím Delete xóa mục đang chọn.',
+  ],
+  // palette
+  addStep: ['Add a step', 'Thêm bước'],
+  paletteHelp: [
+    'Select a node or edge to edit it. Steps marked policy-gated report “blocked by policy” until the source allows derived metrics.',
+    'Chọn một bước hoặc kết nối để chỉnh sửa. Các bước bị chặn theo chính sách sẽ báo “blocked by policy” cho đến khi nguồn cho phép chỉ số dẫn xuất.',
+  ],
+  // node panel
+  id: ['Id', 'Id'],
+  labelOpt: ['Label (optional)', 'Nhãn (không bắt buộc)'],
+  settings: ['Settings', 'Cài đặt'],
+  timeout: ['Timeout (seconds, 10–3600)', 'Thời gian chờ tối đa (giây, 10–3600)'],
+  onError: ['On error', 'Khi lỗi'],
+  errStop: ['stop the run', 'dừng lần chạy'],
+  errContinue: ['continue with the next steps', 'tiếp tục các bước sau'],
+  selectedRun: ['Selected run:', 'Lần chạy đã chọn:'],
+  startedAt: ['started {t}', 'bắt đầu lúc {t}'],
+  finishedAt: ['finished {t}', 'kết thúc lúc {t}'],
+  jobs: ['jobs: {ids}', 'tác vụ: {ids}'],
+  result: ['Result', 'Kết quả'],
+  deleteStep: ['Delete step', 'Xóa bước'],
+  done: ['Done', 'Xong'],
+  // edge panel
+  connection: ['Connection', 'Kết nối'],
+  runsWhen: ['Runs when the condition is', 'Chạy khi điều kiện là'],
+  switchTo: ['Switch to {v}', 'Chuyển sang {v}'],
+  deleteConnection: ['Delete connection', 'Xóa kết nối'],
+  // generated fields
+  optional: [' (optional)', ' (không bắt buộc)'],
+  commaSep: ['comma-separated', 'phân tách bằng dấu phẩy'],
+  numOrText: ['number or text', 'số hoặc văn bản'],
+  // runs
+  runs: ['Runs', 'Lần chạy'],
+  noRuns: ['No runs yet.', 'Chưa có lần chạy nào.'],
+  colStarted: ['Started', 'Bắt đầu lúc'],
+  colSteps: ['Steps', 'Bước'],
+  colError: ['Error', 'Lỗi'],
+  showOnGraph: ['Show on graph', 'Hiện trên sơ đồ'],
+  hideOnGraph: ['Hide on graph', 'Ẩn khỏi sơ đồ'],
+  cancel: ['Cancel', 'Hủy'],
+});
 
 /*
  * Workflow Builder (Phase 9, P9-02): a small dependency-free SVG editor for the versioned workflow DAG.
@@ -85,6 +178,7 @@ export function Builder({ id }: { id?: string }) {
 }
 
 function BuilderList() {
+  const t = useT(M);
   const defs = useLoad(() => api<{ items: WorkflowDef[] }>('/workflow-defs'), []);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const [name, setName] = useState('');
@@ -105,20 +199,19 @@ function BuilderList() {
 
   return (
     <>
-      <h2>Workflow Builder</h2>
+      <h2>{t('title')}</h2>
       <p className="muted small">
-        Custom workflows chain the existing guarded jobs (discovery, sync, metrics, viral, trends, AI, export, report, notify) with wait and if steps. Graphs must be acyclic; every save is a new
-        version and every run pins one. Recurring runs use a <code>CUSTOM_WORKFLOW</code> schedule on the Schedules page.
+        {t('intro1')} <code>CUSTOM_WORKFLOW</code> {t('intro2')}
       </p>
       <div className="filters">
         <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Weekly market scan" />
+          {t('name')}
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('namePh')} />
         </label>
         <label>
-          Project (needed to run)
+          {t('projectNeeded')}
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-            <option value="">— none yet —</option>
+            <option value="">{t('noneYet')}</option>
             {projects.data?.items.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -127,28 +220,28 @@ function BuilderList() {
           </select>
         </label>
         <label>
-          Start from
+          {t('startFrom')}
           <select value={template} onChange={(e) => setTemplate(e.target.value as 'weekly-scan' | 'empty')}>
-            <option value="weekly-scan">Template: weekly market scan</option>
-            <option value="empty">Empty (start node only)</option>
+            <option value="weekly-scan">{t('tplWeekly')}</option>
+            <option value="empty">{t('tplEmpty')}</option>
           </select>
         </label>
         <button className="primary" disabled={!name.trim()} onClick={create}>
-          Create workflow
+          {t('create')}
         </button>
       </div>
       <ErrorBox error={err ?? defs.error} />
       <Loading on={defs.loading} />
-      {defs.data && defs.data.items.length === 0 && <Empty>No custom workflows yet.</Empty>}
+      {defs.data && defs.data.items.length === 0 && <Empty>{t('noWorkflows')}</Empty>}
       {defs.data && defs.data.items.length > 0 && (
         <table>
           <thead>
             <tr>
-              <th>Workflow</th>
-              <th>Project</th>
-              <th>Status</th>
-              <th>Version</th>
-              <th>Updated</th>
+              <th>{t('colWorkflow')}</th>
+              <th>{t('colProject')}</th>
+              <th>{t('colStatus')}</th>
+              <th>{t('colVersion')}</th>
+              <th>{t('colUpdated')}</th>
             </tr>
           </thead>
           <tbody>
@@ -175,6 +268,7 @@ function BuilderList() {
 
 /* ---------------- editor ---------------- */
 function Editor({ id }: { id: string }) {
+  const t = useT(M);
   const def = useLoad(() => api<WorkflowDetail>(`/workflow-defs/${id}`), [id]);
   const types = useLoad(() => api<{ items: NodeTypeInfo[] }>('/workflow-defs/node-types'), []);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
@@ -264,7 +358,7 @@ function Editor({ id }: { id: string }) {
       const r = await api<{ version: number }>(`/workflow-defs/${id}/versions`, { method: 'POST', body: { graph } });
       setDirty(false);
       setBaseVersion(r.version);
-      setMsg({ ok: true, text: `Saved as version ${r.version}.` });
+      setMsg({ ok: true, text: t('savedAs', { n: r.version }) });
       def.reload();
     } catch (e) {
       setMsg({ ok: false, text: errText(e) });
@@ -275,7 +369,7 @@ function Editor({ id }: { id: string }) {
     setBusy(true);
     try {
       const r = await api<{ job_id: string; status: string }>(`/workflow-defs/${id}/run`, { method: 'POST', body: {} });
-      setMsg({ ok: true, text: `Run queued (job ${r.job_id.slice(0, 8)}, ${r.status}). Node colours follow the newest run.` });
+      setMsg({ ok: true, text: t('runQueued', { job: r.job_id.slice(0, 8), status: r.status }) });
       setRunId(null);
       // The run row appears once the worker picks the job up; follow the newest run then.
       for (let i = 0; i < 20; i++) {
@@ -296,7 +390,7 @@ function Editor({ id }: { id: string }) {
   }
 
   async function loadVersion(version: number) {
-    if (dirty && !window.confirm('Discard unsaved changes?')) return;
+    if (dirty && !window.confirm(t('discardConfirm'))) return;
     try {
       const v = await api<{ graph: Graph }>(`/workflow-defs/${id}/versions/${version}`);
       setGraph(withPositions(v.graph));
@@ -304,7 +398,7 @@ function Editor({ id }: { id: string }) {
       setDirty(false);
       setSel(null);
       setValidation(null);
-      setMsg(version === d.currentVersion ? null : { ok: true, text: `Showing version ${version}. Save to make it the current version again.` });
+      setMsg(version === d.currentVersion ? null : { ok: true, text: t('showingVersion', { n: version }) });
     } catch (e) {
       setMsg({ ok: false, text: errText(e) });
     }
@@ -312,12 +406,20 @@ function Editor({ id }: { id: string }) {
 
   const viewingOld = baseVersion !== null && baseVersion !== d.currentVersion;
   const canRun = !dirty && !viewingOld && !!d.projectId && d.status !== 'PAUSED' && d.status !== 'ARCHIVED';
-  const runBlocker = dirty ? 'Save first' : viewingOld ? 'Showing an old version' : !d.projectId ? 'Attach a project first' : d.status === 'PAUSED' || d.status === 'ARCHIVED' ? `Workflow is ${d.status}` : '';
+  const runBlocker = dirty
+    ? t('blockSave')
+    : viewingOld
+      ? t('blockOld')
+      : !d.projectId
+        ? t('blockProject')
+        : d.status === 'PAUSED' || d.status === 'ARCHIVED'
+          ? t('blockStatus', { s: d.status })
+          : '';
 
   return (
     <>
       <p className="small">
-        <a href="#/builder">← All workflows</a>
+        <a href="#/builder">{t('allWorkflows')}</a>
       </p>
       <div className="row">
         <input
@@ -325,49 +427,49 @@ function Editor({ id }: { id: string }) {
           style={{ width: 280, fontWeight: 600 }}
           defaultValue={d.name}
           key={d.name}
-          aria-label="Workflow name"
+          aria-label={t('ariaName')}
           onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== d.name && patch({ name: e.target.value.trim() })}
         />
-        <select aria-label="Project" value={d.projectId ?? ''} onChange={(e) => patch({ projectId: e.target.value || null })}>
-          <option value="">— no project —</option>
+        <select aria-label={t('colProject')} value={d.projectId ?? ''} onChange={(e) => patch({ projectId: e.target.value || null })}>
+          <option value="">{t('noProject')}</option>
           {projects.data?.items.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
           ))}
         </select>
-        <select aria-label="Status" value={d.status} onChange={(e) => (e.target.value !== 'ARCHIVED' || window.confirm('Archive this workflow? It disappears from the list.')) && patch({ status: e.target.value })}>
+        <select aria-label={t('colStatus')} value={d.status} onChange={(e) => (e.target.value !== 'ARCHIVED' || window.confirm(t('archiveConfirm'))) && patch({ status: e.target.value })}>
           {['DRAFT', 'ENABLED', 'PAUSED', 'ARCHIVED'].map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-        <select aria-label="Version" value={baseVersion ?? d.currentVersion} onChange={(e) => loadVersion(Number(e.target.value))}>
+        <select aria-label={t('colVersion')} value={baseVersion ?? d.currentVersion} onChange={(e) => loadVersion(Number(e.target.value))}>
           {d.versions.map((v) => (
             <option key={v.version} value={v.version}>
               v{v.version}
-              {v.version === d.currentVersion ? ' (current)' : ''} · {new Date(v.createdAt).toLocaleString()}
+              {v.version === d.currentVersion ? t('current') : ''} · {new Date(v.createdAt).toLocaleString(currentLocale())}
             </option>
           ))}
         </select>
-        {dirty && <span className="badge badge-pending">unsaved</span>}
+        {dirty && <span className="badge badge-pending">{t('unsaved')}</span>}
         <span style={{ flex: 1 }} />
-        <button onClick={validate}>Validate</button>
+        <button onClick={validate}>{t('validate')}</button>
         <button onClick={save} disabled={!dirty && !viewingOld}>
-          Save new version
+          {t('saveNew')}
         </button>
         <button className="primary" onClick={runNow} disabled={!canRun || busy} title={runBlocker}>
-          {busy ? 'Starting…' : 'Run now'}
+          {busy ? t('starting') : t('runNow')}
         </button>
       </div>
-      {runBlocker && !dirty && <p className="muted small">Run disabled: {runBlocker}.</p>}
+      {runBlocker && !dirty && <p className="muted small">{t('runDisabled', { r: runBlocker })}</p>}
       {msg && <div className={msg.ok ? 'ok' : 'error'}>{msg.text}</div>}
       {validation && (
         <div className={validation.ok ? 'ok' : 'error'}>
           {validation.ok ? (
-            <>Valid. Execution order: {validation.order.join(' → ')}</>
+            <>{t('valid', { order: validation.order.join(' → ') })}</>
           ) : (
             <>
-              <b>Not valid:</b>
+              <b>{t('notValid')}</b>
               <ul style={{ margin: '4px 0 0' }}>
                 {validation.errors.map((e) => (
                   <li key={e}>{e}</li>
@@ -424,6 +526,7 @@ function Canvas(p: {
   run: WorkflowRun | null;
   onError: (t: string) => void;
 }) {
+  const t = useT(M);
   const svg = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<Drag>(null);
   const moved = useRef(false);
@@ -484,7 +587,7 @@ function Canvas(p: {
         onPointerLeave={() => setDrag(null)}
         onPointerDown={(e) => e.target === svg.current && p.setSel(null)}
         role="application"
-        aria-label="Workflow graph editor"
+        aria-label={t('ariaGraph')}
       >
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -562,14 +665,14 @@ function Canvas(p: {
                   setDrag({ kind: 'link', from: n.id, x: pt.x, y: pt.y });
                 }}
               >
-                <title>Drag onto another node to connect</title>
+                <title>{t('portTitle')}</title>
               </circle>
             </g>
           );
         })}
       </svg>
       <p className="muted small" style={{ margin: '4px 8px' }}>
-        Drag a node to move it · drag from its right-hand port onto another node to connect · click an edge to select it · Delete removes the selection.
+        {t('hint')}
       </p>
     </div>
   );
@@ -577,6 +680,7 @@ function Canvas(p: {
 
 /* ---------------- side panels ---------------- */
 function Palette({ types, onAdd }: { types: NodeTypeInfo[]; onAdd: (t: NodeTypeInfo) => void }) {
+  const tr = useT(M);
   const groups = new Map<string, NodeTypeInfo[]>();
   for (const t of types.filter((x) => x.type !== TRIGGER)) {
     const g = t.type.split('.')[0]!;
@@ -584,8 +688,8 @@ function Palette({ types, onAdd }: { types: NodeTypeInfo[]; onAdd: (t: NodeTypeI
   }
   return (
     <>
-      <h3>Add a step</h3>
-      <p className="muted small">Select a node or edge to edit it. Steps marked policy-gated report “blocked by policy” until the source allows derived metrics.</p>
+      <h3>{tr('addStep')}</h3>
+      <p className="muted small">{tr('paletteHelp')}</p>
       {[...groups].map(([g, items]) => (
         <div key={g} style={{ marginBottom: 8 }}>
           <div className="muted small" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -611,8 +715,9 @@ function NodePanel(p: {
   onSelect: (id: string | null) => void;
   onError: (t: string) => void;
 }) {
+  const t = useT(M);
   const n = p.node;
-  const set = (patch: Partial<GNode>) => p.onChange(updateNode(p.graph, n.id, patch));
+  const set =(patch: Partial<GNode>) => p.onChange(updateNode(p.graph, n.id, patch));
   return (
     <>
       <h3 style={{ marginBottom: 4 }}>{p.info?.label ?? n.type}</h3>
@@ -621,7 +726,7 @@ function NodePanel(p: {
       </div>
       <div className="form">
         <label>
-          Id
+          {t('id')}
           <input
             defaultValue={n.id}
             onBlur={(e) => {
@@ -637,26 +742,26 @@ function NodePanel(p: {
           />
         </label>
         <label>
-          Label (optional)
+          {t('labelOpt')}
           <input value={n.label ?? ''} maxLength={80} onChange={(e) => set({ label: e.target.value || undefined })} placeholder={p.info?.label} />
         </label>
         {p.info && Object.keys(p.info.configSchema.properties ?? {}).length > 0 && (
           <fieldset>
-            <legend>Settings</legend>
+            <legend>{t('settings')}</legend>
             <ObjectFields schema={p.info.configSchema} value={n.config} onChange={(config) => set({ config })} />
           </fieldset>
         )}
         {n.type !== TRIGGER && (
           <>
             <label>
-              Timeout (seconds, 10–3600)
+              {t('timeout')}
               <input type="number" min={10} max={3600} value={n.timeoutSeconds} onChange={(e) => set({ timeoutSeconds: Number(e.target.value) })} />
             </label>
             <label>
-              On error
+              {t('onError')}
               <select value={n.onError} onChange={(e) => set({ onError: e.target.value as 'stop' | 'continue' })}>
-                <option value="stop">stop the run</option>
-                <option value="continue">continue with the next steps</option>
+                <option value="stop">{t('errStop')}</option>
+                <option value="continue">{t('errContinue')}</option>
               </select>
             </label>
           </>
@@ -664,14 +769,14 @@ function NodePanel(p: {
       </div>
       {p.step && (
         <div className="small" style={{ marginTop: 12 }}>
-          <b>Selected run:</b> <Status s={p.step.status} />
-          {p.step.startedAt && <div className="muted">started {fmtTime(p.step.startedAt)}</div>}
-          {p.step.finishedAt && <div className="muted">finished {fmtTime(p.step.finishedAt)}</div>}
-          {p.step.jobIds.length > 0 && <div className="muted">jobs: {p.step.jobIds.map((j) => j.slice(0, 8)).join(', ')}</div>}
+          <b>{t('selectedRun')}</b> <Status s={p.step.status} />
+          {p.step.startedAt && <div className="muted">{t('startedAt', { t: fmtTime(p.step.startedAt) })}</div>}
+          {p.step.finishedAt && <div className="muted">{t('finishedAt', { t: fmtTime(p.step.finishedAt) })}</div>}
+          {p.step.jobIds.length > 0 && <div className="muted">{t('jobs', { ids: p.step.jobIds.map((j) => j.slice(0, 8)).join(', ') })}</div>}
           {p.step.error && <div className="error-inline">{p.step.error}</div>}
           {p.step.result !== undefined && (
             <details>
-              <summary>Result</summary>
+              <summary>{t('result')}</summary>
               <pre className="small" style={{ whiteSpace: 'pre-wrap' }}>
                 {JSON.stringify(p.step.result, null, 2).slice(0, 2000)}
               </pre>
@@ -687,26 +792,27 @@ function NodePanel(p: {
               p.onSelect(null);
             }}
           >
-            Delete step
+            {t('deleteStep')}
           </button>
         )}
-        <button onClick={() => p.onSelect(null)}>Done</button>
+        <button onClick={() => p.onSelect(null)}>{t('done')}</button>
       </div>
     </>
   );
 }
 
 function EdgePanel({ graph, index, onChange, onDone }: { graph: Graph; index: number; onChange: (g: Graph) => void; onDone: () => void }) {
+  const t = useT(M);
   const e = graph.edges[index]!;
   return (
     <>
-      <h3>Connection</h3>
+      <h3>{t('connection')}</h3>
       <p>
         <code>{e.from}</code> → <code>{e.to}</code>
       </p>
       {e.when && (
         <p>
-          Runs when the condition is <b className={e.when === 'true' ? 'ok-text' : 'error-inline'}>{e.when}</b>. <button onClick={() => onChange(toggleWhen(graph, index))}>Switch to {e.when === 'true' ? 'false' : 'true'}</button>
+          {t('runsWhen')} <b className={e.when === 'true' ? 'ok-text' : 'error-inline'}>{e.when}</b>. <button onClick={() => onChange(toggleWhen(graph, index))}>{t('switchTo', { v: e.when === 'true' ? 'false' : 'true' })}</button>
         </p>
       )}
       <div className="row">
@@ -716,9 +822,9 @@ function EdgePanel({ graph, index, onChange, onDone }: { graph: Graph; index: nu
             onDone();
           }}
         >
-          Delete connection
+          {t('deleteConnection')}
         </button>
-        <button onClick={onDone}>Done</button>
+        <button onClick={onDone}>{t('done')}</button>
       </div>
     </>
   );
@@ -748,8 +854,9 @@ function ObjectFields({ schema, value, onChange }: { schema: JsonSchema; value: 
 }
 
 function Field({ name, schema: s, required, value, onChange }: { name: string; schema: JsonSchema; required: boolean; value: unknown; onChange: (v: unknown) => void }) {
+  const t = useT(M);
   const range = s.minimum !== undefined || s.maximum !== undefined ? ` (${s.minimum ?? ''}–${s.maximum ?? ''})` : '';
-  const title = `${name}${range}${required ? '' : ' (optional)'}`;
+  const title = `${name}${range}${required ? '' : t('optional')}`;
   if (s.type === 'object' && s.properties)
     return (
       <fieldset>
@@ -787,7 +894,7 @@ function Field({ name, schema: s, required, value, onChange }: { name: string; s
   if (s.type === 'array')
     return (
       <label>
-        {title} — comma-separated
+        {title} — {t('commaSep')}
         <input
           defaultValue={Array.isArray(value) ? value.join(', ') : ''}
           onBlur={(e) => {
@@ -803,7 +910,7 @@ function Field({ name, schema: s, required, value, onChange }: { name: string; s
   if (s.anyOf)
     return (
       <label>
-        {title} — number or text
+        {title} — {t('numOrText')}
         <input value={value === undefined || value === null ? '' : String(value)} onChange={(e) => onChange(e.target.value.trim() !== '' && !Number.isNaN(Number(e.target.value)) ? Number(e.target.value) : e.target.value)} />
       </label>
     );
@@ -822,20 +929,21 @@ function Field({ name, schema: s, required, value, onChange }: { name: string; s
 
 /* ---------------- runs ---------------- */
 function Runs({ runs, selected, onSelect, onCancel }: { runs: WorkflowRun[]; selected: string | null; onSelect: (id: string | null) => void; onCancel: (jobId: string) => void }) {
+  const t = useT(M);
   return (
     <>
-      <h3>Runs</h3>
+      <h3>{t('runs')}</h3>
       {runs.length === 0 ? (
-        <Empty>No runs yet.</Empty>
+        <Empty>{t('noRuns')}</Empty>
       ) : (
         <table>
           <thead>
             <tr>
-              <th>Started</th>
-              <th>Version</th>
-              <th>Status</th>
-              <th>Steps</th>
-              <th>Error</th>
+              <th>{t('colStarted')}</th>
+              <th>{t('colVersion')}</th>
+              <th>{t('colStatus')}</th>
+              <th>{t('colSteps')}</th>
+              <th>{t('colError')}</th>
               <th />
             </tr>
           </thead>
@@ -856,8 +964,8 @@ function Runs({ runs, selected, onSelect, onCancel }: { runs: WorkflowRun[]; sel
                   </td>
                   <td className="small">{r.error ?? ''}</td>
                   <td>
-                    <button onClick={() => onSelect(selected === r.id ? null : r.id)}>{selected === r.id ? 'Hide on graph' : 'Show on graph'}</button>{' '}
-                    {ACTIVE.includes(r.status) && r.jobId && <button onClick={() => onCancel(r.jobId!)}>Cancel</button>}
+                    <button onClick={() => onSelect(selected === r.id ? null : r.id)}>{selected === r.id ? t('hideOnGraph') : t('showOnGraph')}</button>{' '}
+                    {ACTIVE.includes(r.status) && r.jobId && <button onClick={() => onCancel(r.jobId!)}>{t('cancel')}</button>}
                   </td>
                 </tr>
               );

@@ -74,13 +74,13 @@ Work in this order, and commit after each item so that work can resume from here
 - **Setup guide dialog** (`SetupGuide.tsx`) backed by `GET /setup/status`. That endpoint returns booleans and counts only; a test checks that no secret value leaks.
 - "Automations" was renamed "Schedules" in the UI.
 
-## Language EN/VI + theme switch (requested 2026-11-27 ~01:53, IN PROGRESS)
+## Language EN/VI + theme switch: DONE (2026-11-27)
 - **Plan:**
   1. i18n: `apps/web/src/i18n/` with a `useT()` hook, dictionaries in `en` and `vi`, the choice kept in localStorage, `<html lang>` set.
   2. Translate the shell, the setup guide and the shared UI first, then every page.
   3. Theme: System, Light or Dark, using a `data-theme` attribute on `<html>`, kept in localStorage. CSS tokens follow `[data-theme]`, with `prefers-color-scheme` as the System default.
   4. Switches in the sidebar footer.
-- **Status (~02:05):** done: i18n infra (`apps/web/src/i18n.tsx`), theme tokens and switch, shell, ui.tsx, SetupGuide, and pages Builder, Dashboard, Projects, Reports, Accounts, Explorer, Insights. Still in progress: Ops.tsx and Apps.tsx. Then: build, restart, screenshots in VI and dark, full tests, commit.
+- **Done:** every page, the shell and the setup guide are translated (messages sit next to each component in `defineMessages`). The theme can be System, Light or Dark. Both choices are kept per browser, and dates and numbers follow the chosen language. **When adding UI text, add both languages.**
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

@@ -1,8 +1,56 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError, type Account, type AccountDetail, type Job, type Page, type Post, type Project } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { ErrorBox, ExternalLink, fmtNum, fmtTime, Status, useLoad } from '../ui.tsx';
 
+const M = defineMessages({
+  title: ['Accounts', 'Tài khoản'],
+  inputPlaceholder: ['Profile URL, e.g. https://bsky.app/profile/bsky.app', 'URL hồ sơ, ví dụ https://bsky.app/profile/bsky.app'],
+  noProject: ['(no project)', '(không thuộc dự án)'],
+  resolving: ['Resolving…', 'Đang xác định…'],
+  trackAccount: ['Track account', 'Theo dõi tài khoản'],
+  tracked: ['Tracked {name}. Sync job {job} queued. {warnings}', 'Đã theo dõi {name}. Tác vụ đồng bộ {job} đã vào hàng đợi. {warnings}'],
+  thAccount: ['Account', 'Tài khoản'],
+  thPlatform: ['Platform', 'Nền tảng'],
+  thStatus: ['Status', 'Trạng thái'],
+  thFollowers: ['Followers', 'Người theo dõi'],
+  thPosts: ['Posts', 'Bài đăng'],
+  thCollected: ['Collected', 'Thu thập lúc'],
+  noAccounts: ['No accounts yet — paste a profile URL above.', 'Chưa có tài khoản nào — hãy dán URL hồ sơ ở trên.'],
+  back: ['← Accounts', '← Tài khoản'],
+  statFollowers: ['followers', 'người theo dõi'],
+  statFollowing: ['following', 'đang theo dõi'],
+  statPostsOnPlatform: ['posts on platform', 'bài đăng trên nền tảng'],
+  statPostsStored: ['posts stored', 'bài đăng đã lưu'],
+  metricsLine: [
+    'Metrics collected {at} via {provider} (policy {policy}). Last successful sync {last}.',
+    'Chỉ số thu thập lúc {at} qua {provider} (chính sách {policy}). Lần đồng bộ thành công gần nhất: {last}.',
+  ],
+  syncNow: ['Sync now', 'Đồng bộ ngay'],
+  refreshMetrics: ['Refresh metrics', 'Làm mới chỉ số'],
+  job: ['Job', 'Tác vụ'],
+  jobResult: [' · {new} new, {updated} updated', ' · {new} mới, {updated} cập nhật'],
+  postsHeading: ['Posts', 'Bài đăng'],
+  thPublished: ['Published', 'Đăng lúc'],
+  thType: ['Type', 'Loại'],
+  thContent: ['Content', 'Nội dung'],
+  thViews: ['Views', 'Lượt xem'],
+  thLikes: ['Likes', 'Lượt thích'],
+  thComments: ['Comments', 'Bình luận'],
+  thShares: ['Shares', 'Chia sẻ'],
+  noText: ['(no text)', '(không có nội dung)'],
+  noPosts: ['No posts stored yet — run a sync.', 'Chưa lưu bài đăng nào — hãy chạy đồng bộ.'],
+  syncHistory: ['Sync history', 'Lịch sử đồng bộ'],
+  thStarted: ['Started', 'Bắt đầu'],
+  thOperation: ['Operation', 'Thao tác'],
+  thRequests: ['Requests', 'Yêu cầu'],
+  thRecords: ['Records', 'Bản ghi'],
+  thLatency: ['Latency', 'Độ trễ'],
+  thErrorWarnings: ['Error / warnings', 'Lỗi / cảnh báo'],
+});
+
 export function Accounts() {
+  const t = useT(M);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const [projectId, setProjectId] = useState('');
   const list = useLoad(() => api<Page<Account>>(`/accounts?limit=100${projectId ? `&projectId=${projectId}` : ''}`), [projectId]);
@@ -15,7 +63,7 @@ export function Accounts() {
     setMsg(null);
     try {
       const r = await api<{ account: Account; job_id: string | null; warnings: string[] }>('/accounts', { method: 'POST', body: { input, ...(projectId ? { projectId } : {}) } });
-      setMsg({ kind: 'ok', text: `Tracked ${r.account.username ?? r.account.externalId}. Sync job ${r.job_id ?? '—'} queued. ${r.warnings.join(' ')}` });
+      setMsg({ kind: 'ok', text: t('tracked', { name: r.account.username ?? r.account.externalId, job: r.job_id ?? '—', warnings: r.warnings.join(' ') }) });
       setInput('');
       list.reload();
     } catch (x) {
@@ -26,11 +74,11 @@ export function Accounts() {
   }
   return (
     <>
-      <h2>Accounts</h2>
+      <h2>{t('title')}</h2>
       <form onSubmit={track} className="row">
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Profile URL, e.g. https://bsky.app/profile/bsky.app" required maxLength={500} />
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={t('inputPlaceholder')} required maxLength={500} />
         <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-          <option value="">(no project)</option>
+          <option value="">{t('noProject')}</option>
           {projects.data?.items.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -38,7 +86,7 @@ export function Accounts() {
           ))}
         </select>
         <button type="submit" className="primary" disabled={busy}>
-          {busy ? 'Resolving…' : 'Track account'}
+          {busy ? t('resolving') : t('trackAccount')}
         </button>
       </form>
       {msg && <div className={msg.kind === 'ok' ? 'ok' : 'error'}>{msg.text}</div>}
@@ -46,12 +94,12 @@ export function Accounts() {
       <table>
         <thead>
           <tr>
-            <th>Account</th>
-            <th>Platform</th>
-            <th>Status</th>
-            <th>Followers</th>
-            <th>Posts</th>
-            <th>Collected</th>
+            <th>{t('thAccount')}</th>
+            <th>{t('thPlatform')}</th>
+            <th>{t('thStatus')}</th>
+            <th>{t('thFollowers')}</th>
+            <th>{t('thPosts')}</th>
+            <th>{t('thCollected')}</th>
           </tr>
         </thead>
         <tbody>
@@ -73,12 +121,13 @@ export function Accounts() {
           ))}
         </tbody>
       </table>
-      {list.data?.items.length === 0 && <p className="muted">No accounts yet — paste a profile URL above.</p>}
+      {list.data?.items.length === 0 && <p className="muted">{t('noAccounts')}</p>}
     </>
   );
 }
 
 export function AccountPage({ id }: { id: string }) {
+  const t = useT(M);
   const acc = useLoad(() => api<AccountDetail>(`/accounts/${id}`), [id]);
   const posts = useLoad(() => api<Page<Post>>(`/posts?accountId=${id}&limit=50`), [id]);
   const [job, setJob] = useState<Job | null>(null);
@@ -86,7 +135,7 @@ export function AccountPage({ id }: { id: string }) {
 
   useEffect(() => {
     if (!job || !['QUEUED', 'RUNNING'].includes(job.status)) return;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       const j = await api<Job>(`/jobs/${job.id}`);
       setJob(j);
       if (!['QUEUED', 'RUNNING'].includes(j.status)) {
@@ -94,7 +143,7 @@ export function AccountPage({ id }: { id: string }) {
         posts.reload();
       }
     }, 1500);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [job, acc, posts]);
 
   async function sync() {
@@ -121,7 +170,7 @@ export function AccountPage({ id }: { id: string }) {
   return (
     <>
       <p>
-        <a href="#/accounts">← Accounts</a>
+        <a href="#/accounts">{t('back')}</a>
       </p>
       <ErrorBox error={acc.error ?? posts.error ?? err} />
       {a && (
@@ -140,47 +189,47 @@ export function AccountPage({ id }: { id: string }) {
           </div>
           <div className="stats">
             <div>
-              <b>{fmtNum(a.metrics?.followers, a.metrics?.missing?.followers)}</b> followers
+              <b>{fmtNum(a.metrics?.followers, a.metrics?.missing?.followers)}</b> {t('statFollowers')}
             </div>
             <div>
-              <b>{fmtNum(a.metrics?.following, a.metrics?.missing?.following)}</b> following
+              <b>{fmtNum(a.metrics?.following, a.metrics?.missing?.following)}</b> {t('statFollowing')}
             </div>
             <div>
-              <b>{fmtNum(a.metrics?.postsCount, a.metrics?.missing?.postsCount)}</b> posts on platform
+              <b>{fmtNum(a.metrics?.postsCount, a.metrics?.missing?.postsCount)}</b> {t('statPostsOnPlatform')}
             </div>
             <div>
-              <b>{a.postCount}</b> posts stored
+              <b>{a.postCount}</b> {t('statPostsStored')}
             </div>
           </div>
           <p className="muted small">
-            Metrics collected {fmtTime(a.metrics?.collectedAt)} via {a.metrics?.providerId ?? '—'} (policy {a.metrics?.policyId ?? '—'}). Last successful sync {fmtTime(a.sync?.lastSuccessAt)}.
+            {t('metricsLine', { at: fmtTime(a.metrics?.collectedAt), provider: a.metrics?.providerId ?? '—', policy: a.metrics?.policyId ?? '—', last: fmtTime(a.sync?.lastSuccessAt) })}
           </p>
           <div className="row">
             <button className="primary" onClick={sync} disabled={!!job && ['QUEUED', 'RUNNING'].includes(job.status)}>
-              Sync now
+              {t('syncNow')}
             </button>
             <button onClick={refresh} disabled={!!job && ['QUEUED', 'RUNNING'].includes(job.status)}>
-              Refresh metrics
+              {t('refreshMetrics')}
             </button>
             {job && (
               <span>
-                Job <Status s={job.status} /> {job.progress}% {job.error && <span className="error-inline">{job.error.code}: {job.error.message}</span>}
-                {job.result && ` · ${String(job.result.postsNew ?? 0)} new, ${String(job.result.postsUpdated ?? 0)} updated`}
+                {t('job')} <Status s={job.status} /> {job.progress}% {job.error && <span className="error-inline">{job.error.code}: {job.error.message}</span>}
+                {job.result && t('jobResult', { new: String(job.result.postsNew ?? 0), updated: String(job.result.postsUpdated ?? 0) })}
               </span>
             )}
           </div>
-          <h3>Posts</h3>
+          <h3>{t('postsHeading')}</h3>
           <table>
             <thead>
               <tr>
-                <th>Published</th>
-                <th>Type</th>
-                <th>Content</th>
-                <th>Views</th>
-                <th>Likes</th>
-                <th>Comments</th>
-                <th>Shares</th>
-                <th>Collected</th>
+                <th>{t('thPublished')}</th>
+                <th>{t('thType')}</th>
+                <th>{t('thContent')}</th>
+                <th>{t('thViews')}</th>
+                <th>{t('thLikes')}</th>
+                <th>{t('thComments')}</th>
+                <th>{t('thShares')}</th>
+                <th>{t('thCollected')}</th>
               </tr>
             </thead>
             <tbody>
@@ -189,7 +238,7 @@ export function AccountPage({ id }: { id: string }) {
                   <td className="small">{fmtTime(p.publishedAt)}</td>
                   <td>{p.contentType}</td>
                   <td className="caption">
-                    <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 160) : '(no text)')}</ExternalLink>
+                    <ExternalLink href={p.url}>{p.title ?? (p.caption ? p.caption.slice(0, 160) : t('noText'))}</ExternalLink>
                     {p.hashtags.length > 0 && <div className="muted small">#{p.hashtags.join(' #')}</div>}
                   </td>
                   <td>{fmtNum(p.metrics?.views, p.metrics?.missing?.views)}</td>
@@ -201,18 +250,18 @@ export function AccountPage({ id }: { id: string }) {
               ))}
             </tbody>
           </table>
-          {posts.data?.items.length === 0 && <p className="muted">No posts stored yet — run a sync.</p>}
-          <h3>Sync history</h3>
+          {posts.data?.items.length === 0 && <p className="muted">{t('noPosts')}</p>}
+          <h3>{t('syncHistory')}</h3>
           <table>
             <thead>
               <tr>
-                <th>Started</th>
-                <th>Operation</th>
-                <th>Status</th>
-                <th>Requests</th>
-                <th>Records</th>
-                <th>Latency</th>
-                <th>Error / warnings</th>
+                <th>{t('thStarted')}</th>
+                <th>{t('thOperation')}</th>
+                <th>{t('thStatus')}</th>
+                <th>{t('thRequests')}</th>
+                <th>{t('thRecords')}</th>
+                <th>{t('thLatency')}</th>
+                <th>{t('thErrorWarnings')}</th>
               </tr>
             </thead>
             <tbody>

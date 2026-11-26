@@ -1,14 +1,94 @@
 import { useEffect, useState } from 'react';
 import { api, type ExportRow, type Job, type JobStats, type Provider, type Workflow } from '../api.ts';
+import { defineMessages, useT } from '../i18n.tsx';
 import { ACTIVE, Empty, errText, ErrorBox, fmtTime, Status, useLoad } from '../ui.tsx';
+
+const M = defineMessages({
+  // Job Monitor
+  jobsTitle: ['Job Monitor', 'Giám sát tác vụ'],
+  last24h: ['Last 24 h', '24 giờ qua'],
+  noJobs: ['No jobs.', 'Không có tác vụ.'],
+  stuckJobs: ['Stuck jobs: {ids} (running longer than 1.5 × job timeout).', 'Tác vụ bị treo: {ids} (chạy lâu hơn 1,5 × thời gian chờ của tác vụ).'],
+  deadLetter: ['Dead letter (failed, 24 h)', 'Tác vụ lỗi (dead letter, 24 giờ)'],
+  none: ['none', 'không có'],
+  retry: ['Retry', 'Thử lại'],
+  cancel: ['Cancel', 'Hủy'],
+  recentJobs: ['Recent jobs', 'Tác vụ gần đây'],
+  colCreated: ['Created', 'Ngày tạo'],
+  colJob: ['Job', 'Tác vụ'],
+  colStatus: ['Status', 'Trạng thái'],
+  colProgress: ['Progress', 'Tiến độ'],
+  colAttempts: ['Attempts', 'Số lần thử'],
+  colErrors: ['Error / warnings', 'Lỗi / cảnh báo'],
+  // Schedules
+  schedulesTitle: ['Schedules', 'Lịch chạy'],
+  resumeScheduler: ['Resume scheduler', 'Tiếp tục bộ lập lịch'],
+  pauseAll: ['Pause all schedules', 'Tạm dừng mọi lịch chạy'],
+  colWorkflow: ['Workflow', 'Quy trình'],
+  colSchedule: ['Schedule', 'Lịch chạy'],
+  colNextRun: ['Next run', 'Lần chạy tới'],
+  colLastRun: ['Last run', 'Lần chạy trước'],
+  colEnabled: ['Enabled', 'Bật'],
+  every: ['every', 'mỗi'],
+  min: ['min', 'phút'],
+  runNow: ['Run now', 'Chạy ngay'],
+  schedulesNote: [
+    'Missed runs while the computer was off run once on the next start (no replay). Schedules never start duplicate work: an identical active job makes the run SKIPPED.',
+    'Các lần chạy bị lỡ khi máy tắt sẽ chạy một lần ở lần khởi động tiếp theo (không chạy bù từng lần). Lịch chạy không bao giờ tạo việc trùng lặp: nếu đã có tác vụ giống hệt đang chạy, lần chạy sẽ là SKIPPED.',
+  ],
+  // Exports
+  exportsTitle: ['Exports', 'Xuất dữ liệu'],
+  exportsNote: [
+    'Create exports from the Content Explorer. Files expire after the configured number of days.',
+    'Tạo bản xuất dữ liệu từ trang Khám phá nội dung. Tệp sẽ hết hạn sau số ngày đã cấu hình.',
+  ],
+  colFormat: ['Format', 'Định dạng'],
+  colRows: ['Rows', 'Số dòng'],
+  colWithheld: ['Withheld by policy', 'Bị giữ lại theo chính sách'],
+  colFile: ['File', 'Tệp'],
+  withheldRow: ['{provider}: {posts} post(s), {accounts} account(s)', '{provider}: {posts} bài viết, {accounts} tài khoản'],
+  expires: ['expires {time}', 'hết hạn {time}'],
+  noExports: ['No exports yet.', 'Chưa có bản xuất dữ liệu nào.'],
+  // Data Sources
+  sourcesTitle: ['Data Sources', 'Nguồn dữ liệu'],
+  system: ['System', 'Hệ thống'],
+  queue: ['queue', 'hàng đợi'],
+  inlineNote: [
+    ' — dev mode: jobs and schedules run inside the API. Install Redis/Memurai for the separate worker.',
+    ' — chế độ phát triển: tác vụ và lịch chạy chạy bên trong API. Cài Redis/Memurai để dùng worker riêng.',
+  ],
+  colProvider: ['Provider', 'Nhà cung cấp'],
+  colPlatform: ['Platform', 'Nền tảng'],
+  colPhase0: ['Phase 0 status', 'Trạng thái Phase 0'],
+  colPolicy: ['Policy', 'Chính sách'],
+  colUsage: ['Usage today', 'Đã dùng hôm nay'],
+  colHealth: ['Health', 'Tình trạng'],
+  yes: ['yes', 'có'],
+  noCredential: ['no (credential missing)', 'không (thiếu thông tin xác thực)'],
+  noVerified: ['no (not verified)', 'không (chưa xác minh)'],
+  noAdapter: ['no adapter', 'chưa có adapter'],
+  polHistory: ['history', 'lịch sử'],
+  polDerived: ['derived', 'chỉ số suy ra'],
+  polExport: ['export', 'xuất'],
+  keepDays: [' · keep ≤{n}d', ' · lưu ≤{n} ngày'],
+  healthy: ['healthy', 'hoạt động tốt'],
+  unhealthy: ['unhealthy', 'có lỗi'],
+  testing: ['Testing…', 'Đang kiểm tra…'],
+  test: ['Test', 'Kiểm tra'],
+  sourcesNote: [
+    '✗ means not allowed until the Product Owner approves the provider policy (deny-by-default). Exports leave such rows out and say so.',
+    '✗ nghĩa là chưa được phép cho đến khi Product Owner duyệt chính sách của nhà cung cấp (mặc định từ chối). Bản xuất dữ liệu bỏ các dòng đó ra và có ghi rõ.',
+  ],
+});
 
 /* ---------------- Job Monitor ---------------- */
 export function Jobs() {
+  const t = useT(M);
   const list = useLoad(() => api<{ items: Job[] }>('/jobs?limit=100'), []);
   const stats = useLoad(() => api<JobStats>('/jobs/stats'), []);
   useEffect(() => {
-    const t = setInterval(() => (list.reload(), stats.reload()), 3000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => (list.reload(), stats.reload()), 3000);
+    return () => clearInterval(timer);
   }, [list.reload, stats.reload]);
   async function act(id: string, action: 'cancel' | 'retry') {
     await api(`/jobs/${id}/${action}`, { method: 'POST' }).catch(() => {});
@@ -17,19 +97,19 @@ export function Jobs() {
   const s = stats.data;
   return (
     <>
-      <h2>Job Monitor</h2>
+      <h2>{t('jobsTitle')}</h2>
       <ErrorBox error={list.error ?? stats.error} />
       {s && (
         <div className="grid2">
           <section>
-            <h3>Last 24 h</h3>
+            <h3>{t('last24h')}</h3>
             <p>
               {Object.entries(s.byStatus).map(([k, n]) => (
                 <span key={k} style={{ marginRight: 12 }}>
                   <Status s={k} /> {n}
                 </span>
               ))}
-              {Object.keys(s.byStatus).length === 0 && <span className="muted">No jobs.</span>}
+              {Object.keys(s.byStatus).length === 0 && <span className="muted">{t('noJobs')}</span>}
             </p>
             <table>
               <tbody>
@@ -45,14 +125,23 @@ export function Jobs() {
                 ))}
               </tbody>
             </table>
-            {s.active.some((j) => j.stuck) && <div className="notice">Stuck jobs: {s.active.filter((j) => j.stuck).map((j) => j.id.slice(0, 8)).join(', ')} (running longer than 1.5 × job timeout).</div>}
+            {s.active.some((j) => j.stuck) && (
+              <div className="notice">
+                {t('stuckJobs', {
+                  ids: s.active
+                    .filter((j) => j.stuck)
+                    .map((j) => j.id.slice(0, 8))
+                    .join(', '),
+                })}
+              </div>
+            )}
           </section>
           <section>
-            <h3>Dead letter (failed, 24 h)</h3>
+            <h3>{t('deadLetter')}</h3>
             <p className="small">
               {Object.entries(s.deadLetter.byErrorCode)
                 .map(([k, n]) => `${k} × ${n}`)
-                .join(' · ') || <span className="muted">none</span>}
+                .join(' · ') || <span className="muted">{t('none')}</span>}
             </p>
             <table>
               <tbody>
@@ -64,7 +153,7 @@ export function Jobs() {
                       {j.errorCode}: {j.errorMessage?.slice(0, 160)}
                     </td>
                     <td>
-                      <button onClick={() => act(j.id, 'retry')}>Retry</button>
+                      <button onClick={() => act(j.id, 'retry')}>{t('retry')}</button>
                     </td>
                   </tr>
                 ))}
@@ -73,16 +162,16 @@ export function Jobs() {
           </section>
         </div>
       )}
-      <h3>Recent jobs</h3>
+      <h3>{t('recentJobs')}</h3>
       <table>
         <thead>
           <tr>
-            <th>Created</th>
-            <th>Job</th>
-            <th>Status</th>
-            <th>Progress</th>
-            <th>Attempts</th>
-            <th>Error / warnings</th>
+            <th>{t('colCreated')}</th>
+            <th>{t('colJob')}</th>
+            <th>{t('colStatus')}</th>
+            <th>{t('colProgress')}</th>
+            <th>{t('colAttempts')}</th>
+            <th>{t('colErrors')}</th>
             <th />
           </tr>
         </thead>
@@ -102,8 +191,8 @@ export function Jobs() {
               </td>
               <td className="small">{[j.error ? `${j.error.code}: ${j.error.message ?? ''}` : '', ...j.warnings.slice(0, 2)].filter(Boolean).join(' · ')}</td>
               <td>
-                {ACTIVE.includes(j.status) && <button onClick={() => act(j.id, 'cancel')}>Cancel</button>}
-                {['FAILED', 'CANCELLED', 'PARTIAL_SUCCESS'].includes(j.status) && <button onClick={() => act(j.id, 'retry')}>Retry</button>}
+                {ACTIVE.includes(j.status) && <button onClick={() => act(j.id, 'cancel')}>{t('cancel')}</button>}
+                {['FAILED', 'CANCELLED', 'PARTIAL_SUCCESS'].includes(j.status) && <button onClick={() => act(j.id, 'retry')}>{t('retry')}</button>}
               </td>
             </tr>
           ))}
@@ -115,6 +204,7 @@ export function Jobs() {
 
 /* ---------------- Automations ---------------- */
 export function Workflows() {
+  const t = useT(M);
   const list = useLoad(() => api<{ paused: boolean; items: Workflow[] }>('/workflows'), []);
   const [msg, setMsg] = useState<string | null>(null);
   async function call(path: string, method: string, body?: unknown) {
@@ -129,13 +219,13 @@ export function Workflows() {
   return (
     <>
       <div className="row">
-        <h2 style={{ margin: 0 }}>Schedules</h2>
+        <h2 style={{ margin: 0 }}>{t('schedulesTitle')}</h2>
         {list.data?.paused ? (
           <>
-            <Status s="PAUSED" /> <button onClick={() => call('/scheduler/resume', 'POST')}>Resume scheduler</button>
+            <Status s="PAUSED" /> <button onClick={() => call('/scheduler/resume', 'POST')}>{t('resumeScheduler')}</button>
           </>
         ) : (
-          <button onClick={() => call('/scheduler/pause', 'POST')}>Pause all schedules</button>
+          <button onClick={() => call('/scheduler/pause', 'POST')}>{t('pauseAll')}</button>
         )}
       </div>
       {msg && <p className="small">{msg}</p>}
@@ -143,11 +233,11 @@ export function Workflows() {
       <table>
         <thead>
           <tr>
-            <th>Workflow</th>
-            <th>Schedule</th>
-            <th>Next run</th>
-            <th>Last run</th>
-            <th>Enabled</th>
+            <th>{t('colWorkflow')}</th>
+            <th>{t('colSchedule')}</th>
+            <th>{t('colNextRun')}</th>
+            <th>{t('colLastRun')}</th>
+            <th>{t('colEnabled')}</th>
             <th />
           </tr>
         </thead>
@@ -163,7 +253,7 @@ export function Workflows() {
                   `cron ${w.cron} (${w.timezone})`
                 ) : (
                   <>
-                    every{' '}
+                    {t('every')}{' '}
                     <input
                       className="narrow"
                       style={{ width: 70 }}
@@ -172,7 +262,7 @@ export function Workflows() {
                       defaultValue={w.everyMinutes ?? 60}
                       onBlur={(e) => Number(e.target.value) !== w.everyMinutes && call(`/workflows/${w.id}`, 'PATCH', { everyMinutes: Number(e.target.value) })}
                     />{' '}
-                    min
+                    {t('min')}
                   </>
                 )}
               </td>
@@ -185,34 +275,35 @@ export function Workflows() {
                 <input type="checkbox" checked={w.enabled} onChange={(e) => call(`/workflows/${w.id}`, 'PATCH', { enabled: e.target.checked })} />
               </td>
               <td>
-                <button onClick={() => call(`/workflows/${w.id}/run`, 'POST')}>Run now</button>
+                <button onClick={() => call(`/workflows/${w.id}/run`, 'POST')}>{t('runNow')}</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="muted small">Missed runs while the computer was off run once on the next start (no replay). Schedules never start duplicate work: an identical active job makes the run SKIPPED.</p>
+      <p className="muted small">{t('schedulesNote')}</p>
     </>
   );
 }
 
 /* ---------------- Exports ---------------- */
 export function Exports() {
+  const t = useT(M);
   const list = useLoad(() => api<{ items: ExportRow[] }>('/exports'), []);
   return (
     <>
-      <h2>Exports</h2>
-      <p className="muted small">Create exports from the Content Explorer. Files expire after the configured number of days.</p>
+      <h2>{t('exportsTitle')}</h2>
+      <p className="muted small">{t('exportsNote')}</p>
       <ErrorBox error={list.error} />
       <table>
         <thead>
           <tr>
-            <th>Created</th>
-            <th>Format</th>
-            <th>Status</th>
-            <th>Rows</th>
-            <th>Withheld by policy</th>
-            <th>File</th>
+            <th>{t('colCreated')}</th>
+            <th>{t('colFormat')}</th>
+            <th>{t('colStatus')}</th>
+            <th>{t('colRows')}</th>
+            <th>{t('colWithheld')}</th>
+            <th>{t('colFile')}</th>
           </tr>
         </thead>
         <tbody>
@@ -225,45 +316,46 @@ export function Exports() {
                 {e.error && <div className="error-inline small">{e.error}</div>}
               </td>
               <td className="small">{Object.entries(e.rowCounts).map(([k, n]) => `${k} ${n}`).join(' · ')}</td>
-              <td className="small">{e.withheld.length ? e.withheld.map((w) => `${w.providerId}: ${w.posts} post(s), ${w.accounts} account(s)`).join('; ') : '—'}</td>
+              <td className="small">{e.withheld.length ? e.withheld.map((w) => t('withheldRow', { provider: w.providerId, posts: w.posts, accounts: w.accounts })).join('; ') : '—'}</td>
               <td className="small">
                 {e.downloadUrl ? <a href={e.downloadUrl}>{e.fileName}</a> : '—'} {e.sizeBytes ? `(${Math.ceil(e.sizeBytes / 1024)} KB)` : ''}
-                <div className="muted">expires {fmtTime(e.expiresAt)}</div>
+                <div className="muted">{t('expires', { time: fmtTime(e.expiresAt) })}</div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {list.data?.items.length === 0 && <Empty>No exports yet.</Empty>}
+      {list.data?.items.length === 0 && <Empty>{t('noExports')}</Empty>}
     </>
   );
 }
 
 /* ---------------- Data Sources ---------------- */
 export function Sources() {
+  const t = useT(M);
   const health = useLoad(() => api<{ status: string; queueDriver: string }>('/health/ready').catch(() => ({ status: 'not_ready', queueDriver: '?' })), []);
   const providers = useLoad(() => api<{ items: Provider[] }>('/providers'), []);
   const [testing, setTesting] = useState<string | null>(null);
   return (
     <>
-      <h2>Data Sources</h2>
+      <h2>{t('sourcesTitle')}</h2>
       {health.data && (
         <p>
-          System <Status s={health.data.status === 'ready' ? 'SUCCEEDED' : 'FAILED'} /> · queue <code>{health.data.queueDriver}</code>
-          {health.data.queueDriver === 'inline' && <span className="muted"> — dev mode: jobs and schedules run inside the API. Install Redis/Memurai for the separate worker.</span>}
+          {t('system')} <Status s={health.data.status === 'ready' ? 'SUCCEEDED' : 'FAILED'} /> · {t('queue')} <code>{health.data.queueDriver}</code>
+          {health.data.queueDriver === 'inline' && <span className="muted">{t('inlineNote')}</span>}
         </p>
       )}
       <ErrorBox error={providers.error} />
       <table>
         <thead>
           <tr>
-            <th>Provider</th>
-            <th>Platform</th>
-            <th>Phase 0 status</th>
-            <th>Enabled</th>
-            <th>Policy</th>
-            <th>Usage today</th>
-            <th>Health</th>
+            <th>{t('colProvider')}</th>
+            <th>{t('colPlatform')}</th>
+            <th>{t('colPhase0')}</th>
+            <th>{t('colEnabled')}</th>
+            <th>{t('colPolicy')}</th>
+            <th>{t('colUsage')}</th>
+            <th>{t('colHealth')}</th>
             <th />
           </tr>
         </thead>
@@ -275,14 +367,14 @@ export function Sources() {
               <td>
                 <Status s={p.status} />
               </td>
-              <td>{p.enabled ? 'yes' : p.implemented ? (p.credentialConfigured === false ? 'no (credential missing)' : 'no (not verified)') : 'no adapter'}</td>
+              <td>{p.enabled ? t('yes') : p.implemented ? (p.credentialConfigured === false ? t('noCredential') : t('noVerified')) : t('noAdapter')}</td>
               <td className="small">
-                history {p.policy.allowHistoricalSnapshots ? '✓' : '✗'} · derived {p.policy.allowDerivedMetrics ? '✓' : '✗'} · export {p.policy.allowExport ? '✓' : '✗'}
-                {p.policy.retentionDays ? ` · keep ≤${p.policy.retentionDays}d` : ''}
+                {t('polHistory')} {p.policy.allowHistoricalSnapshots ? '✓' : '✗'} · {t('polDerived')} {p.policy.allowDerivedMetrics ? '✓' : '✗'} · {t('polExport')} {p.policy.allowExport ? '✓' : '✗'}
+                {p.policy.retentionDays ? t('keepDays', { n: p.policy.retentionDays }) : ''}
               </td>
               <td className="small">{p.usageToday ? Object.entries(p.usageToday).map(([k, v]) => `${k}: ${v}`).join(' · ') : '—'}</td>
               <td className="small">
-                {p.lastHealth ? (p.lastHealth.healthy ? 'healthy' : 'unhealthy') : '—'} {p.checkedAt ? `(${fmtTime(p.checkedAt)})` : ''}
+                {p.lastHealth ? (p.lastHealth.healthy ? t('healthy') : t('unhealthy')) : '—'} {p.checkedAt ? `(${fmtTime(p.checkedAt)})` : ''}
               </td>
               <td>
                 {p.implemented && (
@@ -295,7 +387,7 @@ export function Sources() {
                       providers.reload();
                     }}
                   >
-                    {testing === p.id ? 'Testing…' : 'Test'}
+                    {testing === p.id ? t('testing') : t('test')}
                   </button>
                 )}
               </td>
@@ -303,7 +395,7 @@ export function Sources() {
           ))}
         </tbody>
       </table>
-      <p className="muted small">✗ means not allowed until the Product Owner approves the provider policy (deny-by-default). Exports leave such rows out and say so.</p>
+      <p className="muted small">{t('sourcesNote')}</p>
     </>
   );
 }

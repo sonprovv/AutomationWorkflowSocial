@@ -11,11 +11,13 @@ import { ProjectPage, Projects } from './pages/Projects.tsx';
 import { Reports } from './pages/Reports.tsx';
 import { guideSeen, markGuideSeen, SetupGuide, useSetupStatus } from './SetupGuide.tsx';
 import { Icon, type IconName } from './icons.tsx';
+import { applyTheme, defineMessages, initialTheme, PrefsProvider, usePrefs, useT, type Lang, type Theme } from './i18n.tsx';
 import './styles.css';
 
 /*
  * Phase 5 web UI (Master Plan §10): Dashboard, Projects (keywords, discovery, review queue), Accounts,
- * Content Explorer with server-side filters + exports, Job Monitor, Automations, Exports, Data Sources.
+ * Content Explorer with server-side filters + exports, Job Monitor, Schedules, Exports, Data Sources; Phase 9 adds
+ * App Spy and the Workflow Builder. English/Vietnamese and light/dark/system theme: i18n.tsx.
  * Hash routing keeps the app a static bundle served by the API (no server-side routing needed).
  */
 
@@ -47,35 +49,100 @@ function parseHash(): Route {
   return { page: 'dashboard' };
 }
 
-const NAV: { group: string; items: [string, string, IconName, string[]][] }[] = [
-  { group: 'Overview', items: [['dashboard', 'Dashboard', 'dashboard', []]] },
+const M = defineMessages({
+  overview: ['Overview', 'Chung'],
+  research: ['Research', 'Nghiên cứu'],
+  automation: ['Automation', 'Tự động hóa'],
+  output: ['Output', 'Kết quả'],
+  system: ['System', 'Hệ thống'],
+  dashboard: ['Dashboard', 'Tổng quan'],
+  projects: ['Projects', 'Dự án'],
+  accounts: ['Accounts', 'Tài khoản'],
+  explore: ['Content Explorer', 'Khám phá nội dung'],
+  insights: ['Insights', 'Phân tích'],
+  apps: ['App Spy', 'App Spy'],
+  builder: ['Workflow Builder', 'Trình tạo quy trình'],
+  workflows: ['Schedules', 'Lịch chạy'],
+  jobs: ['Job Monitor', 'Giám sát tác vụ'],
+  exports: ['Exports', 'Xuất dữ liệu'],
+  reports: ['Reports', 'Báo cáo'],
+  sources: ['Data Sources', 'Nguồn dữ liệu'],
+  apiDocs: ['API docs', 'Tài liệu API'],
+  tagline: ['Competitor intelligence', 'Theo dõi đối thủ'],
+  setupGuide: ['Setup guide', 'Hướng dẫn cài đặt'],
+  setupDone: ['Core setup complete', 'Đã xong các bước chính'],
+  setupTodo: ['Finish setting up', 'Hoàn tất cài đặt'],
+  setupHint: ['Keys, sources, reports', 'Key, nguồn dữ liệu, báo cáo'],
+  language: ['Language', 'Ngôn ngữ'],
+  theme: ['Theme', 'Giao diện'],
+  themeSystem: ['Follow the system theme', 'Theo hệ thống'],
+  themeLight: ['Light', 'Sáng'],
+  themeDark: ['Dark', 'Tối'],
+  nav: ['Main navigation', 'Điều hướng chính'],
+});
+type NavKey = 'dashboard' | 'projects' | 'accounts' | 'explore' | 'insights' | 'apps' | 'builder' | 'workflows' | 'jobs' | 'exports' | 'reports' | 'sources';
+
+const NAV: { group: 'overview' | 'research' | 'automation' | 'output' | 'system'; items: [NavKey, IconName, string[]][] }[] = [
+  { group: 'overview', items: [['dashboard', 'dashboard', []]] },
   {
-    group: 'Research',
+    group: 'research',
     items: [
-      ['projects', 'Projects', 'folder', ['project']],
-      ['accounts', 'Accounts', 'users', ['account']],
-      ['explore', 'Content Explorer', 'search', []],
-      ['insights', 'Insights', 'trend', []],
-      ['apps', 'App Spy', 'phone', ['app']],
+      ['projects', 'folder', ['project']],
+      ['accounts', 'users', ['account']],
+      ['explore', 'search', []],
+      ['insights', 'trend', []],
+      ['apps', 'phone', ['app']],
     ],
   },
   {
-    group: 'Automation',
+    group: 'automation',
     items: [
-      ['builder', 'Workflow Builder', 'workflow', []],
-      ['workflows', 'Schedules', 'clock', []],
-      ['jobs', 'Job Monitor', 'activity', []],
+      ['builder', 'workflow', []],
+      ['workflows', 'clock', []],
+      ['jobs', 'activity', []],
     ],
   },
   {
-    group: 'Output',
+    group: 'output',
     items: [
-      ['exports', 'Exports', 'download', []],
-      ['reports', 'Reports', 'file', []],
+      ['exports', 'download', []],
+      ['reports', 'file', []],
     ],
   },
-  { group: 'System', items: [['sources', 'Data Sources', 'database', []]] },
+  { group: 'system', items: [['sources', 'database', []]] },
 ];
+
+function Prefs() {
+  const { lang, setLang, theme, setTheme } = usePrefs();
+  const t = useT(M);
+  const langs: [Lang, string][] = [
+    ['en', 'EN'],
+    ['vi', 'VI'],
+  ];
+  const themes: [Theme, string, string][] = [
+    ['system', '◐', t('themeSystem')],
+    ['light', '☀', t('themeLight')],
+    ['dark', '☾', t('themeDark')],
+  ];
+  return (
+    <div className="prefs">
+      <div className="seg" role="group" aria-label={t('language')}>
+        {langs.map(([l, label]) => (
+          <button key={l} aria-pressed={lang === l} onClick={() => setLang(l)} title={l === 'en' ? 'English' : 'Tiếng Việt'}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="seg" role="group" aria-label={t('theme')}>
+        {themes.map(([th, icon, label]) => (
+          <button key={th} aria-pressed={theme === th} onClick={() => setTheme(th)} title={label} aria-label={label}>
+            {icon}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [route, setRoute] = useState<Route>(parseHash);
@@ -89,6 +156,8 @@ function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   const [guideOpen, setGuideOpen] = useState(false);
+  const t = useT(M);
+  const { lang } = usePrefs();
   const setup = useSetupStatus();
   // First visit: open the setup guide once.
   useEffect(() => {
@@ -97,41 +166,42 @@ function App() {
   const isActive = (p: string, also: string[]) => route.page === p || also.includes(route.page);
   return (
     <div className="shell">
-      <aside className="sidebar" aria-label="Main navigation">
+      <aside className="sidebar" aria-label={t('nav')}>
         <a className="brand" href="#/dashboard">
           <span className="brand-mark" aria-hidden="true">
             ◎
           </span>
           <span>
             Social Spy
-            <small>Competitor intelligence</small>
+            <small>{t('tagline')}</small>
           </span>
         </a>
         {NAV.map((g) => (
           <div key={g.group} style={{ display: 'contents' }}>
-            <div className="nav-group">{g.group}</div>
-            {g.items.map(([p, label, icon, also]) => (
+            <div className="nav-group">{t(g.group)}</div>
+            {g.items.map(([p, icon, also]) => (
               <a key={p} href={`#/${p}`} className={`nav-link${isActive(p, also) ? ' active' : ''}`} aria-current={isActive(p, also) ? 'page' : undefined}>
                 <Icon name={icon} />
-                {label}
+                {t(p)}
               </a>
             ))}
           </div>
         ))}
         <a className="nav-link" href="/api/docs" target="_blank" rel="noopener noreferrer">
           <Icon name="code" />
-          API docs
+          {t('apiDocs')}
         </a>
         <div className="sidebar-foot">
           <button className="setup-card" onClick={() => setGuideOpen(true)}>
             <b>
-              Setup guide <span style={{ margin: 0 }}>{setup.data ? `${setup.done}/${setup.total}` : ''}</span>
+              {t('setupGuide')} <span style={{ margin: 0 }}>{setup.data ? `${setup.done}/${setup.total}` : ''}</span>
             </b>
-            <span>{setup.data ? (setup.done === setup.total ? 'Core setup complete' : 'Finish setting up') : 'Keys, sources, reports'}</span>
+            <span>{setup.data ? (setup.done === setup.total ? t('setupDone') : t('setupTodo')) : t('setupHint')}</span>
             <div className="progress" aria-hidden="true">
               <i style={{ width: `${setup.data ? (100 * setup.done) / setup.total : 0}%` }} />
             </div>
           </button>
+          <Prefs />
         </div>
       </aside>
       {guideOpen && (
@@ -146,7 +216,7 @@ function App() {
           }}
         />
       )}
-      <main key={key}>
+      <main key={`${key}-${lang}`}>
         {route.page === 'dashboard' && <Dashboard />}
         {route.page === 'projects' && <Projects />}
         {route.page === 'project' && <ProjectPage id={route.id} />}
@@ -167,8 +237,12 @@ function App() {
   );
 }
 
+applyTheme(initialTheme()); // before the first paint: no flash of the wrong theme
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <PrefsProvider>
+      <App />
+    </PrefsProvider>
   </StrictMode>,
 );

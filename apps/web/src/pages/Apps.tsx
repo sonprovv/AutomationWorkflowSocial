@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, type Page, type Project } from '../api.ts';
+import { currentLocale, defineMessages, useT } from '../i18n.tsx';
 import { Empty, errText, ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, Status, useLoad } from '../ui.tsx';
 
 /*
@@ -7,6 +8,101 @@ import { Empty, errText, ErrorBox, ExternalLink, fmtNum, fmtTime, Loading, Statu
  * app → developer website → social profile links with evidence. No icons or screenshots (Apple promo-content
  * rule); every app links to its App Store page; Google Play is BLOCKED (no official API).
  */
+
+const M = defineMessages({
+  free: ['Free', 'Miễn phí'],
+  polSource: [
+    'Source: Apple iTunes Search API (official, public; about 20 calls per minute), checked {at}. Policy',
+    'Nguồn: Apple iTunes Search API (chính thức, công khai; khoảng 20 lượt gọi mỗi phút), kiểm tra lúc {at}. Chính sách',
+  ],
+  polKept: [': only the latest listing of tracked apps is kept', ': chỉ lưu thông tin mới nhất của các ứng dụng đang theo dõi'],
+  polNoHistory: [' (no history)', ' (không lưu lịch sử)'],
+  polNoExport: [', no export', ', không xuất dữ liệu'],
+  polNoMedia: [', no icons or screenshots. ', ', không lưu biểu tượng hay ảnh chụp màn hình. '],
+  polPending: [
+    'History and export wait for the Product Owner to approve the policy proposal.',
+    'Lịch sử và xuất dữ liệu đang chờ Product Owner duyệt đề xuất chính sách.',
+  ],
+  polTail: [
+    ' Google Play: BLOCKED (no official API). Downloads, revenue and rankings are not available and are never estimated.',
+    ' Google Play: BLOCKED (không có API chính thức). Lượt tải, doanh thu và thứ hạng không có sẵn và không bao giờ được ước tính.',
+  ],
+  searchStore: ['Search the App Store', 'Tìm kiếm trên App Store'],
+  searchPlaceholder: ['note taking', 'ghi chú'],
+  storefront: ['Storefront', 'Cửa hàng (quốc gia)'],
+  search: ['Search', 'Tìm kiếm'],
+  trackBy: ['Or track by App Store link, id or bundle id', 'Hoặc theo dõi bằng liên kết App Store, id hoặc bundle id'],
+  addToProject: ['Add to project', 'Thêm vào dự án'],
+  noneOption: ['— none —', '— không —'],
+  trackApp: ['Track app', 'Theo dõi ứng dụng'],
+  searchResults: ['Search results', 'Kết quả tìm kiếm'],
+  noAppsFound: ['No apps found.', 'Không tìm thấy ứng dụng nào.'],
+  trackedApps: ['Tracked apps', 'Ứng dụng đang theo dõi'],
+  trackedAppsInProject: ['Tracked apps in this project', 'Ứng dụng đang theo dõi trong dự án này'],
+  noTrackedApps: ['No tracked apps yet.', 'Chưa theo dõi ứng dụng nào.'],
+  colApp: ['App', 'Ứng dụng'],
+  colDeveloper: ['Developer', 'Nhà phát triển'],
+  colStore: ['Store', 'Cửa hàng'],
+  colRating: ['Rating', 'Đánh giá'],
+  colVersion: ['Version', 'Phiên bản'],
+  colSocialLinks: ['Social links', 'Liên kết mạng xã hội'],
+  colCollected: ['Collected', 'Thu thập lúc'],
+  colPrice: ['Price', 'Giá'],
+  colRatingCount: ['Rating (count)', 'Đánh giá (số lượt)'],
+  colUpdated: ['Updated', 'Cập nhật'],
+  colWebsite: ['Website', 'Website'],
+  noWebsiteTitle: ['The developer lists no website', 'Nhà phát triển không ghi website'],
+  trackedArrow: ['Tracked →', 'Đang theo dõi →'],
+  track: ['Track', 'Theo dõi'],
+  storefrontCountry: ['storefront {c}', 'cửa hàng {c}'],
+  lastUpdate: ['Last update', 'Lần cập nhật gần nhất'],
+  firstRelease: ['First release', 'Phát hành lần đầu'],
+  srcLine: ['Source {provider} · collected {time} ·', 'Nguồn {provider} · thu thập lúc {time} ·'],
+  storePage: ['App Store page', 'Trang App Store'],
+  developerPage: ['developer page', 'trang nhà phát triển'],
+  refreshListing: ['Refresh listing', 'Làm mới thông tin'],
+  listingRefreshed: ['Listing refreshed.', 'Đã làm mới thông tin.'],
+  developerOtherApps: ['Developer’s other apps', 'Ứng dụng khác của nhà phát triển'],
+  confirmStop: ['Stop tracking this app everywhere?', 'Ngừng theo dõi ứng dụng này ở mọi nơi?'],
+  stopTracking: ['Stop tracking', 'Ngừng theo dõi'],
+  socialTitle: ['Social accounts (from the developer website)', 'Tài khoản mạng xã hội (từ website của nhà phát triển)'],
+  evidence1: [
+    'Evidence chain: App Store listing → developer website the store lists (',
+    'Chuỗi bằng chứng: thông tin trên App Store → website nhà phát triển mà cửa hàng ghi (',
+  ],
+  noneListed: ['none listed', 'không có'],
+  evidence2: [
+    ') → profile links published on that page. Names are never matched. HIGH = the page stayed on the listed site; MEDIUM = it redirected to another site. Confirm or reject each one.',
+    ') → các liên kết hồ sơ được đăng trên trang đó. Không bao giờ ghép theo tên. HIGH = trang vẫn ở trên website đã ghi; MEDIUM = trang chuyển hướng sang website khác. Hãy xác nhận hoặc từ chối từng liên kết.',
+  ],
+  noWebsiteListing: ['The listing has no developer website', 'Thông tin ứng dụng không có website nhà phát triển'],
+  discoverResult: [
+    'Checked {url}: {found} profile link(s), {created} new, {matched} match an account you track.',
+    'Đã kiểm tra {url}: {found} liên kết hồ sơ, {created} mới, {matched} khớp với tài khoản bạn đang theo dõi.',
+  ],
+  checkWebsite: ['Check developer website', 'Kiểm tra website nhà phát triển'],
+  noLinksYet: ['No links checked yet.', 'Chưa kiểm tra liên kết nào.'],
+  noWebsiteEmpty: [
+    'This listing has no developer website, so no account can be linked with evidence.',
+    'Ứng dụng này không có website nhà phát triển, nên không thể liên kết tài khoản nào kèm bằng chứng.',
+  ],
+  colProfile: ['Profile', 'Hồ sơ'],
+  colConfidence: ['Confidence', 'Độ tin cậy'],
+  colEvidence: ['Evidence', 'Bằng chứng'],
+  colTrackedAccount: ['Tracked account', 'Tài khoản đang theo dõi'],
+  colStatus: ['Status', 'Trạng thái'],
+  evLink: ['link', 'liên kết'],
+  evOn: ['on', 'trên'],
+  redirectedFrom: [' (redirected from {host})', ' (chuyển hướng từ {host})'],
+  checkedTime: ['checked {time}', 'kiểm tra lúc {time}'],
+  notTracked: ['not tracked', 'chưa theo dõi'],
+  confirm: ['Confirm', 'Xác nhận'],
+  reject: ['Reject', 'Từ chối'],
+  otherAppsBy: ['Other apps by {name}', 'Ứng dụng khác của {name}'],
+  none: ['None.', 'Không có.'],
+  trackingApp: ['Tracking {name}.', 'Đang theo dõi {name}.'],
+  storeDescription: ['Store description', 'Mô tả trên cửa hàng'],
+});
 
 interface StoreApp {
   storeAppId: string;
@@ -75,22 +171,28 @@ const rating = (a: StoreApp) =>
       {a.rating.toFixed(2)} <span className="muted small">({fmtNum(a.ratingCount)})</span>
     </>
   );
-const price = (a: StoreApp) => (a.price === null ? fmtNum(null) : a.price === 0 ? 'Free' : `${a.price} ${a.currency ?? ''}`);
+const price = (a: StoreApp, free: string) => (a.price === null ? fmtNum(null) : a.price === 0 ? free : `${a.price} ${a.currency ?? ''}`);
+const fmtDate = (d: string | null) => (d ? new Date(d).toLocaleDateString(currentLocale()) : '—');
 
 function PolicyNotice({ p }: { p: Policy | null }) {
+  const t = useT(M);
   if (!p) return null;
   return (
     <div className="notice small">
-      Source: Apple iTunes Search API (official, public; about 20 calls per minute), checked {p.checkedAt}. Policy <code>{p.policyId}</code>: only the latest listing of tracked apps is kept
-      {p.historicalSnapshots ? '' : ' (no history)'}
-      {p.export ? '' : ', no export'}, no icons or screenshots. {p.proposalStatus === 'PENDING_PRODUCT_OWNER_APPROVAL' && 'History and export wait for the Product Owner to approve the policy proposal.'} Google Play: BLOCKED (no official
-      API). Downloads, revenue and rankings are not available and are never estimated.
+      {t('polSource', { at: p.checkedAt })} <code>{p.policyId}</code>
+      {t('polKept')}
+      {p.historicalSnapshots ? '' : t('polNoHistory')}
+      {p.export ? '' : t('polNoExport')}
+      {t('polNoMedia')}
+      {p.proposalStatus === 'PENDING_PRODUCT_OWNER_APPROVAL' && t('polPending')}
+      {t('polTail')}
     </div>
   );
 }
 
 /* ---------------- list + search ---------------- */
 export function Apps() {
+  const t = useT(M);
   const policy = useLoad(() => api<Policy>('/apps/policy'), []);
   const projects = useLoad(() => api<Page<Project>>('/projects?limit=100'), []);
   const [projectId, setProjectId] = useState('');
@@ -131,11 +233,11 @@ export function Apps() {
       <PolicyNotice p={policy.data} />
       <div className="filters">
         <label>
-          Search the App Store
-          <input value={term} onChange={(e) => setTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && term.trim() && search()} placeholder="note taking" />
+          {t('searchStore')}
+          <input value={term} onChange={(e) => setTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && term.trim() && search()} placeholder={t('searchPlaceholder')} />
         </label>
         <label>
-          Storefront
+          {t('storefront')}
           <select value={country} onChange={(e) => setCountry(e.target.value)}>
             {COUNTRIES.map((c) => (
               <option key={c}>{c}</option>
@@ -143,17 +245,17 @@ export function Apps() {
           </select>
         </label>
         <button className="primary" disabled={!term.trim() || busy} onClick={search}>
-          Search
+          {t('search')}
         </button>
         <span style={{ width: 24 }} />
         <label>
-          Or track by App Store link, id or bundle id
+          {t('trackBy')}
           <input className="narrow" style={{ width: 320 }} value={input} onChange={(e) => setInput(e.target.value)} placeholder="https://apps.apple.com/us/app/…/id123456789" />
         </label>
         <label>
-          Add to project
+          {t('addToProject')}
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-            <option value="">— none —</option>
+            <option value="">{t('noneOption')}</option>
             {projects.data?.items.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -162,32 +264,32 @@ export function Apps() {
           </select>
         </label>
         <button className="primary" disabled={!input.trim() || busy} onClick={() => track(input)}>
-          Track app
+          {t('trackApp')}
         </button>
       </div>
       <ErrorBox error={err ?? policy.error} />
       {results && (
         <>
-          <h3>Search results</h3>
+          <h3>{t('searchResults')}</h3>
           <p className="muted small">{results.note}</p>
-          {results.items.length === 0 ? <Empty>No apps found.</Empty> : <AppTable items={results.items} onTrack={(a) => track(a.storeAppId, a.country)} busy={busy} />}
+          {results.items.length === 0 ? <Empty>{t('noAppsFound')}</Empty> : <AppTable items={results.items} onTrack={(a) => track(a.storeAppId, a.country)} busy={busy} />}
         </>
       )}
-      <h3>Tracked apps{projectId ? ' in this project' : ''}</h3>
+      <h3>{projectId ? t('trackedAppsInProject') : t('trackedApps')}</h3>
       <ErrorBox error={tracked.error} />
       <Loading on={tracked.loading} />
-      {tracked.data && tracked.data.items.length === 0 && <Empty>No tracked apps yet.</Empty>}
+      {tracked.data && tracked.data.items.length === 0 && <Empty>{t('noTrackedApps')}</Empty>}
       {tracked.data && tracked.data.items.length > 0 && (
         <table>
           <thead>
             <tr>
-              <th>App</th>
-              <th>Developer</th>
-              <th>Store</th>
-              <th>Rating</th>
-              <th>Version</th>
-              <th>Social links</th>
-              <th>Collected</th>
+              <th>{t('colApp')}</th>
+              <th>{t('colDeveloper')}</th>
+              <th>{t('colStore')}</th>
+              <th>{t('colRating')}</th>
+              <th>{t('colVersion')}</th>
+              <th>{t('colSocialLinks')}</th>
+              <th>{t('colCollected')}</th>
             </tr>
           </thead>
           <tbody>
@@ -215,16 +317,17 @@ export function Apps() {
 }
 
 function AppTable({ items, onTrack, busy }: { items: StoreApp[]; onTrack: (a: StoreApp) => void; busy: boolean }) {
+  const t = useT(M);
   return (
     <table>
       <thead>
         <tr>
-          <th>App</th>
-          <th>Developer</th>
-          <th>Price</th>
-          <th>Rating (count)</th>
-          <th>Updated</th>
-          <th>Website</th>
+          <th>{t('colApp')}</th>
+          <th>{t('colDeveloper')}</th>
+          <th>{t('colPrice')}</th>
+          <th>{t('colRatingCount')}</th>
+          <th>{t('colUpdated')}</th>
+          <th>{t('colWebsite')}</th>
           <th />
         </tr>
       </thead>
@@ -238,11 +341,27 @@ function AppTable({ items, onTrack, busy }: { items: StoreApp[]; onTrack: (a: St
               </div>
             </td>
             <td>{a.developerName ?? '—'}</td>
-            <td>{price(a)}</td>
+            <td>{price(a, t('free'))}</td>
             <td>{rating(a)}</td>
-            <td className="small">{a.storeUpdatedAt ? new Date(a.storeUpdatedAt).toLocaleDateString() : '—'}</td>
-            <td className="small">{a.websiteUrl ? <ExternalLink href={a.websiteUrl}>{new URL(a.websiteUrl).hostname}</ExternalLink> : <span className="muted" title="The developer lists no website">—</span>}</td>
-            <td>{a.trackedId ? <a href={`#/app/${a.trackedId}`}>Tracked →</a> : <button disabled={busy} onClick={() => onTrack(a)}>Track</button>}</td>
+            <td className="small">{fmtDate(a.storeUpdatedAt)}</td>
+            <td className="small">
+              {a.websiteUrl ? (
+                <ExternalLink href={a.websiteUrl}>{new URL(a.websiteUrl).hostname}</ExternalLink>
+              ) : (
+                <span className="muted" title={t('noWebsiteTitle')}>
+                  —
+                </span>
+              )}
+            </td>
+            <td>
+              {a.trackedId ? (
+                <a href={`#/app/${a.trackedId}`}>{t('trackedArrow')}</a>
+              ) : (
+                <button disabled={busy} onClick={() => onTrack(a)}>
+                  {t('track')}
+                </button>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -252,6 +371,7 @@ function AppTable({ items, onTrack, busy }: { items: StoreApp[]; onTrack: (a: St
 
 /* ---------------- one app ---------------- */
 export function AppPage({ id }: { id: string }) {
+  const t = useT(M);
   const app = useLoad(() => api<AppDetail>(`/apps/${id}`), [id]);
   const [dev, setDev] = useState<{ developer: { name: string } | null; items: StoreApp[] } | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -261,8 +381,8 @@ export function AppPage({ id }: { id: string }) {
     setBusy(true);
     setMsg(null);
     try {
-      const t = await fn();
-      if (t) setMsg({ ok: true, text: t });
+      const text = await fn();
+      if (text) setMsg({ ok: true, text });
       app.reload();
     } catch (e) {
       setMsg({ ok: false, text: errText(e) });
@@ -283,90 +403,91 @@ export function AppPage({ id }: { id: string }) {
         {a.name} {a.status !== 'ACTIVE' && <Status s={a.status} />}
       </h2>
       <p className="muted" style={{ marginTop: 0 }}>
-        {a.developerName} · {a.genre} · <code>{a.bundleId}</code> · storefront {a.country.toUpperCase()}
+        {a.developerName} · {a.genre} · <code>{a.bundleId}</code> · {t('storefrontCountry', { c: a.country.toUpperCase() })}
       </p>
       <PolicyNotice p={a.policy} />
       <div className="stats">
         <div>
-          <div className="muted small">Rating</div>
+          <div className="muted small">{t('colRating')}</div>
           <b>{rating(a)}</b>
         </div>
         <div>
-          <div className="muted small">Price</div>
-          <b>{price(a)}</b>
+          <div className="muted small">{t('colPrice')}</div>
+          <b>{price(a, t('free'))}</b>
         </div>
         <div>
-          <div className="muted small">Version</div>
+          <div className="muted small">{t('colVersion')}</div>
           <b>{a.version ?? '—'}</b>
         </div>
         <div>
-          <div className="muted small">Last update</div>
-          <b>{a.storeUpdatedAt ? new Date(a.storeUpdatedAt).toLocaleDateString() : '—'}</b>
+          <div className="muted small">{t('lastUpdate')}</div>
+          <b>{fmtDate(a.storeUpdatedAt)}</b>
         </div>
         <div>
-          <div className="muted small">First release</div>
-          <b>{a.releasedAt ? new Date(a.releasedAt).toLocaleDateString() : '—'}</b>
+          <div className="muted small">{t('firstRelease')}</div>
+          <b>{fmtDate(a.releasedAt)}</b>
         </div>
       </div>
       <p className="small muted">
-        Source {a.provenance.providerId} · collected {fmtTime(a.provenance.collectedAt)} · <ExternalLink href={a.storeUrl}>App Store page</ExternalLink>
+        {t('srcLine', { provider: a.provenance.providerId, time: fmtTime(a.provenance.collectedAt) })} <ExternalLink href={a.storeUrl}>{t('storePage')}</ExternalLink>
         {a.developerUrl && (
           <>
             {' '}
-            · <ExternalLink href={a.developerUrl}>developer page</ExternalLink>
+            · <ExternalLink href={a.developerUrl}>{t('developerPage')}</ExternalLink>
           </>
         )}
       </p>
       <div className="row">
-        <button disabled={busy} onClick={() => run(async () => (await api(`/apps/${id}/refresh`, { method: 'POST' }), 'Listing refreshed.'))}>
-          Refresh listing
+        <button disabled={busy} onClick={() => run(async () => (await api(`/apps/${id}/refresh`, { method: 'POST' }), t('listingRefreshed')))}>
+          {t('refreshListing')}
         </button>
         <button disabled={busy || !a.developerId} onClick={() => run(async () => setDev(await api(`/apps/${id}/developer-apps`)))}>
-          Developer’s other apps
+          {t('developerOtherApps')}
         </button>
         <button
           disabled={busy}
           onClick={() =>
             run(async () => {
-              if (a.projectIds.length && !window.confirm('Stop tracking this app everywhere?')) return;
+              if (a.projectIds.length && !window.confirm(t('confirmStop'))) return;
               await api(`/apps/${id}`, { method: 'DELETE' });
               location.hash = '#/apps';
             })
           }
         >
-          Stop tracking
+          {t('stopTracking')}
         </button>
       </div>
       {msg && <div className={msg.ok ? 'ok' : 'error'}>{msg.text}</div>}
 
-      <h3>Social accounts (from the developer website)</h3>
+      <h3>{t('socialTitle')}</h3>
       <p className="muted small">
-        Evidence chain: App Store listing → developer website the store lists ({a.websiteUrl ? <ExternalLink href={a.websiteUrl}>{a.websiteUrl}</ExternalLink> : 'none listed'}) → profile links published on that page. Names are never
-        matched. HIGH = the page stayed on the listed site; MEDIUM = it redirected to another site. Confirm or reject each one.
+        {t('evidence1')}
+        {a.websiteUrl ? <ExternalLink href={a.websiteUrl}>{a.websiteUrl}</ExternalLink> : t('noneListed')}
+        {t('evidence2')}
       </p>
       <div className="row">
         <button
           disabled={busy || !a.websiteUrl}
-          title={a.websiteUrl ? '' : 'The listing has no developer website'}
+          title={a.websiteUrl ? '' : t('noWebsiteListing')}
           onClick={() => run(async () => {
             const r = await api<{ found: number; created: number; matchedTrackedAccounts: number; finalUrl: string }>(`/apps/${id}/discover-links`, { method: 'POST' });
-            return `Checked ${r.finalUrl}: ${r.found} profile link(s), ${r.created} new, ${r.matchedTrackedAccounts} match an account you track.`;
+            return t('discoverResult', { url: r.finalUrl, found: r.found, created: r.created, matched: r.matchedTrackedAccounts });
           })}
         >
-          Check developer website
+          {t('checkWebsite')}
         </button>
       </div>
       {a.links.length === 0 ? (
-        <Empty>{a.websiteUrl ? 'No links checked yet.' : 'This listing has no developer website, so no account can be linked with evidence.'}</Empty>
+        <Empty>{a.websiteUrl ? t('noLinksYet') : t('noWebsiteEmpty')}</Empty>
       ) : (
         <table>
           <thead>
             <tr>
-              <th>Profile</th>
-              <th>Confidence</th>
-              <th>Evidence</th>
-              <th>Tracked account</th>
-              <th>Status</th>
+              <th>{t('colProfile')}</th>
+              <th>{t('colConfidence')}</th>
+              <th>{t('colEvidence')}</th>
+              <th>{t('colTrackedAccount')}</th>
+              <th>{t('colStatus')}</th>
               <th />
             </tr>
           </thead>
@@ -380,23 +501,23 @@ export function AppPage({ id }: { id: string }) {
                   <span className={`badge badge-${l.confidence === 'HIGH' ? 'ok' : 'paused'}`}>{l.confidence}</span>
                 </td>
                 <td className="small">
-                  link <code>{l.evidence.href}</code> on <ExternalLink href={l.evidence.finalUrl}>{new URL(l.evidence.finalUrl).hostname}</ExternalLink>
-                  {l.evidence.redirects.length > 0 && <> (redirected from {new URL(l.evidence.websiteUrl).hostname})</>}
-                  <div className="muted">checked {fmtTime(l.evidence.fetchedAt)}</div>
+                  {t('evLink')} <code>{l.evidence.href}</code> {t('evOn')} <ExternalLink href={l.evidence.finalUrl}>{new URL(l.evidence.finalUrl).hostname}</ExternalLink>
+                  {l.evidence.redirects.length > 0 && t('redirectedFrom', { host: new URL(l.evidence.websiteUrl).hostname })}
+                  <div className="muted">{t('checkedTime', { time: fmtTime(l.evidence.fetchedAt) })}</div>
                 </td>
-                <td>{l.account ? <a href={`#/account/${l.account.id}`}>{l.account.username ?? l.account.displayName}</a> : <span className="muted">not tracked</span>}</td>
+                <td>{l.account ? <a href={`#/account/${l.account.id}`}>{l.account.username ?? l.account.displayName}</a> : <span className="muted">{t('notTracked')}</span>}</td>
                 <td>
                   <Status s={l.status} />
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {l.status !== 'CONFIRMED' && (
                     <button disabled={busy} onClick={() => run(() => api(`/app-links/${l.id}`, { method: 'PATCH', body: { status: 'CONFIRMED' } }).then(() => undefined))}>
-                      Confirm
+                      {t('confirm')}
                     </button>
                   )}{' '}
                   {l.status !== 'REJECTED' && (
                     <button disabled={busy} onClick={() => run(() => api(`/app-links/${l.id}`, { method: 'PATCH', body: { status: 'REJECTED' } }).then(() => undefined))}>
-                      Reject
+                      {t('reject')}
                     </button>
                   )}
                 </td>
@@ -408,14 +529,18 @@ export function AppPage({ id }: { id: string }) {
 
       {dev && (
         <>
-          <h3>Other apps by {dev.developer?.name ?? a.developerName}</h3>
-          {dev.items.length === 0 ? <Empty>None.</Empty> : <AppTable items={dev.items} busy={busy} onTrack={(x) => run(async () => (await api('/apps', { method: 'POST', body: { input: x.storeAppId, country: x.country } }), `Tracking ${x.name}.`))} />}
+          <h3>{t('otherAppsBy', { name: dev.developer?.name ?? a.developerName ?? '' })}</h3>
+          {dev.items.length === 0 ? (
+            <Empty>{t('none')}</Empty>
+          ) : (
+            <AppTable items={dev.items} busy={busy} onTrack={(x) => run(async () => (await api('/apps', { method: 'POST', body: { input: x.storeAppId, country: x.country } }), t('trackingApp', { name: x.name })))} />
+          )}
         </>
       )}
 
       {a.description && (
         <details>
-          <summary>Store description</summary>
+          <summary>{t('storeDescription')}</summary>
           <p className="bio small">{a.description}</p>
         </details>
       )}
