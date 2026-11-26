@@ -9,7 +9,7 @@ import { InlineDispatcher } from '@sss/queue';
 import { createRuntime, seedFromCapabilityRecords, type Runtime } from '@sss/services';
 
 const TABLES = [
-  'search_results', 'discovery_candidates', 'keywords', 'usage_reservations', 'app_settings', 'exports', 'viral_scores', 'content_analysis', 'trend_snapshots', 'reports', 'notifications',
+  'search_results', 'discovery_candidates', 'keywords', 'usage_reservations', 'app_settings', 'exports', 'viral_scores', 'content_analysis', 'trend_snapshots', 'reports', 'notifications', 'workflow_runs', 'workflow_versions', 'workflow_defs',
   'audit_logs', 'usage_logs', 'schedules', 'sync_cursors', 'collection_runs', 'job_logs', 'jobs',
   'post_metrics', 'posts', 'account_metrics', 'project_accounts', 'competitor_accounts', 'social_accounts',
   'competitors', 'projects', 'data_policies', 'providers',

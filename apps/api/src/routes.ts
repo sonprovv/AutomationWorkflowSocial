@@ -12,6 +12,12 @@ import {
   discoverRequestSchema,
   enqueueDiscovery,
   KeywordService,
+  WorkflowBuilderService,
+  workflowCreateDefSchema,
+  validateGraph,
+  NODE_TYPES,
+  NODE_LABELS,
+  NODE_CONFIG,
   ReportService,
   NotificationService,
   ViralService,
@@ -269,15 +275,30 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     results: await notifier.send({ projectId: null, type: 'test', dedupKey: `test:${new Date().toISOString()}`, title: 'Social Spy Automation — test notification', body: 'If you can read this, the channel works.' }),
   }));
 
-  /* ---------------- planned routes (later phases) ---------------- */
-  const planned: [string, 'get' | 'post' | 'patch', string, number][] = [
-    ['/workflows/:id/graph', 'get', 'Visual workflow DAG (workflow builder)', 9],
-  ];
-  for (const [url, method, what, phase] of planned) {
-    api[method](url, { schema: { tags: ['planned'], description: `${what} — planned for Phase ${phase} (Master Plan §16)` } }, async (_req, reply) =>
-      reply.status(501).send({ error: { code: 'NOT_SUPPORTED', message: `${what} is planned for Phase ${phase} and not implemented yet.` } }),
-    );
-  }
+  /* ---------------- workflow builder (Phase 9) ---------------- */
+  const builder = new WorkflowBuilderService(ctx);
+  api.get('/workflow-defs/node-types', { schema: { tags: ['workflow-builder'] } }, async () => ({
+    items: NODE_TYPES.map((t) => ({ type: t, label: NODE_LABELS[t], configSchema: z.toJSONSchema(NODE_CONFIG[t]) })),
+  }));
+  api.get('/workflow-defs', { schema: { tags: ['workflow-builder'] } }, async () => ({ items: await builder.list() }));
+  api.post('/workflow-defs', { schema: { tags: ['workflow-builder'], body: workflowCreateDefSchema, description: 'Create a workflow (template weekly-scan or empty); version 1 is saved.' } }, async (req, reply) => reply.status(201).send(await builder.create(req.body)));
+  api.get('/workflow-defs/:id', { schema: { tags: ['workflow-builder'], params: idParam } }, async (req) => builder.get(req.params.id));
+  api.get('/workflow-defs/:id/graph', { schema: { tags: ['workflow-builder'], params: idParam } }, async (req) => {
+    const d = await builder.get(req.params.id);
+    return { workflowId: d.id, version: d.currentVersion, graph: d.graph };
+  });
+  api.post('/workflow-defs/:id/validate', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ graph: z.unknown() }).strict() } }, async (req) => {
+    const v = validateGraph(req.body.graph);
+    return { ok: v.ok, errors: v.errors, order: v.order };
+  });
+  api.post('/workflow-defs/:id/versions', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ graph: z.unknown() }).strict(), description: 'Validate and save the graph as a new immutable version.' } }, async (req, reply) =>
+    reply.status(201).send(await builder.saveVersion(req.params.id, req.body.graph)),
+  );
+  api.patch('/workflow-defs/:id', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ status: z.enum(['DRAFT', 'ENABLED', 'PAUSED', 'ARCHIVED']) }).strict() } }, async (req) => builder.setStatus(req.params.id, req.body.status));
+  api.post('/workflow-defs/:id/run', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ version: z.number().int().min(1).optional() }).strict().nullish() } }, async (req, reply) =>
+    accepted(reply, await builder.enqueueRun(req.params.id, req.body?.version)),
+  );
+  api.get('/workflow-defs/:id/runs', { schema: { tags: ['workflow-builder'], params: idParam } }, async (req) => ({ items: await builder.runs(req.params.id) }));
 }
 
 export type { Api };

@@ -216,9 +216,7 @@ describe('E2E: provider gating and API contract', () => {
     expect((await app.inject({ method: 'GET', url: '/api/v1/projects/not-a-uuid' })).statusCode).toBe(400);
     expect((await app.inject({ method: 'GET', url: '/api/v1/projects/00000000-0000-4000-8000-000000000000' })).statusCode).toBe(404);
     expect((await app.inject({ method: 'GET', url: '/api/v1/nope' })).statusCode).toBe(404);
-    const planned = await app.inject({ method: 'GET', url: '/api/v1/workflows/wf02-discovery/graph' });
-    expect(planned.statusCode).toBe(501);
-    expect(json(planned).error.message).toMatch(/Phase 9/);
+    expect((await app.inject({ method: 'GET', url: '/api/v1/workflow-defs/00000000-0000-4000-8000-000000000000/graph' })).statusCode).toBe(404);
     const docs = await app.inject({ method: 'GET', url: '/api/docs/json' });
     expect(json(docs).paths).toHaveProperty('/api/v1/accounts');
   });

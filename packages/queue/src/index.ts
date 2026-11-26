@@ -5,7 +5,7 @@ import { z } from 'zod';
 /* ------------------------------------------------------------------ */
 /* Queue catalogue (Master Plan §8)                                    */
 /* ------------------------------------------------------------------ */
-export const QUEUE_NAMES = ['discovery', 'collection', 'analytics', 'ai', 'report', 'notification', 'maintenance'] as const;
+export const QUEUE_NAMES = ['discovery', 'collection', 'analytics', 'ai', 'report', 'notification', 'maintenance', 'workflow'] as const;
 export type QueueName = (typeof QUEUE_NAMES)[number];
 
 export const JOB_NAMES = {
@@ -20,6 +20,7 @@ export const JOB_NAMES = {
   AI_ANALYZE: 'ai.analyze',
   REPORT: 'report.generate',
   BACKUP: 'maintenance.backup',
+  WORKFLOW_RUN: 'workflow.run',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -35,6 +36,8 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'ai.analyze': 'ai',
   'report.generate': 'report',
   'maintenance.backup': 'maintenance',
+  // Its own queue: a running workflow waits for child jobs on other queues, so it must never block them.
+  'workflow.run': 'workflow',
 };
 
 export const accountSyncPayload = z.object({
@@ -80,6 +83,9 @@ export const aiAnalyzePayload = z.object({ projectId: z.uuid().nullable(), postI
 /** WF11/WF12 report for a project; notify=false only builds it. */
 export const reportPayload = z.object({ projectId: z.uuid(), kind: z.enum(['daily', 'weekly']), notify: z.boolean(), trigger: z.enum(['manual', 'schedule', 'retry']) });
 
+/** Phase 9 workflow builder run (pinned version). */
+export const workflowRunPayload = z.object({ workflowId: z.uuid(), version: z.number().int().min(1), trigger: z.enum(['manual', 'schedule', 'retry']) });
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
@@ -92,6 +98,7 @@ export const PAYLOAD_SCHEMAS = {
   'ai.analyze': aiAnalyzePayload,
   'report.generate': reportPayload,
   'maintenance.backup': cleanupPayload,
+  'workflow.run': workflowRunPayload,
 } as const;
 
 /**

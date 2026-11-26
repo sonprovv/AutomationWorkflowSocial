@@ -1,9 +1,10 @@
 import { CollectorError, toCollectorError } from '@sss/collector-core';
-import { accountSyncPayload, aiAnalyzePayload, reportPayload, discoverPayload, exportPayload, projectAnalyticsPayload, trendsPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { accountSyncPayload, aiAnalyzePayload, reportPayload, workflowRunPayload, discoverPayload, exportPayload, projectAnalyticsPayload, trendsPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
 import { AiAnalysisService } from './ai.ts';
 import { BackupService } from './backup.ts';
+import { WorkflowBuilderService } from './workflow-engine.ts';
 import { CleanupService } from './cleanup.ts';
 import { ReportService } from './reports.ts';
 import { TrendService } from './trends.ts';
@@ -109,6 +110,12 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
         const status = r.stoppedBy === 'CANCELLED' ? 'CANCELLED' : r.failed > 0 || r.stoppedBy ? (r.analyzed > 0 ? 'PARTIAL_SUCCESS' : r.failed > 0 ? 'FAILED' : 'SKIPPED') : r.analyzed + r.skippedExisting + r.refused === 0 ? 'SKIPPED' : 'SUCCEEDED';
         await jobs.finish(jobId, status, { result: r, warnings: [...r.warnings, ...(r.stoppedBy ? [`Stopped: ${r.stoppedBy}`] : [])], errorCode: status === 'FAILED' ? 'AI_FAILED' : null, errorMessage: status === 'FAILED' ? r.stoppedBy : null });
         await log('info', 'finish', `ai: ${r.analyzed} analysed, ${r.skippedExisting} cached, ${r.refused} refused, ${r.failed} failed; ${r.inputTokens}+${r.outputTokens} tokens, $${r.costUsd}`);
+        return;
+      }
+      if (name === JOB_NAMES.WORKFLOW_RUN) {
+        const p = workflowRunPayload.parse(payload);
+        const r = await new WorkflowBuilderService(ctx).execute({ workflowId: p.workflowId, version: p.version, jobId, isCancelled: () => jobs.isCancelRequested(jobId), onProgress: (pct) => jobs.progress(jobId, pct) });
+        await jobs.finish(jobId, r.status, { result: { runId: r.runId, steps: r.steps }, errorCode: r.status === 'FAILED' ? 'WORKFLOW_FAILED' : r.status === 'CANCELLED' ? 'CANCELLED' : null, errorMessage: r.error });
         return;
       }
       if (name === JOB_NAMES.BACKUP) {

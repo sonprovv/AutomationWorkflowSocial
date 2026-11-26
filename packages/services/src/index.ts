@@ -19,6 +19,8 @@ export * from './ai.ts';
 export * from './notify.ts';
 export * from './reports.ts';
 export * from './backup.ts';
+export * from './workflow-graph.ts';
+export * from './workflow-engine.ts';
 export * from './observability.ts';
 export * from './scheduler.ts';
 export * from './usage.ts';

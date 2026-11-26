@@ -23,6 +23,7 @@ export const WORKFLOW_KEYS = [
   'WF13_PROVIDER_HEALTH_CHECK',
   'WF14_POLICY_CLEANUP',
   'WF15_BACKUP',
+  'CUSTOM_WORKFLOW',
 ] as const;
 export type WorkflowKey = (typeof WORKFLOW_KEYS)[number];
 
@@ -36,6 +37,7 @@ export const WORKFLOW_DESCRIPTIONS: Record<WorkflowKey, string> = {
   WF11_DAILY_REPORT: 'Builds the daily report (+ Excel) for projects with settings.daily_report and sends it to the configured channels.',
   WF12_WEEKLY_REPORT: 'Builds the weekly report for projects with settings.weekly_report and sends it to the configured channels.',
   WF13_PROVIDER_HEALTH_CHECK: 'Checks health and credentials of every enabled provider.',
+  CUSTOM_WORKFLOW: 'Runs a workflow built in the workflow builder (config.workflowId) if it is ENABLED.',
   WF15_BACKUP: 'Encrypted logical backup of the database (keeps BACKUP_KEEP newest files).',
   WF14_POLICY_CLEANUP: 'Deletes data the policy says must go (provider-deleted posts after a grace period, expired retention) and purges housekeeping rows.',
 };
@@ -189,6 +191,18 @@ export class SchedulerService {
       case 'WF13_PROVIDER_HEALTH_CHECK': {
         const providerId = ((s.config as { providerId?: string | null }).providerId ?? null) as string | null;
         return this.single(JOB_NAMES.PROVIDER_HEALTH, { providerId }, providerId ?? 'all', null);
+      }
+      case 'CUSTOM_WORKFLOW': {
+        const workflowId = String((s.config as { workflowId?: string }).workflowId ?? '');
+        const def = workflowId ? await this.ctx.db.workflowDef.findUnique({ where: { id: workflowId } }) : null;
+        if (!def || def.status !== 'ENABLED') return { status: 'SKIPPED', jobIds: [], notes: [`Workflow ${workflowId || '(missing config.workflowId)'} not found or not ENABLED`] };
+        const { WorkflowBuilderService } = await import('./workflow-engine.ts');
+        try {
+          return { status: 'ENQUEUED', jobIds: [(await new WorkflowBuilderService(this.ctx).enqueueRun(def.id)).id], notes: [] };
+        } catch (e) {
+          if (e instanceof AppError && e.code === 'CONFLICT') return { status: 'SKIPPED', jobIds: [], notes: [e.message] };
+          throw e;
+        }
       }
       case 'WF15_BACKUP':
         return this.single(JOB_NAMES.BACKUP, { trigger: 'schedule' }, 'all', null);

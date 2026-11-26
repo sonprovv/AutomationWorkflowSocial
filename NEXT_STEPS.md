@@ -57,7 +57,7 @@ Done (ADR-0016). Notes for the user:
 
 ## Phase 9 plan (post-MVP; started 2026-11-27)
 Work in this order, and commit after each item so that work can resume from here:
-1. **P9-01 Workflow DAG engine:** tables `workflows`, `workflow_versions` (immutable JSON) and `workflow_runs`.
+1. ✅ **DONE (2026-11-27, tests in `tests/integration/workflow-builder.test.ts`, 3/3 pass; full `npm test` not re-run after this item — run it first when resuming)** **P9-01 Workflow DAG engine:** tables `workflows`, `workflow_versions` (immutable JSON) and `workflow_runs`.
    - Validation: the graph is acyclic; node types come from a whitelist; loops are bounded; each node has a timeout and an error policy.
    - Execution: nodes map to the existing jobs (discover, sync, metrics, viral, trends, AI, export, report, notify) or to wait/filter/if nodes, run in topological order.
    - API: `/workflow-defs`. The route `/workflows/:id/graph` stops returning 501.

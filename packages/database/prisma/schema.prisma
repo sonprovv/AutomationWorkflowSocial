@@ -426,6 +426,50 @@ model AppSetting {
   @@map("app_settings")
 }
 
+/// Phase 9 workflow builder: a named DAG whose graph lives in immutable versions.
+model WorkflowDef {
+  id             String    @id @default(uuid()) @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  name           String
+  description    String?
+  /// DRAFT | ENABLED | PAUSED | ARCHIVED (Master Plan §7.1)
+  status         String    @default("DRAFT")
+  currentVersion Int       @default(0) @map("current_version")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("workflow_defs")
+}
+
+/// Immutable graph snapshot; every edit creates a new version, every run pins one.
+model WorkflowVersion {
+  id         String   @id @default(uuid()) @db.Uuid
+  workflowId String   @map("workflow_id") @db.Uuid
+  version    Int
+  graph      Json
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([workflowId, version])
+  @@map("workflow_versions")
+}
+
+model WorkflowRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  workflowId String    @map("workflow_id") @db.Uuid
+  version    Int
+  /// RUNNING | SUCCEEDED | PARTIAL_SUCCESS | FAILED | CANCELLED
+  status     String
+  /// Per node: status, child job id, timings, error.
+  steps      Json      @default("{}")
+  jobId      String?   @map("job_id") @db.Uuid
+  error      String?
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+
+  @@index([workflowId, startedAt(sort: Desc)])
+  @@map("workflow_runs")
+}
+
 /// WF11/WF12 reports. A source that failed in the period makes the report PARTIAL_SUCCESS (never "no new content").
 model Report {
   id          String   @id @default(uuid()) @db.Uuid
