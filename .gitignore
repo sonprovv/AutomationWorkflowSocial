@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+# Local PoC scratch output (committed run logs live in docs/feasibility/runs)
+.poc-tmp/

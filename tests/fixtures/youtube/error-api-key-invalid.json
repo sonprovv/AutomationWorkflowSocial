@@ -1,0 +1,12 @@
+{
+  "_fixture": "CAPTURED 2026-11-26: GET youtube/v3/videos with a deliberately invalid X-Goog-Api-Key header",
+  "error": {
+    "code": 400,
+    "message": "API key not valid. Please pass a valid API key.",
+    "errors": [{ "message": "API key not valid. Please pass a valid API key.", "domain": "global", "reason": "badRequest" }],
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      { "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "API_KEY_INVALID", "domain": "googleapis.com", "metadata": { "service": "youtube.googleapis.com" } }
+    ]
+  }
+}

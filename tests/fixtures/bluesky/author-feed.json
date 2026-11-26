@@ -1,0 +1,39 @@
+{
+  "_fixture": "SYNTHETIC: app.bsky.feed.getAuthorFeed shape; DIDs, handles and text are fabricated",
+  "feed": [
+    {
+      "post": {
+        "uri": "at://did:plc:fixtureauthor000000000001/app.bsky.feed.post/3fixturepost1",
+        "cid": "bafyfixture1",
+        "author": { "did": "did:plc:fixtureauthor000000000001", "handle": "fixture.example.com" },
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "text": "New depth wallpaper drop #3DWallpaper",
+          "createdAt": "2026-11-25T01:00:00.000Z",
+          "langs": ["en"],
+          "facets": [{ "features": [{ "$type": "app.bsky.richtext.facet#tag", "tag": "3DWallpaper" }] }]
+        },
+        "embed": { "$type": "app.bsky.embed.video#view", "thumbnail": "https://video.bsky.app/fixture/thumb.jpg" },
+        "likeCount": 10, "repostCount": 2, "replyCount": 0, "quoteCount": 1
+      }
+    },
+    {
+      "post": {
+        "uri": "at://did:plc:someoneelse0000000000001/app.bsky.feed.post/3fixturepost2",
+        "cid": "bafyfixture2",
+        "author": { "did": "did:plc:someoneelse0000000000001", "handle": "other.example.com" },
+        "record": { "text": "reposted content", "createdAt": "2026-11-24T01:00:00.000Z" }
+      },
+      "reason": { "$type": "app.bsky.feed.defs#reasonRepost" }
+    },
+    {
+      "post": {
+        "uri": "at://did:plc:fixtureauthor000000000001/app.bsky.feed.post/3fixturepost3",
+        "cid": "bafyfixture3",
+        "author": { "did": "did:plc:fixtureauthor000000000001", "handle": "fixture.example.com" },
+        "record": { "text": "text only, counts missing", "createdAt": "2026-11-23T01:00:00.000Z" }
+      }
+    }
+  ],
+  "cursor": "fixture-cursor-1"
+}

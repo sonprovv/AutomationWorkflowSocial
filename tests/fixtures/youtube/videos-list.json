@@ -1,0 +1,26 @@
+{
+  "_fixture": "SYNTHETIC: videos.list shape; IDs and text are fabricated",
+  "items": [
+    {
+      "id": "AAAAAAAAAA1",
+      "snippet": {
+        "publishedAt": "2026-11-20T10:00:00Z",
+        "channelId": "UCfixturechannel00000001",
+        "title": "Fixture video #LiveWallpaper",
+        "description": "Synthetic description #depth",
+        "thumbnails": { "default": { "url": "https://i.ytimg.com/vi/AAAAAAAAAA1/default.jpg" }, "high": { "url": "https://i.ytimg.com/vi/AAAAAAAAAA1/hqdefault.jpg" } },
+        "defaultAudioLanguage": "en",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": { "duration": "PT45S" },
+      "statistics": { "viewCount": "1000", "favoriteCount": "0" },
+      "status": { "privacyStatus": "public" }
+    },
+    {
+      "id": "AAAAAAAAAA2",
+      "snippet": { "publishedAt": "2026-11-21T10:00:00Z", "channelId": "UCfixturechannel00000001", "title": "Fixture 2", "description": "" },
+      "contentDetails": { "duration": "PT10M" },
+      "statistics": { "viewCount": "0", "likeCount": "0", "commentCount": "0" }
+    }
+  ]
+}

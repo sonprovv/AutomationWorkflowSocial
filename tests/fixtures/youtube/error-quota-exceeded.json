@@ -1,0 +1,8 @@
+{
+  "_fixture": "SYNTHETIC: shape per https://developers.google.com/youtube/v3/docs/core_errors (reason quotaExceeded, 403)",
+  "error": {
+    "code": 403,
+    "message": "The request cannot be completed because you have exceeded your quota.",
+    "errors": [{ "message": "The request cannot be completed because you have exceeded your quota.", "domain": "youtube.quota", "reason": "quotaExceeded" }]
+  }
+}
