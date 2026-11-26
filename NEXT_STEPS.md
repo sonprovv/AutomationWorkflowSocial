@@ -88,13 +88,35 @@ Work in this order, and commit after each item so that work can resume from here
   - Bilingual (EN/VI).
   - Opens from the sidebar ("User guide"), from a "?" button on each page (jumping to that page's section), and from the setup guide footer.
 
-## Demo videos, one per feature (requested 2026-11-27 ~02:07, NEXT)
-- **Request:** the user wants realistic demo videos (one per feature) and a "Watch demo" button.
-- **Plan:**
-  - Record the real UI in headless Edge over CDP: `Page.startScreencast` frames, then ffmpeg (installed by winget) to mp4/webm.
-  - Show a scripted cursor and captions.
-  - Use a **separate demo instance** (its own data directory and port) seeded with real Bluesky data, so the user's database is untouched.
-  - Videos go in `apps/web/public/demos/`, and the guide gets a "Watch demo" button.
+## Demo videos, one per feature: PARKED (2026-11-27 ~02:12, the user said to leave it for now)
+**Request:** realistic demo videos, one per feature, and a "Watch demo" button in the user guide.
+
+**Done so far:**
+- `tools/demo/src/browser.ts`: a CDP driver for headless Edge/Chrome. It records with `Page.startScreencast` (JPEG frames plus timestamps) and dispatches real mouse/keyboard input (click, type, drag, wheel, select). An injected overlay adds a visible cursor with click ripple, a caption bar and a title card. Overlays run through CDP, so they are not affected by the page CSP. Typechecks; not run yet.
+- `tools/demo/package.json` (workspace `@sss/demo`).
+- ffmpeg 9 is installed (winget, Gyan build) and on PATH.
+
+**To do when resuming:**
+1. `tools/demo/src/record.ts`, the orchestrator:
+   - Start a separate demo instance: embedded PG in a temp dir on its own port, `migrateDeploy`, `seedFromCapabilityRecords`, then spawn `apps/api/src/main.ts`. Use `API_PORT=18990`, `QUEUE_DRIVER=inline`, `SERVE_WEB=true`, `NODE_ENV=development`.
+   - Point `EXPORT_DIR`, `BACKUP_DIR` and `BACKUP_KEY_FILE` at the temp dir.
+   - Blank `TELEGRAM_*`, `SMTP_URL`, `WEBHOOK_URL` and `ANTHROPIC_API_KEY` so nothing real is sent or spent. The user's `.data/` is never touched; `process.loadEnvFile` does not override variables already set.
+   - Seed real Bluesky data through the API:
+     - a project with keywords (`atproto`);
+     - track `atproto.com` and `bsky.app`, then run discovery;
+     - App Spy: track Goodnotes (id 1444383602) and discover its links;
+     - a workflow from the weekly-scan template;
+     - a daily report and an export.
+2. `tools/demo/src/scenes.ts`: one scene per FeatureGuide section id (start, dashboard, projects, accounts, explore, insights, apps, builder, workflows, jobs, exports, reports, sources). Each scene:
+   - opens with a title card, then performs real actions with EN/VI captions;
+   - uses structural selectors or text pairs `[en, vi]` (labels are in each page's `defineMessages`);
+   - in Insights, shows "blocked by policy" honestly.
+3. Encode with the ffmpeg concat demuxer, using frame durations from the timestamps:
+   - `-c:v libx264 -crf 30 -preset veryfast -r 25 -movflags +faststart`;
+   - output `apps/web/public/demos/<id>.<lang>.mp4` plus `manifest.json`.
+   - Decide git vs ignore by total size (keep it out of git if over about 25 MB, and document `npm run demo:record`).
+4. Root script `"demo:record": "tsx tools/demo/src/record.ts"` with `--lang vi,en` and `--only <ids>`.
+5. FeatureGuide: fetch `/demos/manifest.json`. Show a "Watch demo / Xem demo" button when a video exists for the section; it plays inline with controls. Restart the app after the build (static files are registered at startup).
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

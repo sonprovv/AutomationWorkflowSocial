@@ -1,0 +1,12 @@
+{
+  "name": "@sss/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Records demo videos of the real UI (headless Edge/Chrome over CDP + ffmpeg). Work in progress: see NEXT_STEPS.md.",
+  "dependencies": {
+    "@sss/config": "0.0.0",
+    "@sss/database": "0.0.0",
+    "@sss/services": "0.0.0"
+  }
+}
