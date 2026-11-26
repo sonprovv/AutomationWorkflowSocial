@@ -95,6 +95,7 @@ model Project {
   keywords         Keyword[]
   candidates       DiscoveryCandidate[]
   searchResults    SearchResult[]
+  apps             ProjectApp[]
 
   @@map("projects")
 }
@@ -149,6 +150,7 @@ model SocialAccount {
   metrics          AccountMetric[]
   cursors          SyncCursor[]
   candidates       DiscoveryCandidate[]
+  appLinks         AppSocialLink[]
 
   @@unique([platform, externalId])
   @@map("social_accounts")
@@ -704,4 +706,88 @@ model SearchResult {
   @@index([projectId, collectedAt(sort: Desc)])
   @@index([keywordId])
   @@map("search_results")
+}
+
+/// App Spy (Phase 9, ADR-0018): latest App Store listing of an app the user tracks. Latest only (no history) until
+/// the Product Owner approves snapshots; no icons or screenshots are stored.
+model App {
+  id             String          @id @default(uuid()) @db.Uuid
+  /// apple (Google Play is BLOCKED)
+  store          String
+  storeAppId     String          @map("store_app_id")
+  /// Storefront (two-letter country); ratings, prices and availability differ per storefront.
+  country        String
+  bundleId       String?         @map("bundle_id")
+  name           String
+  developerId    String?         @map("developer_id")
+  developerName  String?         @map("developer_name")
+  sellerName     String?         @map("seller_name")
+  /// Developer website as listed by the store (sellerUrl).
+  websiteUrl     String?         @map("website_url")
+  storeUrl       String          @map("store_url")
+  developerUrl   String?         @map("developer_url")
+  genre          String?
+  price          Decimal?        @db.Decimal(12, 2)
+  currency       String?
+  rating         Float?
+  ratingCount    Int?            @map("rating_count")
+  version        String?
+  releasedAt     DateTime?       @map("released_at") @db.Timestamptz(3)
+  storeUpdatedAt DateTime?       @map("store_updated_at") @db.Timestamptz(3)
+  description    String?
+  /// genres, contentRating, languages, minimumOsVersion, kind, missing (reasons)
+  details        Json            @default("{}")
+  /// ACTIVE | NOT_FOUND (no longer returned by the storefront)
+  status         String          @default("ACTIVE")
+  providerId     String          @map("provider_id")
+  policyId       String          @map("policy_id")
+  collectedAt    DateTime        @map("collected_at") @db.Timestamptz(3)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  projects       ProjectApp[]
+  links          AppSocialLink[]
+
+  @@unique([store, storeAppId, country])
+  @@index([developerId])
+  @@map("apps")
+}
+
+model ProjectApp {
+  projectId String   @map("project_id") @db.Uuid
+  appId     String   @map("app_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, appId])
+  @@index([appId])
+  @@map("project_apps")
+}
+
+/// App → social profile, only from explicit evidence (a profile link published on the developer website the
+/// store lists). Never matched by name. The user confirms or rejects each proposal.
+model AppSocialLink {
+  id         String         @id @default(uuid()) @db.Uuid
+  appId      String         @map("app_id") @db.Uuid
+  platform   String
+  handle     String
+  profileUrl String         @map("profile_url")
+  /// Tracked social account with the same platform + handle, if any.
+  accountId  String?        @map("account_id") @db.Uuid
+  /// DEVELOPER_WEBSITE
+  method     String
+  /// HIGH (same site as the listed website) | MEDIUM (website redirected to another site)
+  confidence String
+  /// PROPOSED | CONFIRMED | REJECTED
+  status     String         @default("PROPOSED")
+  /// websiteUrl, finalUrl, redirects, href, fetchedAt, storeUrl
+  evidence   Json
+  decidedAt  DateTime?      @map("decided_at") @db.Timestamptz(3)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  app        App            @relation(fields: [appId], references: [id], onDelete: Cascade)
+  account    SocialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@unique([appId, platform, handle])
+  @@map("app_social_links")
 }

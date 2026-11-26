@@ -24,6 +24,7 @@
     "test:live": "vitest run --config vitest.live.config.ts",
     "poc": "tsx tools/feasibility/src/cli.ts",
     "poc:summary": "tsx tools/feasibility/src/summary.ts",
+    "poc:apps": "tsx tools/feasibility/src/appstore-poc.ts",
     "postinstall": "npm run generate -w @sss/database --silent",
     "db:generate": "npm run generate -w @sss/database",
     "db:migrate:new": "npm run migrate:new -w @sss/database --",

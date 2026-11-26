@@ -59,16 +59,26 @@
 | `usage_reservations` | Budget reservations (authorize → reserve → execute → reconcile). They count until they are settled or expire. Granting takes an advisory lock per (provider, unit, day) |
 | `audit_logs` | Actions such as `project.create/update/delete`, `account.track`, `account.tracking` and `candidate.approved/rejected`, with redacted metadata |
 
+### Workflow builder and App Spy (Phase 9)
+| Table | Purpose | Key constraints and indexes |
+|---|---|---|
+| `workflow_defs` | Custom DAG workflow: name, project, status DRAFT/ENABLED/PAUSED/ARCHIVED, `current_version` | — |
+| `workflow_versions` | Immutable graph JSON per version (ADR-0017) | unique `(workflow_id, version)` |
+| `workflow_runs` | One run of a pinned version: status and per-node `steps` (status, child job ids, timings, error, result) | index `(workflow_id, started_at DESC)` |
+| `apps` | Latest App Store listing of a tracked app: ids, developer, website (`sellerUrl`), store link, genre, price, rating and count, version, dates, `details` (genres, languages, missing reasons), `status` ACTIVE/NOT_FOUND, provider, policy, `collected_at`. No icons or screenshots, no history (ADR-0018) | unique `(store, store_app_id, country)`; index `(developer_id)` |
+| `project_apps` | Apps tracked in a project | PK `(project_id, app_id)` |
+| `app_social_links` | App → social profile proposed from a link on the developer website the store lists: platform, handle, profile URL, matched tracked account, method, confidence HIGH/MEDIUM, status PROPOSED/CONFIRMED/REJECTED, `evidence` JSON (website, final URL, redirects, href, fetch time, store URL) | unique `(app_id, platform, handle)` |
+
 **Tables in Master Plan §6.2 that arrive in later phases:**
 - `keyword_groups`
 - `post_media`, `comments` and `raw_responses`
 - `viral_scores`, `trends` / `trend_snapshots`, `content_analysis` and `creative_ideas`
-- `workflows` / `workflow_versions` and `workflow_runs`
 - `credentials` (a secret store) and `notifications` / `reports`
 
 ## Cascades
 - Deleting a project removes its `project_accounts` rows. Accounts and posts are shared across projects, so they are kept; orphan cleanup comes in Phase 4 (WF14).
-- Deleting an account removes its posts, metrics, cursors and project links.
+- Deleting an account removes its posts, metrics, cursors and project links. App links to it keep their evidence; only `account_id` is cleared.
+- Deleting a project removes its `project_apps` rows; apps are kept. Deleting an app removes its project links and social links.
 
 ## Working with migrations
 | Task | Command |

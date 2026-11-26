@@ -21,6 +21,13 @@ This report covers every platform in the Master Plan §4.1 matrix. Only Bluesky 
 
 Machine-readable records are in [`capabilities/*.json`](capabilities/). They are schema-validated by `npm test`, and the test fails if an adapter's `getCapabilities()` no longer matches its record.
 
+### App stores (App Spy, Phase 9: separate records in [`app-stores/`](app-stores/))
+
+| Store | Status | Evidence | Credential | Decision |
+|---|---|---|---|---|
+| **Apple App Store** (iTunes Search/Lookup API) | ✅ **VERIFIED** (data policy pending the Product Owner) | 2 live PoC runs, 8 PASS / 2 PARTIAL each: [apple-app-store.md](apple-app-store.md) | None | App Spy: track apps, developer apps, website → social links with evidence. Latest listing only, no export, no icons |
+| Google Play | ❌ BLOCKED | Official docs: no public catalogue API ([google-play-apps.md](google-play-apps.md)) | — | iOS only, unless the Product Owner buys a licensed data feed |
+
 ## 2. Gate status (Master Plan §4.3 / §16: "at least 2 sources verified")
 
 - [x] Test harness with typed errors, quota/budget guard, redaction and contract tests (74 unit/contract tests, 3 live smoke tests).

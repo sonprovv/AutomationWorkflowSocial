@@ -125,6 +125,21 @@ Custom DAG workflows. Every save is a new immutable version; every run pins one.
 | POST | `/workflow-defs/:id/run` | `{version?}`: queue `workflow.run` (202). Returns 400 without a project and 409 when the workflow is PAUSED or ARCHIVED |
 | GET | `/workflow-defs/:id/runs` | The last 20 runs, each with per-node `steps` (`status`, `jobIds`, timings, `error`, `result`) |
 
+## App Spy (Phase 9, ADR-0018)
+
+Apple App Store only. Google Play links return `422 NOT_SUPPORTED`. Calls count toward `APPLE_SEARCH_DAILY_REQUESTS`, and going over returns `429 BUDGET_EXCEEDED`.
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/apps/policy` | Source status, effective policy (`storeMetadata`, `historicalSnapshots`, `export`, …), proposal status, limitations |
+| GET | `/apps/search` | `term`, `country` (2 letters, default `us`), `limit` ≤ 50. A live, fuzzy search: results are suggestions, each with `trackedId` when already tracked. Nothing is stored |
+| GET / POST | `/apps` | List tracked apps (`projectId?`) / track `{input: App Store link \| id \| bundle id, country?, projectId?}` (201) |
+| GET / DELETE | `/apps/:id` | Detail with `links` and `policy` / stop tracking (`?projectId=` removes only the project link) |
+| POST | `/apps/:id/refresh` | Lookup again. An app the storefront no longer returns gets `status: NOT_FOUND` |
+| GET | `/apps/:id/developer-apps` | The developer's apps (live), each with `trackedId` |
+| POST | `/apps/:id/discover-links` | Fetch the developer website the store lists (SSRF-guarded) and propose the social profiles it links to. Returns `{found, created, matchedTrackedAccounts, sameSite, finalUrl, app}`. Returns 400 when the listing has no website |
+| PATCH | `/app-links/:linkId` | `{status: CONFIRMED \| REJECTED \| PROPOSED}` |
+
 ## Dashboard and exports (Phase 5)
 
 | Method | Route | Description |

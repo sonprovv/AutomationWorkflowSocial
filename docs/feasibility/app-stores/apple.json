@@ -1,0 +1,82 @@
+{
+  "store": "apple",
+  "provider": "apple-itunes-search",
+  "status": "VERIFIED",
+  "checkedAt": "2026-11-27",
+  "capabilities": {
+    "searchApps": "PARTIAL",
+    "getApp": "SUPPORTED",
+    "lookupByBundleId": "PARTIAL",
+    "listDeveloperApps": "SUPPORTED",
+    "developerWebsite": "PARTIAL",
+    "reviews": "NOT_SUPPORTED"
+  },
+  "policy": {
+    "policyId": "apple-itunes-search-v0",
+    "storeMetadata": true,
+    "historicalSnapshots": false,
+    "mediaProcessing": false,
+    "export": false,
+    "developerWebsiteFetch": true,
+    "retentionDays": null,
+    "notes": [
+      "Effective policy until the Product Owner decides: keep the latest listing of apps the user tracks (no history), show the App Store link with every app, no icons or screenshots, no export.",
+      "Apple: promotional content (previews, artwork, app icons) may be used 'only to promote store content and not for entertainment purposes'. App Spy therefore does not display or store icons or screenshots.",
+      "Apple's Search API pages say nothing about storing listing metadata; absence of a rule is not a permission.",
+      "The developer website is fetched once, only when the user asks, only the URL the store lists, with the SSRF guard (public addresses, http/https, 1 MB, 10 s, 3 redirects)."
+    ],
+    "sources": [
+      {
+        "url": "https://performance-partners.apple.com/search-api",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "url": "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "url": "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/LookupExamples.html",
+        "checkedAt": "2026-11-27"
+      }
+    ]
+  },
+  "policyProposal": {
+    "status": "PENDING_PRODUCT_OWNER_APPROVAL",
+    "storeMetadata": true,
+    "historicalSnapshots": true,
+    "mediaProcessing": false,
+    "export": true,
+    "developerWebsiteFetch": true,
+    "retentionDays": 365,
+    "conditions": [
+      "Daily rating/version snapshots for tracked apps only, kept 365 days.",
+      "Exports for internal research only, each row with its App Store URL.",
+      "No icons, screenshots or previews stored or exported."
+    ]
+  },
+  "quota": {
+    "unit": "requests",
+    "perMinute": 20,
+    "notes": [
+      "Documented: 'approximately 20 calls per minute (subject to change)'; heavier use should go through the Enterprise Partner Feed.",
+      "The client paces itself to one call every 3.1 s per process; APPLE_SEARCH_DAILY_REQUESTS caps a day (default 2000).",
+      "Observed in 2 PoC runs (2026-11-27 01:19 and 01:27 UTC+7): 18/18 HTTP 200, no 403/429; p50 about 300 ms."
+    ]
+  },
+  "credentialsRequired": [],
+  "limitations": [
+    "Search is fuzzy: a nonsense term still returned 3 loosely related apps (A3). Treat search results as suggestions; track by id.",
+    "Up to 200 results per search; no pagination and no sort by popularity, rank or downloads.",
+    "No download counts, revenue, keyword rank or chart position. App Spy never estimates them.",
+    "Ratings, prices and availability are per storefront (country).",
+    "Lookup by bundle id works but is not documented (PARTIAL).",
+    "sellerUrl (developer website) is listed for about 71–75% of apps in the PoC sample; the rest cannot be linked.",
+    "No reviews endpoint in this API (the RSS customer-review feed is not part of it and is not used)."
+  ],
+  "evidence": [
+    "docs/feasibility/runs/apple-app-store/2026-11-26T18-19-40-774Z.json",
+    "docs/feasibility/runs/apple-app-store/2026-11-26T18-27-44-934Z-run2.json",
+    "docs/feasibility/samples/apple-app-store.sample.json",
+    "docs/feasibility/apple-app-store.md"
+  ]
+}

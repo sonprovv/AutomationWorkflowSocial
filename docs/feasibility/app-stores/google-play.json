@@ -1,0 +1,54 @@
+{
+  "store": "google-play",
+  "provider": "google-play-none",
+  "status": "BLOCKED",
+  "checkedAt": "2026-11-27",
+  "capabilities": {
+    "searchApps": "BLOCKED",
+    "getApp": "BLOCKED",
+    "lookupByBundleId": "BLOCKED",
+    "listDeveloperApps": "BLOCKED",
+    "developerWebsite": "BLOCKED",
+    "reviews": "AUTH_REQUIRED"
+  },
+  "policy": {
+    "policyId": "google-play-blocked-v0",
+    "storeMetadata": false,
+    "historicalSnapshots": false,
+    "mediaProcessing": false,
+    "export": false,
+    "developerWebsiteFetch": false,
+    "retentionDays": null,
+    "notes": [
+      "No official public API to search the Play Store catalogue or read other developers' listings: the Google Play Developer API (androidpublisher) is for publishing and management tasks 'similar to those available to a developer through the Play Console' (store listings, releases, products, purchases).",
+      "Its Reply to Reviews API is keyed to a package name and 'allows you to view user feedback for your app'. Only reviews created or modified in the last week that have text; 200 GET per hour per app. It is usable only for apps in the caller's own Play Console.",
+      "Neither page lists a catalogue-search API (checked 2026-11-27).",
+      "Scraping play.google.com is excluded by the project rules (no scraping that bypasses terms). Third-party scraper libraries and paid data vendors are not used without a Product Owner decision."
+    ],
+    "sources": [
+      {
+        "url": "https://developers.google.com/android-publisher",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "url": "https://developers.google.com/android-publisher/reply-to-reviews",
+        "checkedAt": "2026-11-27"
+      }
+    ]
+  },
+  "quota": {
+    "unit": "requests",
+    "perMinute": null,
+    "notes": [
+      "Not applicable: no usable source."
+    ]
+  },
+  "credentialsRequired": [],
+  "limitations": [
+    "Manual only: the user can paste a Play Store URL as a note on a competitor; App Spy does not fetch it.",
+    "Options for the Product Owner: a licensed data vendor (for example data.ai/Sensor Tower: paid, contract), or limit App Spy to iOS."
+  ],
+  "evidence": [
+    "docs/feasibility/google-play-apps.md"
+  ]
+}

@@ -95,6 +95,8 @@ export const configSchema = z
     /** Per-day provider caps used by the Phase 1 guard (full budget engine: Phase 4). */
     YOUTUBE_DAILY_QUOTA_UNITS: z.coerce.number().int().min(0).default(8000),
     BLUESKY_DAILY_REQUESTS: z.coerce.number().int().min(0).default(20000),
+    /** App Spy (Phase 9): Apple iTunes Search API calls per UTC day (the API allows ~20/min; the client paces itself). */
+    APPLE_SEARCH_DAILY_REQUESTS: z.coerce.number().int().min(0).default(2000),
     OPEN_BROWSER: bool.default(true),
   })
   .superRefine((c, ctx) => {

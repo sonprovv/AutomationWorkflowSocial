@@ -1,0 +1,318 @@
+{
+  "provider": "apple-itunes-search",
+  "label": "run2",
+  "startedAt": "2026-11-26T18:27:18.006Z",
+  "finishedAt": "2026-11-26T18:27:44.933Z",
+  "node": "v22.16.0",
+  "summary": {
+    "pass": 8,
+    "partial": 2,
+    "fail": 0
+  },
+  "requests": {
+    "total": 9,
+    "byStatus": {
+      "200": 9
+    },
+    "latencyMs": {
+      "p50": 19,
+      "max": 172
+    },
+    "pacedEveryMs": 3100
+  },
+  "fieldCoverage": {
+    "n": 48,
+    "websiteUrl": 71,
+    "bundleId": 100,
+    "developerId": 100,
+    "rating": 100,
+    "ratingCount": 100,
+    "storeUpdatedAt": 100
+  },
+  "checks": [
+    {
+      "id": "A1",
+      "title": "search apps by keyword (us)",
+      "result": "PASS",
+      "latencyMs": 186,
+      "details": {
+        "results": 24,
+        "sample": [
+          {
+            "id": "1444383602",
+            "name": "Goodnotes: AI Notes, Docs, PDF",
+            "developer": "Goodnotes Limited"
+          },
+          {
+            "id": "360593530",
+            "name": "Notability: AI Notes & Study",
+            "developer": "Ginger Labs"
+          },
+          {
+            "id": "6464237904",
+            "name": "Freenotes®: AI Notes Taking",
+            "developer": "Free Notes AI Note Taker LTD"
+          }
+        ],
+        "coverage": {
+          "n": 24,
+          "websiteUrl": 75,
+          "bundleId": 100,
+          "developerId": 100,
+          "rating": 100,
+          "ratingCount": 100,
+          "storeUpdatedAt": 100
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "title": "search with Unicode keyword in another storefront (vn)",
+      "result": "PASS",
+      "latencyMs": 2971,
+      "details": {
+        "results": 24,
+        "sample": [
+          {
+            "id": "1061867449",
+            "name": "BIDV SmartBanking"
+          },
+          {
+            "id": "689963454",
+            "name": "VietinBank iPay"
+          },
+          {
+            "id": "561433133",
+            "name": "VCB Digibank"
+          }
+        ],
+        "coverage": {
+          "n": 24,
+          "websiteUrl": 67,
+          "bundleId": 100,
+          "developerId": 100,
+          "rating": 100,
+          "ratingCount": 100,
+          "storeUpdatedAt": 100
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "title": "search with no matches returns an empty list (not an error)",
+      "result": "PARTIAL",
+      "latencyMs": 3066,
+      "details": {
+        "results": 3
+      }
+    },
+    {
+      "id": "A4",
+      "title": "lookup one app by id",
+      "result": "PASS",
+      "latencyMs": 3105,
+      "details": {
+        "id": "1444383602",
+        "found": 1,
+        "fields": 21
+      }
+    },
+    {
+      "id": "A5",
+      "title": "lookup several ids in one call",
+      "result": "PASS",
+      "latencyMs": 3108,
+      "details": {
+        "asked": 5,
+        "found": 5,
+        "note": "ids not sold in the storefront are absent, not errors"
+      }
+    },
+    {
+      "id": "A6",
+      "title": "lookup by bundle id (works, but undocumented)",
+      "result": "PARTIAL",
+      "latencyMs": 3091,
+      "details": {
+        "bundleId": "com.goodnotesapp.x",
+        "found": true,
+        "note": "PARTIAL by definition: not in Apple’s documentation"
+      }
+    },
+    {
+      "id": "A7",
+      "title": "developer and their other apps",
+      "result": "PASS",
+      "latencyMs": 3092,
+      "details": {
+        "developer": {
+          "developerId": "1708570616",
+          "name": "Goodnotes Limited",
+          "url": "https://apps.apple.com/us/developer/goodnotes-limited/id1708570616"
+        },
+        "apps": 1,
+        "sample": [
+          "Goodnotes: AI Notes, Docs, PDF"
+        ]
+      }
+    },
+    {
+      "id": "A8",
+      "title": "unknown id returns nothing (not an error)",
+      "result": "PASS",
+      "latencyMs": 3102,
+      "details": {
+        "found": 0
+      }
+    },
+    {
+      "id": "A9",
+      "title": "same app in another storefront (vn)",
+      "result": "PASS",
+      "latencyMs": 3108,
+      "details": {
+        "availableInVn": true,
+        "ratingUs": 4.71777,
+        "ratingVn": 4.71519,
+        "note": "ratings and availability are per storefront"
+      }
+    },
+    {
+      "id": "A10",
+      "title": "developer website listed by the store → social profile links on that website",
+      "result": "PASS",
+      "latencyMs": 2269,
+      "details": {
+        "sites": 3,
+        "withLinks": 2,
+        "out": [
+          {
+            "app": "Goodnotes: AI Notes, Docs, PDF",
+            "website": "https://www.goodnotes.com/",
+            "finalUrl": "https://www.goodnotes.com/",
+            "redirects": 0,
+            "links": [
+              "linkedin:company:goodnotes",
+              "x:goodnotesapp",
+              "facebook:goodnotesofficial",
+              "instagram:goodnotes.app",
+              "tiktok:goodnotes"
+            ]
+          },
+          {
+            "app": "Notability: AI Notes & Study",
+            "website": "https://www.gingerlabs.com/",
+            "finalUrl": "https://notability.com/",
+            "redirects": 1,
+            "links": [
+              "instagram:notabilityapp",
+              "youtube:UCybCzee6J3ewoXqMuE78JVQ",
+              "tiktok:notabilityapp",
+              "threads:notabilityapp",
+              "linkedin:company:ginger-labs"
+            ]
+          },
+          {
+            "app": "Freenotes®: AI Notes Taking",
+            "website": "https://freenotes.ai/",
+            "finalUrl": "https://www.freenotes.ai/",
+            "redirects": 1,
+            "links": []
+          }
+        ]
+      }
+    }
+  ],
+  "requestLog": [
+    {
+      "ts": "2026-11-26T18:27:18.006Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/search?term=note+taking&media=software&entity=software&country=us&limit=25",
+      "status": 200,
+      "latencyMs": 172,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:20.986Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/search?term=ng%C3%A2n+h%C3%A0ng&media=software&entity=software&country=vn&limit=25",
+      "status": 200,
+      "latencyMs": 38,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:24.056Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/search?term=zqxjvkwplm+qzxv&media=software&entity=software&country=us&limit=5",
+      "status": 200,
+      "latencyMs": 19,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:27.161Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?id=1444383602&country=us",
+      "status": 200,
+      "latencyMs": 18,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:30.269Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?id=1444383602%2C360593530%2C6464237904%2C1232780281%2C410395246&country=us",
+      "status": 200,
+      "latencyMs": 31,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:33.360Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?bundleId=com.goodnotesapp.x&country=us",
+      "status": 200,
+      "latencyMs": 22,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:36.450Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?id=1708570616&entity=software&country=us&limit=50",
+      "status": 200,
+      "latencyMs": 15,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:39.555Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?id=99999999999&country=us",
+      "status": 200,
+      "latencyMs": 13,
+      "attempt": 1,
+      "quotaUnits": 0
+    },
+    {
+      "ts": "2026-11-26T18:27:42.663Z",
+      "providerId": "apple-itunes-search",
+      "method": "GET",
+      "url": "https://itunes.apple.com/lookup?id=1444383602&country=vn",
+      "status": 200,
+      "latencyMs": 16,
+      "attempt": 1,
+      "quotaUnits": 0
+    }
+  ]
+}

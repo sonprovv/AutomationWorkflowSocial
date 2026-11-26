@@ -15,6 +15,11 @@ import {
   WorkflowBuilderService,
   workflowCreateDefSchema,
   workflowUpdateDefSchema,
+  AppSpyService,
+  appSearchSchema,
+  appTrackSchema,
+  appListSchema,
+  appLinkDecisionSchema,
   validateGraph,
   NODE_TYPES,
   NODE_LABELS,
@@ -301,6 +306,23 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     accepted(reply, await builder.enqueueRun(req.params.id, req.body?.version)),
   );
   api.get('/workflow-defs/:id/runs', { schema: { tags: ['workflow-builder'], params: idParam } }, async (req) => ({ items: await builder.runs(req.params.id) }));
+
+  /* ---------------- App Spy (Phase 9, ADR-0018) ---------------- */
+  const appSpy = new AppSpyService(ctx);
+  const linkParam = z.object({ linkId: z.uuid() });
+  api.get('/apps/policy', { schema: { tags: ['app-spy'], description: 'Source status and effective data policy (Apple App Store; Google Play is BLOCKED).' } }, async () => appSpy.policy());
+  api.get('/apps/search', { schema: { tags: ['app-spy'], querystring: appSearchSchema, description: 'Live App Store search (fuzzy; suggestions only). Nothing is stored.' } }, async (req) => appSpy.search(req.query));
+  api.get('/apps', { schema: { tags: ['app-spy'], querystring: appListSchema } }, async (req) => ({ items: await appSpy.list(req.query) }));
+  api.post('/apps', { schema: { tags: ['app-spy'], body: appTrackSchema, description: 'Track an app by App Store link, id or bundle id (Google Play links: 422 NOT_SUPPORTED).' } }, async (req, reply) => reply.status(201).send(await appSpy.track(req.body)));
+  api.get('/apps/:id', { schema: { tags: ['app-spy'], params: idParam } }, async (req) => appSpy.get(req.params.id));
+  api.delete('/apps/:id', { schema: { tags: ['app-spy'], params: idParam, querystring: z.object({ projectId: z.uuid().optional() }).strict() } }, async (req, reply) => {
+    await appSpy.remove(req.params.id, req.query.projectId);
+    return reply.status(204).send();
+  });
+  api.post('/apps/:id/refresh', { schema: { tags: ['app-spy'], params: idParam } }, async (req) => appSpy.refresh(req.params.id));
+  api.get('/apps/:id/developer-apps', { schema: { tags: ['app-spy'], params: idParam } }, async (req) => appSpy.developerApps(req.params.id));
+  api.post('/apps/:id/discover-links', { schema: { tags: ['app-spy'], params: idParam, description: 'Fetch the developer website listed by the store once and propose the social profiles it links to, with evidence.' } }, async (req) => appSpy.discoverLinks(req.params.id));
+  api.patch('/app-links/:linkId', { schema: { tags: ['app-spy'], params: linkParam, body: appLinkDecisionSchema } }, async (req) => appSpy.decideLink(req.params.linkId, req.body));
 }
 
 export type { Api };

@@ -401,3 +401,9 @@ details summary {
 tr.selected td {
   background: var(--card);
 }
+.badge-confirmed {
+  color: var(--ok);
+}
+.badge-proposed {
+  color: var(--accent);
+}

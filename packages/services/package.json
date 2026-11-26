@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.14.0",
+    "@sss/collector-appstore": "0.0.0",
     "@sss/collector-core": "0.0.0",
     "@sss/collector-registry": "0.0.0",
     "@sss/config": "0.0.0",

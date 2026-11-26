@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AccountPage, Accounts } from './pages/Accounts.tsx';
+import { AppPage, Apps } from './pages/Apps.tsx';
 import { Builder } from './pages/Builder.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Explorer } from './pages/Explorer.tsx';
@@ -27,16 +28,18 @@ type Route =
   | { page: 'jobs' }
   | { page: 'workflows' }
   | { page: 'builder'; id?: string }
+  | { page: 'apps' }
+  | { page: 'app'; id: string }
   | { page: 'exports' }
   | { page: 'reports' }
   | { page: 'sources' };
 
-const SIMPLE = ['projects', 'accounts', 'explore', 'insights', 'jobs', 'workflows', 'exports', 'reports', 'sources'] as const;
+const SIMPLE = ['projects', 'accounts', 'explore', 'insights', 'apps', 'jobs', 'workflows', 'exports', 'reports', 'sources'] as const;
 
 function parseHash(): Route {
   const [path] = location.hash.replace(/^#\/?/, '').split('?');
   const [page, id] = (path ?? '').split('/');
-  if ((page === 'account' || page === 'project') && id) return { page, id };
+  if ((page === 'account' || page === 'project' || page === 'app') && id) return { page, id };
   if (page === 'builder') return id ? { page, id } : { page };
   if ((SIMPLE as readonly string[]).includes(page ?? '')) return { page: page as (typeof SIMPLE)[number] };
   return { page: 'dashboard' };
@@ -59,6 +62,7 @@ function App() {
     ['accounts', 'Accounts', ['account']],
     ['explore', 'Content Explorer', []],
     ['insights', 'Insights', []],
+    ['apps', 'App Spy', ['app']],
     ['jobs', 'Job Monitor', []],
     ['workflows', 'Automations', []],
     ['builder', 'Workflow Builder', []],
@@ -89,6 +93,8 @@ function App() {
         {route.page === 'account' && <AccountPage id={route.id} />}
         {route.page === 'explore' && <Explorer />}
         {route.page === 'insights' && <Insights />}
+        {route.page === 'apps' && <Apps />}
+        {route.page === 'app' && <AppPage id={route.id} />}
         {route.page === 'jobs' && <Jobs />}
         {route.page === 'workflows' && <Workflows />}
         {route.page === 'builder' && <Builder id={route.id} />}
