@@ -1,0 +1,46 @@
+{
+  "schema": "sss.security-check/v1",
+  "at": "2026-11-26T17:36:42.635Z",
+  "checks": [
+    {
+      "check": "No secrets in 245 tracked files",
+      "ok": true,
+      "details": []
+    },
+    {
+      "check": ".env and .data/* (DB, backups, keys, exports, evidence) are git-ignored",
+      "ok": true,
+      "details": []
+    },
+    {
+      "check": "No .env / backup / key files are tracked",
+      "ok": true,
+      "details": []
+    },
+    {
+      "check": ".env.example has empty secret values",
+      "ok": true,
+      "details": []
+    },
+    {
+      "check": "API binds to loopback by default; remote exposure requires API_TOKEN",
+      "ok": true
+    },
+    {
+      "check": "MCP mutations disabled by default; auto-track off by default",
+      "ok": true
+    },
+    {
+      "check": "npm audit (production): no high/critical vulnerabilities",
+      "ok": true,
+      "details": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    }
+  ]
+}

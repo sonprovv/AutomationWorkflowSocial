@@ -47,5 +47,30 @@ Requires Docker Desktop. Run `start.bat --docker` or `./start.command --docker`.
 
 > **Status:** the Docker mode is written but **has not been run**, because the development machine has no Docker. It must be verified before anyone relies on it (tracked in PROGRESS.md).
 
-## 3. Cloud (24/7) — later
-Master Plan §15.2. Use the Compose stack, or managed PostgreSQL and Redis. Before exposing the API beyond localhost, add TLS, authentication and RBAC (Phase 8).
+## 3. Cloud / 24-7 (Master Plan §15.2) — documented, not yet run in a cloud
+Use a small VM or container host. Run these services:
+- **PostgreSQL:** managed, or the Compose `postgres` service. Set `DATABASE_URL`.
+- **Redis:** managed, or the Compose `redis` service. Set `REDIS_URL` and `QUEUE_DRIVER=bullmq`.
+- **Processes:** `api`, `worker` and `scheduler` (the Compose stack, or three processes).
+
+Requirements before exposing anything beyond the machine:
+1. **`API_TOKEN`**: 24+ random characters (`openssl rand -base64 32`). The API refuses a non-loopback `API_HOST` without it. Clients send `Authorization: Bearer <token>`: the web UI asks once per browser session, and the MCP server reads `API_TOKEN` from its environment. Known limitation: export download links opened in a new tab carry no token, so download through the UI page or an HTTP client.
+2. **HTTPS reverse proxy.** Never publish port 3000/18966 directly. Example `Caddyfile`:
+   ```
+   spy.example.com {
+     reverse_proxy 127.0.0.1:18966
+   }
+   ```
+3. **Keep PostgreSQL and Redis private**: no public ports. This is already the case in `docker-compose.yml`.
+4. **Secrets** go in the host's secret store or environment, never in git. Run `npm run security:check` before deploying.
+5. **Backups:**
+   - Set `BACKUP_PASSPHRASE`.
+   - Copy `.data/backups/` (or `BACKUP_DIR`) to separate storage.
+   - Run `npm run backup -- verify` regularly; that is the restore test.
+6. **Monitoring:** scrape `GET /api/v1/metrics` (Prometheus format) with the bearer token. Alert on these:
+   - `sss_jobs_oldest_queued_seconds` above 900;
+   - `sss_jobs_failed_24h`;
+   - `sss_scheduler_paused`;
+   - provider health (`/api/v1/providers`).
+
+Multi-user RBAC is out of scope for this single-user tool. The token gives full access, so share it only with trusted operators.

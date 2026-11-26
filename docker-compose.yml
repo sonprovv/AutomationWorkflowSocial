@@ -56,6 +56,9 @@ services:
       <<: *app-env
       API_HOST: 0.0.0.0
       API_PORT: '3000'
+      # Bound inside the container network only; the published port is 127.0.0.1 (see web service). For remote
+      # exposure set API_TOKEN and HTTPS instead (docs/DEPLOYMENT.md).
+      API_CONTAINER_NETWORK: 'true'
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }

@@ -1,12 +1,12 @@
 import { existsSync } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 import { ZodError } from 'zod';
 import { redactUrl } from '@sss/collector-core';
-import type { Runtime } from '@sss/services';
+import { databaseMetrics, HttpMetrics, type Runtime } from '@sss/services';
 import { AppError, toApiError } from '@sss/shared';
 import { registerRoutes } from './routes.ts';
 
@@ -28,10 +28,34 @@ export async function buildServer(o: ServerOptions): Promise<FastifyInstance> {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
+  const metrics = new HttpMetrics();
+  const token = o.runtime.ctx.config.API_TOKEN;
+  const tokenBuf = token ? Buffer.from(`Bearer ${token}`) : null;
   app.addHook('onRequest', async (req, reply) => {
     reply.header('x-request-id', req.id);
     reply.header('x-content-type-options', 'nosniff');
     reply.header('referrer-policy', 'no-referrer');
+    reply.header('x-frame-options', 'DENY');
+    reply.header('permissions-policy', 'camera=(), microphone=(), geolocation=()');
+    // The UI loads only its own bundle; images may come from provider CDNs (avatars) over https.
+    reply.header(
+      'content-security-policy',
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+    );
+    // Remote exposure (API_HOST not loopback) requires a bearer token on every API call except liveness.
+    if (tokenBuf && req.url.startsWith('/api/') && !req.url.startsWith('/api/v1/health/live')) {
+      const given = Buffer.from(String(req.headers.authorization ?? ''));
+      if (given.length !== tokenBuf.length || !timingSafeEqual(given, tokenBuf)) {
+        return reply.status(401).send({ error: { code: 'AUTH_REQUIRED', message: 'Missing or invalid API token', requestId: req.id } });
+      }
+    }
+  });
+  app.addHook('onResponse', async (req, reply) => {
+    metrics.observe(req.method, req.routeOptions.url ?? 'unmatched', reply.statusCode, reply.elapsedTime / 1000);
+  });
+  app.get('/api/v1/metrics', { schema: { tags: ['health'], description: 'Prometheus text metrics (HTTP, jobs, queue age, posts, provider usage/cost/reservations, collection runs, scheduler).' } }, async (_req, reply) => {
+    const lines = [...metrics.render(), ...(await databaseMetrics(o.runtime.ctx))];
+    return reply.header('content-type', 'text/plain; version=0.0.4').send(`${lines.join('\n')}\n`);
   });
 
   app.setErrorHandler((err, req, reply) => {

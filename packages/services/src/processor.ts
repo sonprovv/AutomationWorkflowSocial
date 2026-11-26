@@ -3,6 +3,7 @@ import { accountSyncPayload, aiAnalyzePayload, reportPayload, discoverPayload, e
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
 import { AiAnalysisService } from './ai.ts';
+import { BackupService } from './backup.ts';
 import { CleanupService } from './cleanup.ts';
 import { ReportService } from './reports.ts';
 import { TrendService } from './trends.ts';
@@ -108,6 +109,11 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
         const status = r.stoppedBy === 'CANCELLED' ? 'CANCELLED' : r.failed > 0 || r.stoppedBy ? (r.analyzed > 0 ? 'PARTIAL_SUCCESS' : r.failed > 0 ? 'FAILED' : 'SKIPPED') : r.analyzed + r.skippedExisting + r.refused === 0 ? 'SKIPPED' : 'SUCCEEDED';
         await jobs.finish(jobId, status, { result: r, warnings: [...r.warnings, ...(r.stoppedBy ? [`Stopped: ${r.stoppedBy}`] : [])], errorCode: status === 'FAILED' ? 'AI_FAILED' : null, errorMessage: status === 'FAILED' ? r.stoppedBy : null });
         await log('info', 'finish', `ai: ${r.analyzed} analysed, ${r.skippedExisting} cached, ${r.refused} refused, ${r.failed} failed; ${r.inputTokens}+${r.outputTokens} tokens, $${r.costUsd}`);
+        return;
+      }
+      if (name === JOB_NAMES.BACKUP) {
+        const r = await new BackupService(ctx).create();
+        await jobs.finish(jobId, 'SUCCEEDED', { result: { file: r.file.split(/[\/]/).pop(), bytes: r.bytes, tables: r.manifest.tables.length, rows: r.manifest.tables.reduce((a, t) => a + t.rows, 0), rotated: r.rotated } });
         return;
       }
       if (name === JOB_NAMES.REPORT) {

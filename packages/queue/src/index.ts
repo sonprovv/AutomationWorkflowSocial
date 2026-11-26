@@ -19,6 +19,7 @@ export const JOB_NAMES = {
   TRENDS: 'analytics.trends',
   AI_ANALYZE: 'ai.analyze',
   REPORT: 'report.generate',
+  BACKUP: 'maintenance.backup',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
@@ -33,6 +34,7 @@ export const JOB_QUEUE: Record<JobName, QueueName> = {
   'analytics.trends': 'analytics',
   'ai.analyze': 'ai',
   'report.generate': 'report',
+  'maintenance.backup': 'maintenance',
 };
 
 export const accountSyncPayload = z.object({
@@ -89,6 +91,7 @@ export const PAYLOAD_SCHEMAS = {
   'analytics.trends': trendsPayload,
   'ai.analyze': aiAnalyzePayload,
   'report.generate': reportPayload,
+  'maintenance.backup': cleanupPayload,
 } as const;
 
 /**

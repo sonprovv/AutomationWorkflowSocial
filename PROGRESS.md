@@ -18,9 +18,23 @@
 | 5 | Web dashboard, content explorer, exports | ✅ **Gate passed with real data**: UI rendered in a real browser, real Excel file validated by openpyxl. Bluesky rows are withheld from exports until the Product Owner approves the policy |
 | 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
 | 7 | MCP, Telegram/email, reports, n8n templates | ✅ **Gate passed with real data** (agent tool call → job → export/report). Real Telegram/email delivery needs the user's channel settings; n8n templates written and unit-tested, not run inside n8n |
-| 8–9 | See Master Plan §16 | ⬜ |
+| 8 | Security, scale, backup, observability, deployment | ✅ **Gate passed**: restore test on the real local DB, security check 7/7, load report (50k synthetic posts). Not run: Docker, macOS, cloud |
+| 9 | Visual workflow editor, additional platforms, App/Ad Spy | ⬜ (post-MVP) |
 
 ---
+
+## Phase 8 — Security, backup, observability, scale (started 2026-11-26 17:30 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P8-01 | Encrypted logical backups (AES-256-GCM, manifest + checksums), WF15 daily, rotation; verified restore into a fresh DB; `npm run backup -- verify` restore test | ✅ | `tests/integration/security-ops.test.ts`; real restore test on the local app DB: 29 tables / 107 rows, all checksums OK |
+| P8-02 | Security headers + CSP; loopback by default; `API_TOKEN` required for remote exposure (constant-time); UI/MCP token support | ✅ | tests |
+| P8-03 | `npm run security:check`: secret scan, ignore rules, .env.example, defaults, npm audit | ✅ | `docs/phase8/security-2026-11-26T17-36-42-634Z.json`: 7/7 PASS (after upgrading nodemailer 8.0.11 → 10.3.1, a high advisory) |
+| P8-04 | `GET /api/v1/metrics` (Prometheus) | ✅ | tests; real app |
+| P8-05 | Load report: 50k SYNTHETIC posts, concurrent API, deep pagination, 50k-row export | ✅ | `docs/phase8/load-2026-11-26T17-41-10-024Z.json`; fixed: export bind-parameter limit (keyset batches), dashboard p50 800 ms → ~7 ms (15 s cache) |
+| P8-06 | Cloud/24-7 deployment guide (HTTPS proxy, token, managed PG/Redis, backups, monitoring) | ⚠ | `docs/DEPLOYMENT.md` §3 — written, not run in a cloud |
+
+Tests: `npm test` **176 passed, 1 skipped**.
 
 ## Phase 7 — MCP, notifications, reports (started 2026-11-26 17:15 UTC)
 
@@ -240,6 +254,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-27 ~00:50 (UTC+7) — Phase 8: backups + restore test, security hardening/check, metrics, load report. 176 tests passing.
 - 2026-11-27 ~00:30 (UTC+7) — Phase 7: reports, notifications, MCP server, n8n templates; real-data MCP gate 6/6. 171 tests passing.
 - 2026-11-27 ~00:15 (UTC+7) — Phase 6: viral-v1, trends-v1, AI analysis (Claude SDK), Insights UI; real-data run 6/6. 166 tests passing.
 - 2026-11-26 ~16:45 — Phase 5: exports with policy guard, dashboard API, full web UI; real-data E2E 8/8. 156 tests passing.

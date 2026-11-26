@@ -46,6 +46,9 @@ export function toExportView(e: Export) {
   };
 }
 
+/** Rows per query when building exports (keeps bind parameters well under PostgreSQL's 32,767 limit). */
+const EXPORT_BATCH = 5000;
+
 const MIME: Record<string, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   csv: 'text/csv; charset=utf-8',
@@ -168,9 +171,14 @@ export class ExportService {
   private async analyticsSheets(projectId: string, postIds: Set<string>): Promise<Sheet[]> {
     const { db } = this.ctx;
     const ids = [...postIds];
-    const scores = await db.viralScore.findMany({ where: { projectId, postId: { in: ids } }, orderBy: { score: { sort: 'desc', nulls: 'last' } } });
-    const analyses = await db.contentAnalysis.findMany({ where: { postId: { in: ids }, status: 'SUCCEEDED' }, orderBy: { createdAt: 'desc' } });
-    const urls = new Map((await db.post.findMany({ where: { id: { in: ids } }, select: { id: true, url: true } })).map((p) => [p.id, p.url]));
+    // Filter by project in SQL and by post id in memory: no unbounded IN lists.
+    const scores = (await db.viralScore.findMany({ where: { projectId }, orderBy: { score: { sort: 'desc', nulls: 'last' } } })).filter((v) => postIds.has(v.postId));
+    const analyses = (await db.contentAnalysis.findMany({ where: { projectId, status: 'SUCCEEDED' }, orderBy: { createdAt: 'desc' } })).filter((a) => postIds.has(a.postId));
+    const needed = [...new Set([...scores.map((v) => v.postId), ...analyses.map((a) => a.postId)])];
+    const urls = new Map<string, string>();
+    for (let i = 0; i < needed.length; i += EXPORT_BATCH) {
+      for (const p of await db.post.findMany({ where: { id: { in: needed.slice(i, i + EXPORT_BATCH) } }, select: { id: true, url: true } })) urls.set(p.id, p.url);
+    }
     // Trend topics summarise post data: only included when some exported posts are cleared for derived analytics.
     const trend = ids.length ? await db.trendSnapshot.findFirst({ where: { projectId }, orderBy: { computedAt: 'desc' } }) : null;
     const t = (x: unknown) => (typeof x === 'string' ? neutralizeFormula(x) : x === null || x === undefined ? null : neutralizeFormula(JSON.stringify(x)));
@@ -235,12 +243,25 @@ export class ExportService {
     };
 
     // Posts.
-    const postRows = await db.post.findMany({
-      where: postWhere(filters),
-      orderBy: [{ sortAt: 'desc' }, { id: 'desc' }],
-      take: config.EXPORT_MAX_POSTS + 1,
-      include: { metrics: { orderBy: { collectedAt: 'desc' }, take: 1 }, account: { select: { username: true, platform: true } } },
-    });
+    // Keyset batches: bounded memory per query and never more bind parameters than PostgreSQL allows
+    // (a single findMany with an include over 50k rows exceeds the 32,767-parameter limit).
+    const baseWhere = postWhere(filters);
+    const postRows: Awaited<ReturnType<typeof fetchBatch>> = [];
+    async function fetchBatch(after: { sortAt: Date; id: string } | null, take: number) {
+      return db.post.findMany({
+        where: after ? { AND: [baseWhere, { OR: [{ sortAt: { lt: after.sortAt } }, { sortAt: after.sortAt, id: { lt: after.id } }] }] } : baseWhere,
+        orderBy: [{ sortAt: 'desc' }, { id: 'desc' }],
+        take,
+        include: { metrics: { orderBy: { collectedAt: 'desc' }, take: 1 }, account: { select: { username: true, platform: true } } },
+      });
+    }
+    for (let after: { sortAt: Date; id: string } | null = null; postRows.length <= config.EXPORT_MAX_POSTS; ) {
+      const batch = await fetchBatch(after, Math.min(EXPORT_BATCH, config.EXPORT_MAX_POSTS + 1 - postRows.length));
+      postRows.push(...batch);
+      if (batch.length === 0 || postRows.length > config.EXPORT_MAX_POSTS) break;
+      const last = batch[batch.length - 1]!;
+      after = { sortAt: last.sortAt, id: last.id };
+    }
     const warnings: string[] = [];
     if (postRows.length > config.EXPORT_MAX_POSTS) {
       postRows.length = config.EXPORT_MAX_POSTS;

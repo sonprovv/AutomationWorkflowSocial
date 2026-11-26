@@ -144,6 +144,14 @@ All of these are policy-gated: posts whose provider policy denies derived metric
 
 The MCP server (`apps/mcp`) wraps these routes for agents; see `docs/MCP.md`.
 
+## Operations (Phase 8)
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/metrics` | Prometheus text metrics (HTTP, jobs, queue age, posts, provider usage/cost/reservations, collection runs, scheduler) |
+
+**Authentication:** when `API_TOKEN` is set (required if `API_HOST` is not loopback), every `/api/v1` route except `/health/live` needs `Authorization: Bearer <API_TOKEN>`. Without it the API returns `401 AUTH_REQUIRED`.
+
 ## Routes registered for later phases (they return `501`)
 
 | Method | Route | Phase |

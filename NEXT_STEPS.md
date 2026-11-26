@@ -50,7 +50,12 @@ Done (ADR-0015, `docs/MCP.md`). To receive reports, set the channel settings in 
 - **Email:** `SMTP_URL`, `EMAIL_FROM` and `EMAIL_TO`;
 - **Webhook:** `WEBHOOK_URL` and `WEBHOOK_SECRET`.
 
-**Next: Phase 8** (Master Plan §16): security, scale, backup/restore test, observability, deployment.
+## Phase 8 status
+Done (ADR-0016). Notes for the user:
+- **Back up the backup key.** `.data/backup.key` (created by the first backup) must be copied somewhere safe. Alternatively set `BACKUP_PASSPHRASE` in `.env` before the next backup.
+- **Before exposing the app beyond this computer,** follow `docs/DEPLOYMENT.md` §3 (`API_TOKEN`, HTTPS).
+
+**Next: Phase 9** (post-MVP, Master Plan §16): visual workflow editor (versioned workflow DAG), additional platforms, App/Ad Spy. Check the MVP acceptance checklist (§17.2) against PROGRESS before starting.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

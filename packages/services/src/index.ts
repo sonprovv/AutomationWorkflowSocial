@@ -18,6 +18,8 @@ export * from './trends.ts';
 export * from './ai.ts';
 export * from './notify.ts';
 export * from './reports.ts';
+export * from './backup.ts';
+export * from './observability.ts';
 export * from './scheduler.ts';
 export * from './usage.ts';
 export * from './processor.ts';

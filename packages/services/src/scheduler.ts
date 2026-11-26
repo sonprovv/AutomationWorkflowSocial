@@ -22,6 +22,7 @@ export const WORKFLOW_KEYS = [
   'WF12_WEEKLY_REPORT',
   'WF13_PROVIDER_HEALTH_CHECK',
   'WF14_POLICY_CLEANUP',
+  'WF15_BACKUP',
 ] as const;
 export type WorkflowKey = (typeof WORKFLOW_KEYS)[number];
 
@@ -35,6 +36,7 @@ export const WORKFLOW_DESCRIPTIONS: Record<WorkflowKey, string> = {
   WF11_DAILY_REPORT: 'Builds the daily report (+ Excel) for projects with settings.daily_report and sends it to the configured channels.',
   WF12_WEEKLY_REPORT: 'Builds the weekly report for projects with settings.weekly_report and sends it to the configured channels.',
   WF13_PROVIDER_HEALTH_CHECK: 'Checks health and credentials of every enabled provider.',
+  WF15_BACKUP: 'Encrypted logical backup of the database (keeps BACKUP_KEEP newest files).',
   WF14_POLICY_CLEANUP: 'Deletes data the policy says must go (provider-deleted posts after a grace period, expired retention) and purges housekeeping rows.',
 };
 
@@ -51,6 +53,7 @@ export function builtinSchedules(config: AppConfig) {
     { id: 'wf12-weekly-report', workflowKey: 'WF12_WEEKLY_REPORT', everyMs: null, cron: '0 8 * * 1', config: {} },
     { id: 'wf13-provider-health', workflowKey: 'WF13_PROVIDER_HEALTH_CHECK', everyMs: config.PROVIDER_HEALTH_EVERY_MINUTES * 60_000, cron: null, config: { providerId: null } },
     { id: 'wf14-policy-cleanup', workflowKey: 'WF14_POLICY_CLEANUP', everyMs: null, cron: '0 3 * * *', config: {} },
+    { id: 'wf15-backup', workflowKey: 'WF15_BACKUP', everyMs: null, cron: '0 2 * * *', config: {} },
   ] satisfies { id: string; workflowKey: WorkflowKey; everyMs: number | null; cron: string | null; config: object }[];
 }
 
@@ -187,6 +190,8 @@ export class SchedulerService {
         const providerId = ((s.config as { providerId?: string | null }).providerId ?? null) as string | null;
         return this.single(JOB_NAMES.PROVIDER_HEALTH, { providerId }, providerId ?? 'all', null);
       }
+      case 'WF15_BACKUP':
+        return this.single(JOB_NAMES.BACKUP, { trigger: 'schedule' }, 'all', null);
       case 'WF14_POLICY_CLEANUP':
         return this.single(JOB_NAMES.CLEANUP, { trigger: 'schedule' }, 'all', null);
       case 'WF02_MARKET_DISCOVERY':

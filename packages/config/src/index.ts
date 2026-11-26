@@ -79,6 +79,15 @@ export const configSchema = z
     /** MCP server: base URL of this app's REST API, and whether tools that change data are allowed. */
     MCP_API_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
     MCP_ALLOW_MUTATIONS: bool.default(false),
+    /** WF15 encrypted backups. Without BACKUP_PASSPHRASE a random key is created in BACKUP_KEY_FILE — keep a copy elsewhere. */
+    BACKUP_DIR: z.string().default('.data/backups'),
+    BACKUP_KEY_FILE: z.string().default('.data/backup.key'),
+    BACKUP_PASSPHRASE: z.preprocess(emptyToUndef, z.string().min(12).optional()),
+    BACKUP_KEEP: z.coerce.number().int().min(1).max(365).default(7),
+    /** Required when API_HOST is not loopback: every /api request must send `Authorization: Bearer <API_TOKEN>`. */
+    API_TOKEN: z.preprocess(emptyToUndef, z.string().min(24).optional()),
+    /** Docker only: the API binds 0.0.0.0 inside the container network while the published port stays on 127.0.0.1. */
+    API_CONTAINER_NETWORK: bool.default(false),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),
     BLUESKY_IDENTIFIER: z.preprocess(emptyToUndef, z.string().optional()),
@@ -89,6 +98,10 @@ export const configSchema = z
     OPEN_BROWSER: bool.default(true),
   })
   .superRefine((c, ctx) => {
+    const loopback = ['127.0.0.1', 'localhost', '::1'].includes(c.API_HOST);
+    if (!loopback && !c.API_TOKEN && !c.API_CONTAINER_NETWORK) {
+      ctx.addIssue({ code: 'custom', path: ['API_TOKEN'], message: `API_HOST=${c.API_HOST} exposes the API beyond this computer: set API_TOKEN (24+ random characters) and put HTTPS in front (docs/DEPLOYMENT.md)` });
+    }
     if (c.NODE_ENV === 'production' && c.QUEUE_DRIVER === 'inline') {
       ctx.addIssue({ code: 'custom', path: ['QUEUE_DRIVER'], message: 'inline queue driver is not allowed in production' });
     }
@@ -120,7 +133,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, opts: { reload?
     const msg = r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid configuration: ${msg}`);
   }
-  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD, r.data.ANTHROPIC_API_KEY, r.data.TELEGRAM_BOT_TOKEN, r.data.WEBHOOK_SECRET]) globalSecrets.add(s);
+  for (const s of [r.data.YOUTUBE_API_KEY, r.data.BLUESKY_APP_PASSWORD, r.data.ANTHROPIC_API_KEY, r.data.TELEGRAM_BOT_TOKEN, r.data.WEBHOOK_SECRET, r.data.BACKUP_PASSPHRASE, r.data.API_TOKEN]) globalSecrets.add(s);
   if (r.data.SMTP_URL) {
     try {
       const pw = decodeURIComponent(new URL(r.data.SMTP_URL).password);

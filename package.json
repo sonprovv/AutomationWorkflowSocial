@@ -34,6 +34,9 @@
     "phase6:analytics": "tsx tools/local/src/phase6-analytics.ts",
     "phase7:mcp": "tsx tools/local/src/phase7-mcp.ts",
     "mcp": "tsx apps/mcp/src/main.ts",
+    "backup": "tsx tools/local/src/backup-cli.ts",
+    "security:check": "tsx tools/local/src/security-check.ts",
+    "load:test": "tsx tools/local/src/load-test.ts",
     "doctor": "tsx tools/local/src/doctor.ts",
     "start:native": "tsx tools/local/src/start.ts",
     "stop:native": "tsx tools/local/src/stop.ts",
@@ -41,7 +44,6 @@
   },
   "devDependencies": {
     "@types/node": "22.20.7",
-    "@types/nodemailer": "8.0.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.1.2"

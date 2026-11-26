@@ -10,12 +10,33 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+/** Remote deployments require API_TOKEN; the UI asks once and keeps it in this browser only (sessionStorage). */
+function token(): string | null {
+  try {
+    return sessionStorage.getItem('sss-api-token');
+  } catch {
+    return null;
+  }
+}
+
+export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}, retried = false): Promise<T> {
+  const t = token();
   const res = await fetch(`/api/v1${path}`, {
     method: init.method ?? 'GET',
-    headers: init.body !== undefined ? { 'content-type': 'application/json' } : undefined,
+    headers: { ...(init.body !== undefined ? { 'content-type': 'application/json' } : {}), ...(t ? { authorization: `Bearer ${t}` } : {}) },
     body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
   });
+  if (res.status === 401 && !retried) {
+    const entered = window.prompt('This server requires an API token (API_TOKEN):');
+    if (entered) {
+      try {
+        sessionStorage.setItem('sss-api-token', entered.trim());
+      } catch {
+        /* storage unavailable */
+      }
+      return api<T>(path, init, true);
+    }
+  }
   if (res.status === 204) return undefined as T;
   const json = await res.json().catch(() => null);
   if (!res.ok) {

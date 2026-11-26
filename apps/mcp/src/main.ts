@@ -10,6 +10,6 @@ import { createMcpServer } from './server.ts';
 
 const config = loadConfig();
 const apiBase = config.MCP_API_URL ?? `http://127.0.0.1:${config.APP_PORT}`;
-const server = createMcpServer({ apiBase, allowMutations: config.MCP_ALLOW_MUTATIONS });
+const server = createMcpServer({ apiBase, apiToken: config.API_TOKEN, allowMutations: config.MCP_ALLOW_MUTATIONS });
 await server.connect(new StdioServerTransport());
 console.error(`[mcp] social-spy-automation MCP server on stdio → ${apiBase} (mutations ${config.MCP_ALLOW_MUTATIONS ? 'ALLOWED' : 'disabled'})`);

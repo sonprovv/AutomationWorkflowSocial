@@ -129,7 +129,7 @@ describe('scheduler (DB-driven tick)', () => {
 
     const list = json(await app!.inject({ method: 'GET', url: '/api/v1/workflows' }));
     expect(list.paused).toBe(false);
-    expect(list.items.map((w: { id: string }) => w.id)).toEqual(['wf02-discovery', 'wf04-account-sync', 'wf05-metrics-refresh', 'wf07-viral', 'wf08-ai-analysis', 'wf09-trends', 'wf11-daily-report', 'wf12-weekly-report', 'wf13-provider-health', 'wf14-policy-cleanup']);
+    expect(list.items.map((w: { id: string }) => w.id)).toEqual(['wf02-discovery', 'wf04-account-sync', 'wf05-metrics-refresh', 'wf07-viral', 'wf08-ai-analysis', 'wf09-trends', 'wf11-daily-report', 'wf12-weekly-report', 'wf13-provider-health', 'wf14-policy-cleanup', 'wf15-backup']);
     const bad = await app!.inject({ method: 'PATCH', url: '/api/v1/workflows/wf14-policy-cleanup', payload: { cron: 'not a cron' } });
     expect(bad.statusCode).toBe(400);
     const ok = json(await app!.inject({ method: 'PATCH', url: '/api/v1/workflows/wf05-metrics-refresh', payload: { everyMinutes: 30 } }));

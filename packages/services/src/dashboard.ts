@@ -9,10 +9,26 @@ import { iso } from './serialize.ts';
  * usage/cost, job status. Only raw, provider-reported counts — no derived scores (those are Phase 6 and
  * policy-gated). Everything is computed server-side; the browser never loads the whole database.
  */
+/** Short in-process cache: the dashboard aggregates over all posts; many open tabs must not multiply that cost. */
+const CACHE_MS = 15_000;
+const caches = new WeakMap<object, Map<string, { at: number; value: Promise<unknown> }>>();
+
 export class DashboardService {
   constructor(private readonly ctx: ServiceContext) {}
 
   async overview(projectId?: string) {
+    const key = projectId ?? '*';
+    let cache = caches.get(this.ctx.db);
+    if (!cache) caches.set(this.ctx.db, (cache = new Map()));
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as ReturnType<DashboardService['compute']>;
+    const value = this.compute(projectId);
+    cache.set(key, { at: Date.now(), value });
+    value.catch(() => cache!.delete(key));
+    return value;
+  }
+
+  private async compute(projectId?: string) {
     const { db } = this.ctx;
     const now = nowOf(this.ctx);
     const d1 = new Date(now.getTime() - 86400_000);

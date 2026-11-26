@@ -1,0 +1,125 @@
+{
+  "schema": "sss.load-report/v1",
+  "kind": "SYNTHETIC load data (schema_version=synthetic-load) in a throwaway database — not collected data",
+  "at": "2026-11-26T17:41:10.024Z",
+  "environment": {
+    "node": "v22.16.0",
+    "platform": "win32",
+    "cpus": 8,
+    "db": "embedded PostgreSQL (same machine)",
+    "queue": "inline"
+  },
+  "dataset": {
+    "accounts": 200,
+    "posts": 50000,
+    "metricSnapshots": 50000,
+    "trackedAccounts": 100,
+    "seedMs": 3918
+  },
+  "scenarios": [
+    {
+      "name": "GET /posts?limit=50 (newest)",
+      "requests": 400,
+      "concurrency": 20,
+      "errors": 0,
+      "rps": 106,
+      "p50ms": 154.1,
+      "p95ms": 266.3,
+      "p99ms": 890.8,
+      "maxms": 920.2
+    },
+    {
+      "name": "GET /posts project + hashtag filter",
+      "requests": 400,
+      "concurrency": 20,
+      "errors": 0,
+      "rps": 125,
+      "p50ms": 155.3,
+      "p95ms": 197.5,
+      "p99ms": 222.1,
+      "maxms": 225.2
+    },
+    {
+      "name": "GET /posts text search (ILIKE)",
+      "requests": 200,
+      "concurrency": 10,
+      "errors": 0,
+      "rps": 29,
+      "p50ms": 353.9,
+      "p95ms": 478.1,
+      "p99ms": 497.6,
+      "maxms": 532.5
+    },
+    {
+      "name": "GET /posts date window",
+      "requests": 300,
+      "concurrency": 20,
+      "errors": 0,
+      "rps": 134,
+      "p50ms": 147.3,
+      "p95ms": 185,
+      "p99ms": 196.2,
+      "maxms": 205.8
+    },
+    {
+      "name": "GET /dashboard?projectId",
+      "requests": 100,
+      "concurrency": 10,
+      "errors": 0,
+      "rps": 402,
+      "p50ms": 6.8,
+      "p95ms": 188.8,
+      "p99ms": 190.3,
+      "maxms": 190.3
+    },
+    {
+      "name": "GET /accounts?limit=100",
+      "requests": 200,
+      "concurrency": 10,
+      "errors": 0,
+      "rps": 30,
+      "p50ms": 308.7,
+      "p95ms": 476,
+      "p99ms": 607.7,
+      "maxms": 678.8
+    },
+    {
+      "name": "GET /jobs/stats",
+      "requests": 200,
+      "concurrency": 10,
+      "errors": 0,
+      "rps": 394,
+      "p50ms": 23.7,
+      "p95ms": 39.8,
+      "p99ms": 44.5,
+      "maxms": 44.8
+    },
+    {
+      "name": "GET /metrics",
+      "requests": 100,
+      "concurrency": 5,
+      "errors": 0,
+      "rps": 102,
+      "p50ms": 49,
+      "p95ms": 60.5,
+      "p99ms": 65.7,
+      "maxms": 65.7
+    }
+  ],
+  "deepPagination": {
+    "pages": 100,
+    "firstPageMs": 12,
+    "last10AvgMs": 10,
+    "p95ms": 14.9
+  },
+  "postsQueryUsesIndex": true,
+  "queryPlan": "Limit  (cost=0.41..12.34 rows=51 width=24)\n  ->  Index Scan using posts_sort_at_id_idx on posts  (cost=0.41..11687.41 rows=50000 width=24)\n        Filter: (status = 'AVAILABLE'::\"PostStatus\")",
+  "export50k": {
+    "status": "SUCCEEDED",
+    "error": null,
+    "rows": 50000,
+    "seconds": 6.5,
+    "sizeMB": 4,
+    "rssMB": 733
+  }
+}

@@ -27,5 +27,21 @@ Phase 1 covers a local, single-user deployment. If you don't know where to start
 - **Job logs:** `GET /api/v1/jobs/:id` returns the job with its logs.
 - **Provider calls:** `collection_runs` (also on the account page under **Sync history**) and `usage_logs`.
 
-## Backup
-Backup and restore are planned for Phase 8. Until then, to back up native mode: stop the app, then copy the `.data/` folder.
+## Backup and restore (Phase 8)
+- **Automatic:** WF15 runs every day at 02:00 and writes an encrypted file to `.data/backups/`. The newest `BACKUP_KEEP` files are kept.
+- **Manual:** run `npm run backup` while the app is running (native mode) or with `DATABASE_URL` set.
+- **Key:** without `BACKUP_PASSPHRASE`, the key is `.data/backup.key`. **Copy it somewhere safe**; without it the backups cannot be decrypted.
+- **Restore test:** run `npm run backup -- verify`. It restores the newest backup into a temporary database, checks every table's row count and checksum, then drops that database.
+- **Real restore:**
+  1. Run `npm run backup -- restore <file>`. This creates `social_spy_restore_<time>` next to the live database and verifies it.
+  2. Stop the app.
+  3. Point `DATABASE_URL` at the new database, or, with the embedded database, rename the databases with `psql`.
+  4. Start the app.
+
+  The live database is never overwritten by the tool.
+- **Moving to another machine:** copy `.data/backups/*.sssbk` and the key. On the new machine, start the app once (this creates the database), then run `restore`.
+
+## Monitoring
+- `GET /api/v1/metrics` returns Prometheus text: HTTP latency, jobs, the age of the oldest queued job, posts, provider usage, cost and reservations, collection runs, and the scheduler state.
+- `GET /api/v1/jobs/stats` returns stuck jobs and the dead-letter view.
+- `npm run security:check` runs the secret scan, ignore rules, safe defaults and `npm audit`.

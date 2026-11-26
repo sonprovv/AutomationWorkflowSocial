@@ -14,6 +14,8 @@ import { z } from 'zod';
  */
 export interface McpOptions {
   apiBase: string;
+  /** Bearer token when the API requires one (API_TOKEN). */
+  apiToken?: string;
   allowMutations: boolean;
   fetchImpl?: typeof fetch;
 }
@@ -28,7 +30,7 @@ export function createMcpServer(o: McpOptions): McpServer {
   async function api(method: 'GET' | 'POST' | 'PATCH', path: string, body?: unknown): Promise<unknown> {
     const r = await f(`${base}/api/v1${path}`, {
       method,
-      headers: body !== undefined ? { 'content-type': 'application/json' } : {},
+      headers: { ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...(o.apiToken ? { authorization: `Bearer ${o.apiToken}` } : {}) },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(60_000),
     });
