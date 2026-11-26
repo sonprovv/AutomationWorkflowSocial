@@ -75,7 +75,7 @@ function build(p: Supported, log: RequestLogEntry[]): Built {
     adapter: new YouTubeAdapter({ apiKey, meter, onLog }),
     // A syntactically plausible but invalid key: exercises live error classification (costs ≥1 quota unit
     // only on a real project; an invalid key is rejected before any project quota is charged).
-    invalid: new YouTubeAdapter({ apiKey: 'AIzaSyINVALID-poc-negative-test-000000', meter, onLog }),
+    invalid: new YouTubeAdapter({ apiKey: 'invalid-key-for-negative-test', meter, onLog }),
     meter,
     credentialsConfigured: Boolean(apiKey),
     mediaHosts: ['i.ytimg.com', 'yt3.ggpht.com', 'yt3.googleusercontent.com'],
