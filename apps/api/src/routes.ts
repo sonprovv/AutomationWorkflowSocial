@@ -14,6 +14,7 @@ import {
   KeywordService,
   WorkflowBuilderService,
   workflowCreateDefSchema,
+  workflowUpdateDefSchema,
   validateGraph,
   NODE_TYPES,
   NODE_LABELS,
@@ -294,7 +295,8 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
   api.post('/workflow-defs/:id/versions', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ graph: z.unknown() }).strict(), description: 'Validate and save the graph as a new immutable version.' } }, async (req, reply) =>
     reply.status(201).send(await builder.saveVersion(req.params.id, req.body.graph)),
   );
-  api.patch('/workflow-defs/:id', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ status: z.enum(['DRAFT', 'ENABLED', 'PAUSED', 'ARCHIVED']) }).strict() } }, async (req) => builder.setStatus(req.params.id, req.body.status));
+  api.get('/workflow-defs/:id/versions/:version', { schema: { tags: ['workflow-builder'], params: z.object({ id: z.uuid(), version: z.coerce.number().int().min(1) }) } }, async (req) => builder.getVersion(req.params.id, req.params.version));
+  api.patch('/workflow-defs/:id', { schema: { tags: ['workflow-builder'], params: idParam, body: workflowUpdateDefSchema, description: 'Rename, attach to a project, or change status (DRAFT/ENABLED/PAUSED/ARCHIVED).' } }, async (req) => builder.update(req.params.id, req.body));
   api.post('/workflow-defs/:id/run', { schema: { tags: ['workflow-builder'], params: idParam, body: z.object({ version: z.number().int().min(1).optional() }).strict().nullish() } }, async (req, reply) =>
     accepted(reply, await builder.enqueueRun(req.params.id, req.body?.version)),
   );

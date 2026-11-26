@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AccountPage, Accounts } from './pages/Accounts.tsx';
+import { Builder } from './pages/Builder.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { Explorer } from './pages/Explorer.tsx';
 import { Insights } from './pages/Insights.tsx';
@@ -25,6 +26,7 @@ type Route =
   | { page: 'insights' }
   | { page: 'jobs' }
   | { page: 'workflows' }
+  | { page: 'builder'; id?: string }
   | { page: 'exports' }
   | { page: 'reports' }
   | { page: 'sources' };
@@ -35,6 +37,7 @@ function parseHash(): Route {
   const [path] = location.hash.replace(/^#\/?/, '').split('?');
   const [page, id] = (path ?? '').split('/');
   if ((page === 'account' || page === 'project') && id) return { page, id };
+  if (page === 'builder') return id ? { page, id } : { page };
   if ((SIMPLE as readonly string[]).includes(page ?? '')) return { page: page as (typeof SIMPLE)[number] };
   return { page: 'dashboard' };
 }
@@ -58,6 +61,7 @@ function App() {
     ['insights', 'Insights', []],
     ['jobs', 'Job Monitor', []],
     ['workflows', 'Automations', []],
+    ['builder', 'Workflow Builder', []],
     ['exports', 'Exports', []],
     ['reports', 'Reports', []],
     ['sources', 'Data Sources', []],
@@ -87,6 +91,7 @@ function App() {
         {route.page === 'insights' && <Insights />}
         {route.page === 'jobs' && <Jobs />}
         {route.page === 'workflows' && <Workflows />}
+        {route.page === 'builder' && <Builder id={route.id} />}
         {route.page === 'exports' && <Exports />}
         {route.page === 'reports' && <Reports />}
         {route.page === 'sources' && <Sources />}

@@ -27,7 +27,7 @@
 | 410 | `PRIVATE_OR_REMOVED` |
 | 422 | `NOT_SUPPORTED` |
 | 429 | `RATE_LIMITED`, `QUOTA_EXCEEDED`, `BUDGET_EXCEEDED` |
-| 501 | Planned for a later phase |
+| 501 | Not used (all planned routes are implemented) |
 | 502 | `PROVIDER_UNAVAILABLE`, `SCHEMA_CHANGED` |
 | 503 | `SERVICE_UNAVAILABLE` |
 | 504 | `TIMEOUT` |
@@ -107,6 +107,24 @@ The discovery job result has `coverage`: one entry per platform/keyword/operatio
 | POST | `/scheduler/pause`, `/scheduler/resume` | Stop or resume firing schedules |
 | GET | `/jobs/stats` | Job monitor (`windowHours`, default 24): `byStatus`, `byName`, `active` (with `ageSeconds`, `stuck`), `deadLetter` (FAILED by error code, recent failures with retry URLs) |
 
+## Workflow builder (Phase 9, ADR-0017)
+
+Custom DAG workflows. Every save is a new immutable version; every run pins one.
+
+| Method | Route | Description |
+|---|---|---|
+| GET | `/workflow-defs/node-types` | Whitelisted node types: `{type, label, configSchema}` (JSON Schema; the editor builds its forms from it) |
+| GET | `/workflow-defs` | Workflows that are not archived |
+| POST | `/workflow-defs` | `{name, description?, projectId?, template: "weekly-scan" \| "empty"}` creates the workflow and saves version 1 |
+| GET | `/workflow-defs/:id` | The workflow with its current `graph` and a list of `versions` |
+| GET | `/workflow-defs/:id/graph` | `{workflowId, version, graph}` of the current version |
+| GET | `/workflow-defs/:id/versions/:version` | One stored version `{version, createdAt, graph}` (404 if missing) |
+| PATCH | `/workflow-defs/:id` | `{name?, description?, projectId? (null detaches), status?: DRAFT \| ENABLED \| PAUSED \| ARCHIVED}`. An empty body returns 400 |
+| POST | `/workflow-defs/:id/validate` | `{graph}` returns `{ok, errors, order}`; nothing is saved |
+| POST | `/workflow-defs/:id/versions` | `{graph}`: validate it and save it as a new version, returning `{version, order}`. An invalid graph returns 400 with `details.errors` |
+| POST | `/workflow-defs/:id/run` | `{version?}`: queue `workflow.run` (202). Returns 400 without a project and 409 when the workflow is PAUSED or ARCHIVED |
+| GET | `/workflow-defs/:id/runs` | The last 20 runs, each with per-node `steps` (`status`, `jobIds`, timings, `error`, `result`) |
+
 ## Dashboard and exports (Phase 5)
 
 | Method | Route | Description |
@@ -152,13 +170,6 @@ The MCP server (`apps/mcp`) wraps these routes for agents; see `docs/MCP.md`.
 
 **Authentication:** when `API_TOKEN` is set (required if `API_HOST` is not loopback), every `/api/v1` route except `/health/live` needs `Authorization: Bearer <API_TOKEN>`. Without it the API returns `401 AUTH_REQUIRED`.
 
-## Routes registered for later phases (they return `501`)
+## Routes for later phases
 
-| Method | Route | Phase |
-|---|---|---|
-| POST | `/posts/:id/analyze` | 6 |
-| GET | `/analytics/viral` | 6 |
-| GET | `/analytics/trends` | 6 |
-| POST | `/exports` | 5 |
-| GET | `/exports/:id/download` | 5 |
-| POST | `/reports` | 7 |
+None are left. Every route that used to return `501` is now implemented (Phases 5–9). The planned `/workflows/:id/graph` became `/workflow-defs/:id/graph` (above), and `/workflows/...` stays the Phase 4 schedule API.

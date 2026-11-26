@@ -57,11 +57,11 @@ Done (ADR-0016). Notes for the user:
 
 ## Phase 9 plan (post-MVP; started 2026-11-27)
 Work in this order, and commit after each item so that work can resume from here:
-1. ✅ **DONE (2026-11-27, tests in `tests/integration/workflow-builder.test.ts`, 3/3 pass; full `npm test` not re-run after this item — run it first when resuming)** **P9-01 Workflow DAG engine:** tables `workflows`, `workflow_versions` (immutable JSON) and `workflow_runs`.
+1. ✅ **DONE (2026-11-27; tests in `tests/integration/workflow-builder.test.ts`)** **P9-01 Workflow DAG engine:** tables `workflows`, `workflow_versions` (immutable JSON) and `workflow_runs`.
    - Validation: the graph is acyclic; node types come from a whitelist; loops are bounded; each node has a timeout and an error policy.
    - Execution: nodes map to the existing jobs (discover, sync, metrics, viral, trends, AI, export, report, notify) or to wait/filter/if nodes, run in topological order.
    - API: `/workflow-defs`. The route `/workflows/:id/graph` stops returning 501.
-2. **P9-02 Visual editor:** a page that edits the DAG (nodes, edges, node config), validates it, saves a new version and runs it. Use React Flow if a release older than 2 weeks is available, otherwise a small SVG editor.
+2. ✅ **DONE (2026-11-27; ADR-0017, page `#/builder`, tests in `apps/web/test/graph-edit.test.ts`; checked in a real browser)** **P9-02 Visual editor:** a page that edits the DAG (nodes, edges, node config), validates it, saves a new version and runs it. Use React Flow if a release older than 2 weeks is available, otherwise a small SVG editor.
 3. **P9-03 App Spy, Phase 0 first:** a feasibility PoC for the Apple iTunes Search/Lookup API (public and official) for app search, details, developer and website. Google Play has no official search API, so it is BLOCKED (manual URL only) and gets a report.
    - If verified: an adapter, a `apps` table, and app → developer website → social account linking with evidence (never match by name alone).
 4. **P9-04 Ad Spy, desk research:** Meta Ad Library API (identity verification and token: AUTH_REQUIRED), Google Ads Transparency Center (no API: BLOCKED), TikTok Commercial Content API (application required). Write the report and capability records only. Do not infer spend, revenue or ROAS.

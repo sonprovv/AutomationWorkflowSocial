@@ -23,6 +23,16 @@ export const workflowCreateDefSchema = z
   .object({ name: z.string().trim().min(1).max(200), description: z.string().max(2000).optional(), projectId: z.uuid().optional(), template: z.enum(['weekly-scan', 'empty']).default('weekly-scan') })
   .strict();
 
+export const workflowUpdateDefSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().max(2000).nullable().optional(),
+    projectId: z.uuid().nullable().optional(),
+    status: z.enum(['DRAFT', 'ENABLED', 'PAUSED', 'ARCHIVED']).optional(),
+  })
+  .strict()
+  .refine((o) => Object.keys(o).length > 0, 'Nothing to update');
+
 /**
  * Workflow builder service + executor (Phase 9). Definitions are versioned (every save = new immutable version,
  * every run pins one). The executor walks the DAG in topological order; each node queues the SAME guarded job the
@@ -70,10 +80,19 @@ export class WorkflowBuilderService {
     return { version, order: v.order };
   }
 
-  async setStatus(id: string, status: 'DRAFT' | 'ENABLED' | 'PAUSED' | 'ARCHIVED') {
+  async update(id: string, input: unknown) {
+    const v = workflowUpdateDefSchema.parse(input);
     await this.get(id);
-    await this.ctx.db.workflowDef.update({ where: { id }, data: { status } });
+    if (v.projectId && !(await this.ctx.db.project.findUnique({ where: { id: v.projectId }, select: { id: true } }))) throw new AppError('NOT_FOUND', `Project ${v.projectId} not found`);
+    await this.ctx.db.workflowDef.update({ where: { id }, data: v });
     return this.get(id);
+  }
+
+  /** One immutable version (for viewing history or restoring it as a new version). */
+  async getVersion(id: string, version: number) {
+    const ver = await this.ctx.db.workflowVersion.findUnique({ where: { workflowId_version: { workflowId: id, version } } });
+    if (!ver) throw new AppError('NOT_FOUND', `Workflow ${id} version ${version} not found`);
+    return { workflowId: id, version: ver.version, createdAt: ver.createdAt.toISOString(), graph: ver.graph };
   }
 
   async enqueueRun(id: string, version?: number) {

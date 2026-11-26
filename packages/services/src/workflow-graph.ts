@@ -156,13 +156,13 @@ export function evaluateCondition(c: z.infer<typeof conditionSchema>, actual: nu
 export const TEMPLATE_WEEKLY_SCAN: Graph = {
   nodes: [
     { id: 'start', type: 'trigger.manual', config: {}, timeoutSeconds: 900, onError: 'stop', position: { x: 40, y: 120 } },
-    { id: 'discover', type: 'collect.discover', config: {}, timeoutSeconds: 1800, onError: 'continue', position: { x: 240, y: 40 } },
-    { id: 'sync', type: 'collect.sync_tracked', config: { maxAccounts: 50 }, timeoutSeconds: 1800, onError: 'continue', position: { x: 240, y: 200 } },
-    { id: 'viral', type: 'analytics.viral', config: {}, timeoutSeconds: 600, onError: 'continue', position: { x: 460, y: 200 } },
-    { id: 'trends', type: 'analytics.trends', config: { windowDays: 7 }, timeoutSeconds: 600, onError: 'continue', position: { x: 660, y: 200 } },
-    { id: 'has_candidates', type: 'flow.if', config: { condition: { metric: 'pendingCandidates', op: '>', value: 0 } }, timeoutSeconds: 900, onError: 'stop', position: { x: 460, y: 40 } },
-    { id: 'tell', type: 'notify.message', config: { title: 'New competitor candidates to review', body: 'Discovery found candidates — open the project review queue.' }, timeoutSeconds: 120, onError: 'continue', position: { x: 660, y: 40 } },
-    { id: 'report', type: 'report.generate', config: { kind: 'weekly', notify: true }, timeoutSeconds: 900, onError: 'stop', position: { x: 860, y: 120 } },
+    { id: 'discover', type: 'collect.discover', config: {}, timeoutSeconds: 1800, onError: 'continue', position: { x: 280, y: 40 } },
+    { id: 'sync', type: 'collect.sync_tracked', config: { maxAccounts: 50 }, timeoutSeconds: 1800, onError: 'continue', position: { x: 280, y: 200 } },
+    { id: 'viral', type: 'analytics.viral', config: {}, timeoutSeconds: 600, onError: 'continue', position: { x: 520, y: 200 } },
+    { id: 'trends', type: 'analytics.trends', config: { windowDays: 7 }, timeoutSeconds: 600, onError: 'continue', position: { x: 760, y: 200 } },
+    { id: 'has_candidates', type: 'flow.if', config: { condition: { metric: 'pendingCandidates', op: '>', value: 0 } }, timeoutSeconds: 900, onError: 'stop', position: { x: 520, y: 40 } },
+    { id: 'tell', type: 'notify.message', config: { title: 'New competitor candidates to review', body: 'Discovery found candidates — open the project review queue.' }, timeoutSeconds: 120, onError: 'continue', position: { x: 760, y: 40 } },
+    { id: 'report', type: 'report.generate', config: { kind: 'weekly', notify: true }, timeoutSeconds: 900, onError: 'stop', position: { x: 1000, y: 120 } },
   ],
   edges: [
     { from: 'start', to: 'discover' },

@@ -20,6 +20,8 @@ Phase 1 covers a local, single-user deployment. If you don't know where to start
 | Posts disappeared after a few days | WF14 deleted posts the provider stopped returning (after `CLEANUP_UNAVAILABLE_GRACE_HOURS`) | Expected (provider deletion rules). Set `CLEANUP_DELETE_UNAVAILABLE=false` to keep them hidden instead |
 | Bluesky search page 2 returns `PERMISSION_DENIED` | Search pagination requires login | Set `BLUESKY_IDENTIFIER` and `BLUESKY_APP_PASSWORD` (ADR-0005) |
 | YouTube shows "not enabled" | It is not verified in Phase 0 yet | Add `YOUTUBE_API_KEY` and run the PoC (ADR-0007) |
+| Blank page, or the console shows "Expected a JavaScript module script but the server responded with a MIME type of text/html", after `npm run build:web` | The API registers the files in `apps/web/dist` once, at startup | Restart the app (`stop.bat`, then `start.bat`) |
+| A custom workflow's **Run now** is disabled | Unsaved changes, an old version is open, no project is attached, or the status is PAUSED/ARCHIVED | The reason is shown under the toolbar. Save, attach a project, or set the status to DRAFT/ENABLED |
 | Garbled emoji or Vietnamese text | The database was not created with UTF-8 | The embedded DB is always UTF-8/ICU. An external DB must be created with `ENCODING 'UTF8'` |
 
 ## Logs

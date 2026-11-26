@@ -19,9 +19,22 @@
 | 6 | Allowed analytics, AI analysis, trend engine | ✅ **Done, tested on real data** (with a test policy in a throwaway DB). In the product it stays blocked until the Product Owner approves the policies; AI needs `ANTHROPIC_API_KEY` |
 | 7 | MCP, Telegram/email, reports, n8n templates | ✅ **Gate passed with real data** (agent tool call → job → export/report). Real Telegram/email delivery needs the user's channel settings; n8n templates written and unit-tested, not run inside n8n |
 | 8 | Security, scale, backup, observability, deployment | ✅ **Gate passed**: restore test on the real local DB, security check 7/7, load report (50k synthetic posts). Not run: Docker, macOS, cloud |
-| 9 | Visual workflow editor, additional platforms, App/Ad Spy | ⬜ (post-MVP) |
+| 9 | Visual workflow editor, additional platforms, App/Ad Spy | 🟡 **P9-01 engine and P9-02 visual editor done** (tested; the editor was checked in a real browser). Next: P9-03 App Spy feasibility, P9-04 Ad Spy desk research, close-out |
 
 ---
+
+## Phase 9 — Post-MVP: workflow builder, App/Ad Spy (started 2026-11-27)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P9-01 | Versioned workflow DAG (`workflow_defs`/`workflow_versions`/`workflow_runs`), validation (whitelist, acyclic, reachable, bounded waits, if-branches), executor over the existing guarded jobs, `/workflow-defs` API | ✅ | `tests/integration/workflow-builder.test.ts`; ADR-0017 |
+| P9-02 | Visual editor (`#/builder`): SVG canvas (move, drag-to-connect, select/delete, true/false if-edges), forms built from each node type's JSON Schema, Validate / Save version / Run, version history (restore = save again), run status on each node, run cancel. API additions: `PATCH` name/project/status, `GET /versions/:version` | ✅ | `apps/web/test/graph-edit.test.ts` (6) + 1 new API test; checked in headless Edge over CDP on the real app: add node → connect → move → edge into the start node refused → validate → saved v2, confirmed via the API. Dependency-free SVG instead of React Flow (ADR-0017) |
+| P9-03 | App Spy feasibility (Apple iTunes Search/Lookup; Google Play BLOCKED) | ⬜ | |
+| P9-04 | Ad Spy desk research (Meta Ad Library, Google Ads Transparency, TikTok Commercial Content API) | ⬜ | |
+
+Notes:
+- **No project in the local app database yet,** so **Run now** has not been clicked in the real app. Execution is covered by the integration tests. The app has an example workflow, "Weekly market scan (example)": attach a project to it to run it.
+- **After `npm run build:web`, restart the app**, because static files are registered at startup (RUNBOOK).
 
 ## Phase 8 — Security, backup, observability, scale (started 2026-11-26 17:30 UTC)
 
@@ -254,6 +267,7 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
 - 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-27 ~01:15 (UTC+7) — Phase 9: P9-01 workflow DAG engine and P9-02 visual editor (verified in a real browser). 186 tests passing.
 - 2026-11-27 ~00:50 (UTC+7) — Phase 8: backups + restore test, security hardening/check, metrics, load report. 176 tests passing.
 - 2026-11-27 ~00:30 (UTC+7) — Phase 7: reports, notifications, MCP server, n8n templates; real-data MCP gate 6/6. 171 tests passing.
 - 2026-11-27 ~00:15 (UTC+7) — Phase 6: viral-v1, trends-v1, AI analysis (Claude SDK), Insights UI; real-data run 6/6. 166 tests passing.

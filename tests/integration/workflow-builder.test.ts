@@ -133,4 +133,26 @@ describe('workflow builder API + execution', () => {
     const types = json(await app.inject({ method: 'GET', url: '/api/v1/workflow-defs/node-types' }));
     expect(types.items.map((t: any) => t.type)).toContain('flow.if');
   });
+  it('editor API: attach a project and rename via PATCH, read any stored version (P9-02)', async () => {
+    const projectId = await setup();
+    const wf = json(await app.inject({ method: 'POST', url: '/api/v1/workflow-defs', payload: { name: 'Unattached' } }));
+    expect(wf.projectId).toBeNull();
+    expect((await app.inject({ method: 'POST', url: `/api/v1/workflow-defs/${wf.id}/run`, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'PATCH', url: `/api/v1/workflow-defs/${wf.id}`, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'PATCH', url: `/api/v1/workflow-defs/${wf.id}`, payload: { projectId: '00000000-0000-4000-8000-000000000000' } })).statusCode).toBe(404);
+    const patched = json(await app.inject({ method: 'PATCH', url: `/api/v1/workflow-defs/${wf.id}`, payload: { projectId, name: 'Attached', status: 'ENABLED' } }));
+    expect(patched).toMatchObject({ projectId, name: 'Attached', status: 'ENABLED' });
+
+    const v1 = json(await app.inject({ method: 'GET', url: `/api/v1/workflow-defs/${wf.id}/versions/1` }));
+    expect(v1).toMatchObject({ version: 1, graph: { nodes: expect.any(Array), edges: expect.any(Array) } });
+    // Restoring v1 = saving its graph as a new version; v1 itself never changes.
+    const restored = json(await app.inject({ method: 'POST', url: `/api/v1/workflow-defs/${wf.id}/versions`, payload: { graph: v1.graph } }));
+    expect(restored.version).toBe(2);
+    expect(json(await app.inject({ method: 'GET', url: `/api/v1/workflow-defs/${wf.id}/versions/1` })).graph).toEqual(v1.graph);
+    expect((await app.inject({ method: 'GET', url: `/api/v1/workflow-defs/${wf.id}/versions/99` })).statusCode).toBe(404);
+
+    const job = await runAndWait(wf.id);
+    expect(['SUCCEEDED', 'PARTIAL_SUCCESS']).toContain(job.status);
+    expect(json(await app.inject({ method: 'GET', url: `/api/v1/workflow-defs/${wf.id}/runs` })).items[0]).toMatchObject({ version: 2, jobId: job.id });
+  });
 });
