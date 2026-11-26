@@ -17,6 +17,8 @@ export const postQuerySchema = z
     until: z.iso.datetime({ offset: true }).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(25),
     cursor: z.string().max(500).optional(),
+    /** UNAVAILABLE posts (no longer returned by the provider) are hidden unless asked for. */
+    includeUnavailable: z.preprocess((x) => x === true || x === 'true', z.boolean()).optional(),
   })
   .strict();
 
@@ -54,10 +56,18 @@ export function toPostView(p: PostWithMetric) {
     thumbnailUrl: p.thumbnailUrl,
     durationSeconds: p.durationSeconds,
     publishedAt: iso(p.publishedAt),
+    providerIndexedAt: iso(p.providerIndexedAt),
     firstSeenAt: p.firstSeenAt.toISOString(),
     status: p.status,
+    unavailable: p.status === 'UNAVAILABLE' ? { since: iso(p.unavailableAt), reason: p.unavailableReason } : null,
     metrics: metricView(p.metrics[0]),
-    provenance: { providerId: p.providerId, policyId: p.policyId, schemaVersion: p.schemaVersion, lastCollectedAt: p.lastCollectedAt.toISOString() },
+    provenance: {
+      providerId: p.providerId,
+      policyId: p.policyId,
+      schemaVersion: p.schemaVersion,
+      lastCollectedAt: p.lastCollectedAt.toISOString(),
+      lastMetricsAt: iso(p.lastMetricsAt),
+    },
   };
 }
 export type PostView = ReturnType<typeof toPostView>;
@@ -73,6 +83,7 @@ export class PostQueryService {
     const c = decodeCursor(v.cursor, cursorSchema);
     const where: Prisma.PostWhereInput = {
       accountId: v.accountId,
+      ...(v.includeUnavailable ? {} : { status: 'AVAILABLE' as const }),
       platform: v.platform,
       contentType: v.contentType,
       ...(v.hashtag ? { hashtags: { has: v.hashtag.toLowerCase().replace(/^#/, '') } } : {}),

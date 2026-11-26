@@ -11,12 +11,14 @@ export type QueueName = (typeof QUEUE_NAMES)[number];
 export const JOB_NAMES = {
   ACCOUNT_SYNC: 'account.sync',
   PROVIDER_HEALTH: 'provider.health',
+  METRICS_REFRESH: 'post.metrics_refresh',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
 export const JOB_QUEUE: Record<JobName, QueueName> = {
   'account.sync': 'collection',
   'provider.health': 'maintenance',
+  'post.metrics_refresh': 'collection',
 };
 
 export const accountSyncPayload = z.object({
@@ -29,9 +31,18 @@ export type AccountSyncPayload = z.infer<typeof accountSyncPayload>;
 export const providerHealthPayload = z.object({ providerId: z.string().nullable() });
 export type ProviderHealthPayload = z.infer<typeof providerHealthPayload>;
 
+/** accountId null = every tracked account (optionally limited to one project). */
+export const metricsRefreshPayload = z.object({
+  accountId: z.uuid().nullable(),
+  projectId: z.uuid().nullable(),
+  trigger: z.enum(['manual', 'schedule', 'retry']),
+});
+export type MetricsRefreshPayload = z.infer<typeof metricsRefreshPayload>;
+
 export const PAYLOAD_SCHEMAS = {
   'account.sync': accountSyncPayload,
   'provider.health': providerHealthPayload,
+  'post.metrics_refresh': metricsRefreshPayload,
 } as const;
 
 /**

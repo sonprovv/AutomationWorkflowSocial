@@ -90,6 +90,14 @@ export async function registerRoutes(app: FastifyInstance, rt: Runtime): Promise
     const job = await accounts.enqueueSync(req.params.id, req.body?.projectId ?? null, 'manual');
     return accepted(reply, toJobView(job));
   });
+  api.post('/accounts/:id/refresh-metrics', { schema: { tags: ['accounts'], params: idParam, body: z.object({ projectId: z.uuid().optional() }).strict().nullish(), description: 'Refresh allowed metrics of the account posts that are due (age-tiered). Posts the provider no longer returns are marked UNAVAILABLE.' } }, async (req, reply) => {
+    const job = await accounts.enqueueMetricsRefresh(req.params.id, req.body?.projectId ?? null, 'manual');
+    return accepted(reply, toJobView(job));
+  });
+  api.post('/metrics/refresh', { schema: { tags: ['accounts'], body: z.object({ projectId: z.uuid().optional() }).strict().nullish(), description: 'Refresh due post metrics for every tracked account (optionally one project).' } }, async (req, reply) => {
+    const job = await accounts.enqueueMetricsRefresh(null, req.body?.projectId ?? null, 'manual');
+    return accepted(reply, toJobView(job));
+  });
   api.patch('/accounts/:id/tracking', { schema: { tags: ['accounts'], params: idParam, body: trackingPatchSchema } }, async (req) => accounts.updateTracking(req.params.id, req.body));
 
   /* ---------------- posts ---------------- */

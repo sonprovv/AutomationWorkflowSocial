@@ -52,8 +52,10 @@ These return `202`:
 | POST | `/accounts` | Track an account (details below) |
 | GET | `/accounts/:id` | Profile, latest metrics with provenance, linked projects, sync state, 10 most recent collection runs |
 | POST | `/accounts/:id/sync` | Manual sync, returns 202. Returns 409 if a sync of this account is already active |
+| POST | `/accounts/:id/refresh-metrics` | Phase 2. Refresh the metrics of this account's posts that are due (age tiers, see `docs/adr/0010-…`). Returns 202; 409 if a refresh of this account is already active |
+| POST | `/metrics/refresh` | Phase 2. Same for every tracked account, optionally `{projectId}`. Paused tracking links are skipped |
 | PATCH | `/accounts/:id/tracking` | `{projectId, trackingStatus?, priority?, approvalStatus?}` |
-| GET | `/posts` | Filters: `accountId`, `projectId`, `platform`, `contentType`, `hashtag`, `q` (case-insensitive, Unicode-aware), `since`, `until`, `limit` (max 100), `cursor`. Sorted newest first |
+| GET | `/posts` | Filters: `accountId`, `projectId`, `platform`, `contentType`, `hashtag`, `q` (case-insensitive, Unicode-aware), `since`, `until`, `limit` (max 100), `cursor`, `includeUnavailable` (default `false`: posts the provider no longer returns are hidden). Sorted newest first. Each post has `providerIndexedAt`, `status`, `unavailable: {since, reason} \| null` and `provenance.lastMetricsAt` |
 | GET | `/posts/:id` | Post with latest metrics and provenance |
 | GET | `/posts/:id/metrics` | Metric snapshots allowed by policy. `historyAllowed: false` means only the latest snapshot is kept |
 | GET | `/jobs` | Recent jobs (`status`, `projectId`, `limit`) |

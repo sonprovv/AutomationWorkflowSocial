@@ -28,6 +28,7 @@
     "db:generate": "npm run generate -w @sss/database",
     "db:migrate:new": "npm run migrate:new -w @sss/database --",
     "slice": "tsx tools/local/src/slice.ts",
+    "phase2:sync": "tsx tools/local/src/phase2-sync.ts",
     "doctor": "tsx tools/local/src/doctor.ts",
     "start:native": "tsx tools/local/src/start.ts",
     "stop:native": "tsx tools/local/src/stop.ts",

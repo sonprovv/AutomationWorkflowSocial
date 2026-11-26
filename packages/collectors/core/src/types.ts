@@ -125,6 +125,8 @@ export interface Post {
   thumbnailUrl: string | null;
   durationSeconds: number | null;
   publishedAt: string | null;
+  /** Provider-side index/ingest time when the platform exposes one (Bluesky indexedAt). publishedAt may be author-supplied. */
+  indexedAt?: string | null;
   metrics: PostMetrics | null;
   provenance: Provenance;
 }

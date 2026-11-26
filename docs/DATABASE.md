@@ -25,7 +25,7 @@
 |---|---|---|
 | `social_accounts` | Accounts on each platform, with status `ACTIVE`, `NOT_FOUND` or `PRIVATE_OR_REMOVED` | unique `(platform, external_id)` |
 | `project_accounts` | Tracking link between a project and an account: approval, tracking status, priority, sync state | PK `(project_id, account_id)`; indexes `(project_id, approval_status)` and `(next_sync_at)` |
-| `posts` | Posts | unique `(platform, external_id)`; indexes `(account_id, published_at DESC)`, `(sort_at DESC, id DESC)`, `(account_id, sort_at DESC, id DESC)` |
+| `posts` | Posts. Phase 2 adds `provider_indexed_at` (Bluesky `indexedAt`; `published_at` is author-supplied), `last_metrics_at`, and `unavailable_at` / `unavailable_reason` for posts the provider stopped returning (`status = UNAVAILABLE`; a later sync that returns the post sets it back to `AVAILABLE`) | unique `(platform, external_id)`; indexes `(account_id, published_at DESC)`, `(sort_at DESC, id DESC)`, `(account_id, sort_at DESC, id DESC)`, `(status, last_metrics_at)` |
 | `post_metrics` | Metric snapshots for posts. Only the latest one is kept unless the policy allows history | index `(post_id, collected_at DESC)` |
 | `account_metrics` | Account metric snapshots, with the same policy rule | index `(account_id, collected_at DESC)` |
 

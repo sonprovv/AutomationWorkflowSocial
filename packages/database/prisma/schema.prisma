@@ -167,6 +167,14 @@ model Post {
   firstSeenAt     DateTime      @default(now()) @map("first_seen_at") @db.Timestamptz(3)
   lastCollectedAt DateTime      @map("last_collected_at") @db.Timestamptz(3)
   status          PostStatus    @default(AVAILABLE)
+  /// When the provider first confirmed the post was no longer returned (deleted / private / taken down).
+  unavailableAt     DateTime?   @map("unavailable_at") @db.Timestamptz(3)
+  /// Why it is UNAVAILABLE, e.g. NOT_RETURNED_BY_PROVIDER. Never set from a network error.
+  unavailableReason String?     @map("unavailable_reason")
+  /// Provider-side index time (Bluesky indexedAt). published_at is author-supplied and can be backdated.
+  providerIndexedAt DateTime?   @map("provider_indexed_at") @db.Timestamptz(3)
+  /// Last time metrics were refreshed for this post (sync or metrics refresh job).
+  lastMetricsAt   DateTime?     @map("last_metrics_at") @db.Timestamptz(3)
   providerId      String        @map("provider_id")
   policyId        String        @map("policy_id")
   schemaVersion   String        @map("schema_version")
@@ -178,6 +186,7 @@ model Post {
   @@index([accountId, publishedAt(sort: Desc)])
   @@index([sortAt(sort: Desc), id(sort: Desc)])
   @@index([accountId, sortAt(sort: Desc), id(sort: Desc)])
+  @@index([status, lastMetricsAt])
   @@map("posts")
 }
 

@@ -34,6 +34,8 @@ export const configSchema = z
     JOB_TIMEOUT_SECONDS: z.coerce.number().int().min(10).max(3600).default(600),
     MAX_RETRIES: z.coerce.number().int().min(0).max(10).default(3),
     INITIAL_POSTS_PER_ACCOUNT: z.coerce.number().int().min(1).max(200).default(20),
+    /** Max posts whose metrics one refresh job updates (WF05/06); the most overdue go first. */
+    METRICS_REFRESH_MAX_POSTS: z.coerce.number().int().min(1).max(5000).default(500),
     PROVIDER_HEALTH_EVERY_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
     /** Provider credentials (optional; adapters report AUTH_REQUIRED when missing). */
     YOUTUBE_API_KEY: z.preprocess(emptyToUndef, z.string().optional()),

@@ -5,6 +5,7 @@ export * from './accounts.ts';
 export * from './posts.ts';
 export * from './providers.ts';
 export * from './sync.ts';
+export * from './metrics.ts';
 export * from './usage.ts';
 export * from './processor.ts';
 export * from './bootstrap.ts';

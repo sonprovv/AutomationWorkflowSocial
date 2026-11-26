@@ -23,8 +23,12 @@ Updated 2026-11-26 after resuming. The full status and test evidence are in [`PR
 | 4 | Product Owner decisions | Listed in `docs/feasibility/README.md` §5:<br>- Bluesky policy proposal<br>- TikTok option (manual URL + oEmbed is recommended)<br>- Meta App Review<br>- paid sources (X, Apify) |
 | 5 | Docker (optional) | `start.bat --docker` on a machine with Docker Desktop, to verify `docker-compose.yml`. |
 
-## Next phase after closing the Phase 1 open items
-**Phase 2** (Master Plan §16): YouTube and Bluesky live adapters at production level; TikTok and Meta as far as access allows. Deliverables: contract tests, real-data sync, usage and provenance.
+## Phase 2 status
+Bluesky is done with real data (see `PROGRESS.md` → Phase 2). Open:
+- **YouTube live verification.** Once `YOUTUBE_API_KEY` is set and the Phase 0 runs are done, run `npm run phase2:sync -- https://www.youtube.com/@GoogleDevelopers` (add any channels) and check the quota units in the report.
+- **TikTok / Meta.** These wait on the Product Owner decisions above.
+
+After that: **Phase 3** (Master Plan §16): project, keyword, discovery, review, tracking, incremental sync. Seed keyword → candidate → approved account → posts.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

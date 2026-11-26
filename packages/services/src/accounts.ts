@@ -151,6 +151,22 @@ export class AccountService {
     });
   }
 
+  /** Queue a metrics refresh (WF05/06) for one account, or for every tracked account (optionally one project). */
+  async enqueueMetricsRefresh(accountId: string | null, projectId: string | null, trigger: 'manual' | 'schedule') {
+    if (accountId) {
+      const acc = await this.ctx.db.socialAccount.findUnique({ where: { id: accountId }, select: { id: true } });
+      if (!acc) throw new AppError('NOT_FOUND', `Account ${accountId} not found`);
+    }
+    return this.jobs.create({
+      name: JOB_NAMES.METRICS_REFRESH,
+      payload: { accountId, projectId, trigger },
+      idempotencyKey: idempotencyKey({ op: JOB_NAMES.METRICS_REFRESH, resource: accountId ?? `all:${projectId ?? '-'}` }),
+      projectId,
+      resourceType: accountId ? 'social_account' : 'tracked_accounts',
+      resourceId: accountId ?? undefined,
+    });
+  }
+
   async get(id: string) {
     const a = await this.ctx.db.socialAccount.findUnique({ where: { id } });
     if (!a) throw new AppError('NOT_FOUND', `Account ${id} not found`);

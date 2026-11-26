@@ -1,8 +1,9 @@
 import { CollectorError, toCollectorError } from '@sss/collector-core';
-import { accountSyncPayload, idempotencyKey, JOB_NAMES, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { accountSyncPayload, idempotencyKey, JOB_NAMES, metricsRefreshPayload, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
 import { AppError } from '@sss/shared';
 import type { ServiceContext } from './context.ts';
 import { JobService } from './jobs.ts';
+import { MetricsRefreshService } from './metrics.ts';
 import { ProviderService } from './providers.ts';
 import { SyncService } from './sync.ts';
 
@@ -15,6 +16,7 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
   const jobs = new JobService(ctx);
   const sync = new SyncService(ctx);
   const providers = new ProviderService(ctx);
+  const metrics = new MetricsRefreshService(ctx);
 
   const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
     const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
@@ -47,6 +49,26 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
           errorMessage: r.error?.message ?? null,
         });
         await log('info', 'finish', `${r.status}: ${r.postsNew} new, ${r.postsUpdated} updated, ${r.pages} page(s), ${r.usage.requests} request(s)`);
+        return;
+      }
+      if (name === JOB_NAMES.METRICS_REFRESH) {
+        const p = metricsRefreshPayload.parse(payload);
+        const r = await metrics.refresh({
+          accountId: p.accountId,
+          projectId: p.projectId,
+          jobId,
+          signal,
+          isCancelled: () => jobs.isCancelRequested(jobId),
+          onProgress: (pct) => jobs.progress(jobId, pct),
+          onLog: log,
+        });
+        await jobs.finish(jobId, r.status, {
+          result: r,
+          warnings: r.warnings,
+          errorCode: r.error?.code ?? (r.status === 'CANCELLED' ? 'CANCELLED' : null),
+          errorMessage: r.error?.message ?? null,
+        });
+        await log('info', 'finish', `${r.status}: ${r.postsUpdated} updated, ${r.postsUnavailable} unavailable of ${r.postsDue} due`);
         return;
       }
       if (name === JOB_NAMES.PROVIDER_HEALTH) {
@@ -97,7 +119,10 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
     const name = job.name.slice('scheduled:'.length) as JobName;
     const data = (job.payload ?? {}) as Record<string, unknown>;
     const payload = PAYLOAD_SCHEMAS[name].parse(data);
-    const resource = name === JOB_NAMES.PROVIDER_HEALTH ? String((payload as { providerId: string | null }).providerId ?? 'all') : String((payload as { accountId?: string }).accountId);
+    const resource =
+      name === JOB_NAMES.PROVIDER_HEALTH
+        ? String((payload as { providerId: string | null }).providerId ?? 'all')
+        : String((payload as { accountId?: string | null }).accountId ?? `all:${(payload as { projectId?: string | null }).projectId ?? '-'}`);
     // Re-delivery of the same scheduled execution (stalled job recovered by BullMQ): resume its DB row
     // instead of skipping on the dedup conflict, which would leave that row RUNNING forever.
     const existing = await ctx.db.job.findFirst({ where: { correlationId: job.jobId, status: { in: ['QUEUED', 'RUNNING'] } } });

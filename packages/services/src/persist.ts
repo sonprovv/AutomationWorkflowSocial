@@ -1,4 +1,4 @@
-import type { Account, Post } from '@sss/collector-core';
+import type { Account, Post, PostMetrics } from '@sss/collector-core';
 import type { Prisma } from '@sss/database';
 import type { EffectivePolicy } from '@sss/policy-engine';
 import { big } from './serialize.ts';
@@ -71,7 +71,12 @@ export async function upsertPost(
     durationSeconds: p.durationSeconds,
     publishedAt,
     lastCollectedAt: collectedAt,
+    // Returned by the provider again → available (clears an earlier "not returned" mark).
     status: 'AVAILABLE' as const,
+    unavailableAt: null,
+    unavailableReason: null,
+    providerIndexedAt: p.indexedAt ? new Date(p.indexedAt) : null,
+    ...(p.metrics ? { lastMetricsAt: new Date(p.metrics.collectedAt) } : {}),
     providerId,
     policyId: p.provenance.policyId,
     schemaVersion: p.provenance.schemaVersion,
@@ -82,25 +87,31 @@ export async function upsertPost(
     update: { ...data, sortAt: publishedAt ?? existing?.firstSeenAt ?? collectedAt },
     select: { id: true },
   });
-  if (p.metrics) {
-    if (!policy.allowHistoricalSnapshots) await tx.postMetric.deleteMany({ where: { postId: row.id } });
-    await tx.postMetric.create({
-      data: {
-        postId: row.id,
-        collectedAt: new Date(p.metrics.collectedAt),
-        views: big(p.metrics.views),
-        likes: big(p.metrics.likes),
-        comments: big(p.metrics.comments),
-        shares: big(p.metrics.shares),
-        saves: big(p.metrics.saves),
-        extra: p.metrics.extra as Prisma.InputJsonValue,
-        missing: p.metrics.missing as Prisma.InputJsonValue,
-        providerId,
-        policyId: policy.policyId,
-      },
-    });
-  }
+  if (p.metrics) await writePostMetric(tx, row.id, p.metrics, providerId, policy);
   return { id: row.id, created: !existing };
+}
+
+/**
+ * Store one metric snapshot. Without `allowHistoricalSnapshots` the older rows for the post are deleted
+ * in the same transaction, so only the current value exists (no unauthorized history or deltas).
+ */
+export async function writePostMetric(tx: Tx, postId: string, m: PostMetrics, providerId: string, policy: EffectivePolicy): Promise<void> {
+  if (!policy.allowHistoricalSnapshots) await tx.postMetric.deleteMany({ where: { postId } });
+  await tx.postMetric.create({
+    data: {
+      postId,
+      collectedAt: new Date(m.collectedAt),
+      views: big(m.views),
+      likes: big(m.likes),
+      comments: big(m.comments),
+      shares: big(m.shares),
+      saves: big(m.saves),
+      extra: m.extra as Prisma.InputJsonValue,
+      missing: m.missing as Prisma.InputJsonValue,
+      providerId,
+      policyId: policy.policyId,
+    },
+  });
 }
 
 async function policyAllowsHistory(tx: Tx, policyId: string): Promise<boolean> {

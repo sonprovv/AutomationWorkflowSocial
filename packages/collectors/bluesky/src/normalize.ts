@@ -168,7 +168,8 @@ export function normalizePost(p: PostView, source: string, collectedAt: string):
     language: p.record.langs?.[0] ?? null,
     thumbnailUrl: thumbnailOf(embed),
     durationSeconds: null, // not exposed by the AppView video embed view
-    publishedAt: p.record.createdAt ?? null,
+    publishedAt: p.record.createdAt ?? null, // author-supplied, can be backdated
+    indexedAt: p.indexedAt ?? null, // AppView server time
     metrics: normalizeMetrics(p, collectedAt),
     provenance: provenance(source, collectedAt),
   };

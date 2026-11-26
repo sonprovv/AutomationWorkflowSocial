@@ -12,10 +12,23 @@
 |---|---|---|
 | 0 | Data Source Feasibility | 🟡 Code, tests and docs are done. **The gate is still open:** it needs `YOUTUBE_API_KEY` to verify a second source. The Product Owner chose to continue in the meantime (ADR-0007) |
 | 1 | Monorepo, runtime, DB, REST, queue, provider SDK, vertical slice | 🟡 **Core done and tested with real data.** Open: the BullMQ path with a real Redis, Docker mode, and macOS (§Phase 1 open items) |
-| 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | ⬜ |
+| 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | 🟡 **Bluesky done with real data** (contract tests, real-data sync of 3 accounts, metrics refresh, usage + provenance). Open: YouTube live verification (needs the key); TikTok/Meta wait on Product Owner decisions (§Phase 2) |
 | 3–9 | See Master Plan §16 | ⬜ |
 
 ---
+
+## Phase 2 — Production adapters (started 2026-11-26 15:33 UTC)
+
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P2-01 | Metrics refresh job `post.metrics_refresh` (WF05/06): age tiers, batched calls, policy-bound snapshots, provider-confirmed UNAVAILABLE; API `POST /accounts/:id/refresh-metrics`, `POST /metrics/refresh` | ✅ | `tests/integration/metrics-refresh.test.ts` (4 tests); ADR-0010 |
+| P2-02 | Provenance and availability fields: `provider_indexed_at` (Bluesky `indexedAt`), `last_metrics_at`, `unavailable_at/reason`; `GET /posts` hides UNAVAILABLE unless `includeUnavailable=true` | ✅ | migration `20261126153529_posts_availability_and_metrics_refresh` |
+| P2-03 | Shared adapter contract suite (12 checks) run by every production adapter | ✅ | `packages/collectors/core/src/contract.ts`; 12/12 pass for Bluesky and for YouTube (fake API, SYNTHETIC) |
+| P2-04 | Real-data sync: 3 Bluesky accounts → initial + incremental sync → metrics refresh → API | ✅ | `npm run phase2:sync` → `docs/phase2/real-sync/2026-11-26T15-46-42-909Z.json`: 84 real posts, 0 duplicates, all with provenance and `indexedAt`, refresh updated 46/46 due posts in 2 requests, every collection run has usage recorded |
+| P2-05 | YouTube live verification (sync, metrics, quota units) | 🟡 | Code and contract tests done. Waiting for `YOUTUBE_API_KEY` |
+| P2-06 | TikTok / Meta | 🟡 | Blocked by platform access (ADR-0006). Waiting for the Product Owner decisions in `docs/feasibility/README.md` §5 |
+
+Tests: `npm test` **122 passed, 1 skipped** (BullMQ test, needs Redis).
 
 ## Phase 1 — Platform skeleton (started 2026-11-26)
 
@@ -146,4 +159,6 @@ Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a
 - 2026-11-26 ~10:00 — Phase 1 docs (ARCHITECTURE, API_SPEC, DATABASE, DEPLOYMENT, RUNBOOK, COLLECTOR_SPEC, ADR-0007…0009).
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
+- 2026-11-26 15:33 — Product Owner: continue with Phase 2.
+- 2026-11-26 ~15:50 — Phase 2: metrics refresh, availability fields, shared contract suite, real-data sync of 3 Bluesky accounts. 122 tests passing.
 - 2026-11-26 ~15:30 — Phase 1 code review done: 7 bugs fixed with regression tests (see above). `npm test`: 94 passed, 1 skipped. Native start/stop re-checked on Windows.

@@ -26,8 +26,26 @@ Rules every adapter follows:
 - **Response validation.** Responses are checked with zod loose schemas. If a required field disappears, the adapter raises `SCHEMA_CHANGED`.
 - **Secrets stay out of URLs.** Secrets are sent in headers and registered with `globalSecrets` so they are redacted.
 
+## Shared contract suite (Phase 2)
+`packages/collectors/core/src/contract.ts` exports `runAdapterContract(spec)`. Every production adapter runs the same 12 checks against a local fake provider with SYNTHETIC fixtures (`packages/collectors/<platform>/test/contract.test.ts`):
+
+| # | Check |
+|---|---|
+| C01 | Every capability key has a known state |
+| C02 | `getProfile` returns a canonical account with provenance; counts are numbers or `null` |
+| C03 | `listPosts` pages with an opaque cursor until `nextCursor` is `null`, without duplicates; every post is canonical |
+| C04 | `getPostMetrics` batches, omits posts the provider no longer returns (no zero-filling), sends nothing for `[]` |
+| C05 | A nonexistent account is a typed `NOT_FOUND` |
+| C06 | HTTP 429 → `RATE_LIMITED` (retryable), retried after `Retry-After` |
+| C07 | 5xx → `PROVIDER_UNAVAILABLE` after bounded retries |
+| C08 | A non-JSON or changed response → `SCHEMA_CHANGED` |
+| C09 | Invalid input → `INVALID_INPUT`, no request sent |
+| C10 | A cancelled call stops without retrying |
+| C11 | Exhausted budget → `BUDGET_EXCEEDED`, no request sent |
+| C12 | Credentials never appear in request URLs |
+
 ## Adding a platform
-1. Create `packages/collectors/<platform>`: `schemas.ts`, `normalize.ts`, `adapter.ts`, and contract tests that run against `startFakeServer`.
+1. Create `packages/collectors/<platform>`: `schemas.ts`, `normalize.ts`, `adapter.ts`, adapter-specific tests, and a `contract.test.ts` that calls `runAdapterContract`.
 2. Add `tools/feasibility/targets/<platform>.json`, then run `npm run poc -- <platform>` three or more times. Write `docs/feasibility/<platform>.md` and update `capabilities/<platform>.json`. This is the Phase 0 gate for the platform.
 3. Register a descriptor in `packages/collectors/registry`: provider ID, platform, credential reference, usage unit and daily cap.
 4. The seed enables the provider only when its record is `VERIFIED`.
