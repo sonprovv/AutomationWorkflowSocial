@@ -9,6 +9,7 @@ import { Insights } from './pages/Insights.tsx';
 import { Exports, Jobs, Sources, Workflows } from './pages/Ops.tsx';
 import { ProjectPage, Projects } from './pages/Projects.tsx';
 import { Reports } from './pages/Reports.tsx';
+import { FeatureGuide, sectionForPage } from './FeatureGuide.tsx';
 import { guideSeen, markGuideSeen, SetupGuide, useSetupStatus } from './SetupGuide.tsx';
 import { Icon, type IconName } from './icons.tsx';
 import { applyTheme, defineMessages, initialTheme, PrefsProvider, usePrefs, useT, type Lang, type Theme } from './i18n.tsx';
@@ -79,6 +80,8 @@ const M = defineMessages({
   themeLight: ['Light', 'Sáng'],
   themeDark: ['Dark', 'Tối'],
   nav: ['Main navigation', 'Điều hướng chính'],
+  userGuide: ['User guide', 'Hướng dẫn sử dụng'],
+  helpThisPage: ['How to use this page', 'Cách dùng trang này'],
 });
 type NavKey = 'dashboard' | 'projects' | 'accounts' | 'explore' | 'insights' | 'apps' | 'builder' | 'workflows' | 'jobs' | 'exports' | 'reports' | 'sources';
 
@@ -156,6 +159,7 @@ function App() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [featureAt, setFeatureAt] = useState<string | null>(null);
   const t = useT(M);
   const { lang } = usePrefs();
   const setup = useSetupStatus();
@@ -191,6 +195,10 @@ function App() {
           <Icon name="code" />
           {t('apiDocs')}
         </a>
+        <button className="nav-link nav-button" onClick={() => setFeatureAt(sectionForPage(route.page))}>
+          <Icon name="book" />
+          {t('userGuide')}
+        </button>
         <div className="sidebar-foot">
           <button className="setup-card" onClick={() => setGuideOpen(true)}>
             <b>
@@ -209,6 +217,11 @@ function App() {
           status={setup.data}
           error={setup.error}
           onRecheck={setup.reload}
+          onOpenGuide={() => {
+            markGuideSeen();
+            setGuideOpen(false);
+            setFeatureAt('start');
+          }}
           onClose={() => {
             markGuideSeen();
             setGuideOpen(false);
@@ -216,6 +229,19 @@ function App() {
           }}
         />
       )}
+      {featureAt && (
+        <FeatureGuide
+          initial={featureAt}
+          onClose={() => setFeatureAt(null)}
+          onOpenSetup={() => {
+            setFeatureAt(null);
+            setGuideOpen(true);
+          }}
+        />
+      )}
+      <button className="help-fab" onClick={() => setFeatureAt(sectionForPage(route.page))} title={t('helpThisPage')} aria-label={t('helpThisPage')}>
+        ?
+      </button>
       <main key={`${key}-${lang}`}>
         {route.page === 'dashboard' && <Dashboard />}
         {route.page === 'projects' && <Projects />}

@@ -82,11 +82,19 @@ Work in this order, and commit after each item so that work can resume from here
   4. Switches in the sidebar footer.
 - **Done:** every page, the shell and the setup guide are translated (messages sit next to each component in `defineMessages`). The theme can be System, Light or Dark. Both choices are kept per browser, and dates and numbers follow the chosen language. **When adding UI text, add both languages.**
 
-## Feature guide / tutorial dialog (requested 2026-11-27 ~02:03, IN PROGRESS)
+## Feature guide / tutorial dialog: DONE (2026-11-27)
 - **Plan:** `apps/web/src/FeatureGuide.tsx`, a two-column modal.
   - Left: a list of features in the suggested order. Right: what the feature is for, step-by-step use, tips and limits, and an "Open page" button.
   - Bilingual (EN/VI).
   - Opens from the sidebar ("User guide"), from a "?" button on each page (jumping to that page's section), and from the setup guide footer.
+
+## Demo videos, one per feature (requested 2026-11-27 ~02:07, NEXT)
+- **Request:** the user wants realistic demo videos (one per feature) and a "Watch demo" button.
+- **Plan:**
+  - Record the real UI in headless Edge over CDP: `Page.startScreencast` frames, then ffmpeg (installed by winget) to mp4/webm.
+  - Show a scripted cursor and captions.
+  - Use a **separate demo instance** (its own data directory and port) seeded with real Bluesky data, so the user's database is untouched.
+  - Videos go in `apps/web/public/demos/`, and the guide gets a "Watch demo" button.
 
 ## Environment notes for this machine
 - Windows 11, Node 22.16, npm 10.9, Git, Python 3.12, .NET 8 SDK. **No Docker, WSL or Redis.**

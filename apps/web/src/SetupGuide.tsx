@@ -93,7 +93,7 @@ function Step({ kind, title, badge, children }: { kind: Kind; title: string; bad
 }
 
 /** Renders `code` and **bold** markers inside translated text (no HTML from messages). */
-function Rich({ text }: { text: string }) {
+export function Rich({ text }: { text: string }) {
   return (
     <>
       {text.split(/(`[^`]+`|\*\*[^*]+\*\*)/).map((part, i) =>
@@ -224,13 +224,14 @@ const M = defineMessages({
   recheck: ['Re-check', 'Kiểm tra lại'],
   done: ['Done', 'Xong'],
   continue: ['Continue to the app', 'Vào ứng dụng'],
+  userGuide: ['How to use the app', 'Cách sử dụng ứng dụng'],
 });
 
 const yes = (t: TFn<keyof typeof M>, on: boolean, onText?: string, offText?: string) => (
   <span className={`badge badge-${on ? 'ok' : 'skipped'}`}>{on ? (onText ?? t('configured')) : (offText ?? t('notSet'))}</span>
 );
 
-export function SetupGuide({ status: s, error, onClose, onRecheck }: { status: SetupStatus | null; error: string | null; onClose: () => void; onRecheck: () => void }) {
+export function SetupGuide({ status: s, error, onClose, onRecheck, onOpenGuide }: { status: SetupStatus | null; error: string | null; onClose: () => void; onRecheck: () => void; onOpenGuide?: () => void }) {
   const t = useT(M);
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -437,6 +438,11 @@ export function SetupGuide({ status: s, error, onClose, onRecheck }: { status: S
         <div className="modal-foot">
           <span className="muted small">{s ? t('checkedAt', { time: new Date(s.checkedAt).toLocaleTimeString(currentLocale()) }) : ''}</span>
           <span style={{ flex: 1 }} />
+          {onOpenGuide && (
+            <button className="ghost" onClick={onOpenGuide}>
+              {t('userGuide')}
+            </button>
+          )}
           <button onClick={onRecheck}>{t('recheck')}</button>
           <button className="primary" onClick={onClose}>
             {s && done === core.length ? t('done') : t('continue')}
