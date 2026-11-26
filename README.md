@@ -1,86 +1,100 @@
 # Social Spy Automation
 
-A local-first platform for researching competitors and content across social networks. The full specification is [`SOCIAL_SPY_AUTOMATION_PLAN.md`](SOCIAL_SPY_AUTOMATION_PLAN.md) and progress is tracked in [`PROGRESS.md`](PROGRESS.md).
+A local-first platform for researching competitors and their content on social networks.
 
-> **Current stage: Phase 0 (Data Source Feasibility).**
-> The repository contains:
-> - the collector SDK core,
-> - Bluesky and YouTube adapters,
-> - a proof-of-concept (PoC) harness that exercises them against the real APIs,
-> - feasibility reports for 10 platforms.
+- Specification: [`SOCIAL_SPY_AUTOMATION_PLAN.md`](SOCIAL_SPY_AUTOMATION_PLAN.md)
+- Progress and test evidence: [`PROGRESS.md`](PROGRESS.md)
+- Design decisions: [`docs/adr/`](docs/adr/)
+
+> **Current stage: Phase 1, the platform skeleton.** It runs locally today: track an account by URL, sync it from real data (Bluesky), browse the results in the API and a minimal UI, and manage the jobs.
 >
-> It does not yet have the dashboard, database or job queue. Those start in Phase 1.
+> Arriving in later phases: discovery, scheduled workflows, the full dashboard, exports, AI, and MCP.
+>
+> Phase 0 is still open until a YouTube key is verified ([ADR-0007](docs/adr/0007-phase0-gate-deferred.md)).
 
-## Requirements
-- Node.js 22 LTS (`>=22.12`). Check with `node -v`.
-- Windows 10/11 (PowerShell or Git Bash) or macOS. Docker is **not** needed for Phase 0.
+## Quick start (no Docker)
 
-## Setup
+You need **Node.js 22 LTS**.
 
-```bash
-npm ci
-```
-
-Create your local `.env` from the template. It is git-ignored and must never be committed.
-
-| Shell | Command |
-|---|---|
-| macOS / Git Bash | `cp .env.example .env` |
-| Windows PowerShell | `Copy-Item .env.example .env` |
-
-Then fill in what you have:
-
-| Variable | Needed for | Notes |
+| | Windows | macOS |
 |---|---|---|
-| `YOUTUBE_API_KEY` | YouTube | In Google Cloud, enable **YouTube Data API v3**, create an API key and restrict it to that API. |
-| `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD` | Bluesky search pagination (optional) | Use an App Password created under Bluesky Settings → App Passwords. **Never use your main password.** |
-| `YOUTUBE_POC_MAX_UNITS`, `BLUESKY_POC_MAX_REQUESTS` | Budget caps per run | Optional. |
+| Start | Double-click **`start.bat`** | `chmod +x start.command stop.command`, then `./start.command` |
+| Stop | `stop.bat`, or Ctrl+C in the start window | `./stop.command`, or Ctrl+C |
+| Diagnose | `scripts\doctor.cmd` | `./scripts/doctor.sh` |
 
-Keep secrets in `.env` only. Do not paste API keys into chat tools.
+On the first run, `start`:
+1. installs dependencies;
+2. creates `.env`;
+3. starts an embedded PostgreSQL (data stored in `.data/`);
+4. applies database migrations;
+5. builds the UI;
+6. opens **http://127.0.0.1:18966**.
 
-## Commands
+To change the port, set `APP_PORT` in `.env`.
+
+### Optional: install Redis for background jobs and schedules
+
+Without Redis, the app runs in **inline mode**: jobs run inside the API process and schedules are disabled.
+
+| OS | Command |
+|---|---|
+| Windows | `winget install Memurai.MemuraiDeveloper` |
+| macOS | `brew install redis && brew services start redis` |
+
+Restart the app after installing.
+
+### Optional: Docker
+
+Use `start.bat --docker` or `./start.command --docker`. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+## Credentials (`.env`, git-ignored)
+
+Never paste keys into chat tools.
+
+| Variable | Purpose |
+|---|---|
+| `YOUTUBE_API_KEY` | YouTube Data API v3. The YouTube provider stays disabled until it is verified (`npm run poc -- youtube`). |
+| `BLUESKY_IDENTIFIER` + `BLUESKY_APP_PASSWORD` | Optional. Enables Bluesky search pagination. Use an App Password, not your main password. |
+
+## Developer commands
 
 | Command | What it does |
 |---|---|
-| `npm run typecheck` | TypeScript type check (`tsc --noEmit`). |
-| `npm test` | Unit and contract tests. Uses a local fake server: no network, no credentials, no cost. |
-| `npm run test:live` | Opt-in live smoke tests with small budgets. YouTube tests are skipped when no key is set. |
-| `npm run poc -- bluesky` | Phase 0 PoC against the real Bluesky API. No credentials needed. |
-| `npm run poc -- youtube` | Phase 0 PoC against the real YouTube API. Needs `YOUTUBE_API_KEY`. |
-| `npm run poc -- <platform> --dry-run` | Prints the targets and budget without calling the network. |
-| `npm run poc:summary` | Aggregates every run into `docs/feasibility/runs/<platform>/SUMMARY.md`. |
+| `npm ci` | Install dependencies and generate the Prisma client |
+| `npm run typecheck` | Type-check everything, including the web app |
+| `npm test` | Unit, contract and integration tests on an embedded PostgreSQL. No network, no credentials. |
+| `npm run test:live` | Opt-in smoke tests against the real providers, with a small budget |
+| `npm run slice -- <profile URL>` | Real-data vertical slice: URL → provider → DB → API. Writes an evidence report. |
+| `npm run poc -- bluesky\|youtube` | Phase 0 feasibility run against the real providers |
+| `npm run poc:summary` | Summarise the Phase 0 runs |
+| `npm run doctor` | Environment diagnostics |
+| `npm run db:migrate:new -- <name>` | Create a database migration. Uses a throwaway embedded PostgreSQL. |
+| `npm run dev -w @sss/web` | Vite dev server with `/api` proxied to `APP_PORT` |
 
-Each PoC run writes two files, both with secrets redacted:
-- the full report to `docs/feasibility/runs/<platform>/<timestamp>.json`;
-- a small sample of normalized records to `docs/feasibility/samples/`.
-
-PoC targets (accounts and keywords) are configured in `tools/feasibility/targets/<platform>.json`.
+API documentation: `/api/docs` when the app is running, or [`docs/API_SPEC.md`](docs/API_SPEC.md).
 
 ## Layout
 
 ```text
-packages/collectors/core      shared contract: types, typed errors, HttpClient, UsageMeter, redaction, validation
-packages/collectors/bluesky   Bluesky AppView adapter
-packages/collectors/youtube   YouTube Data API v3 adapter
-tools/feasibility             Phase 0 PoC CLI and run summary
-tests/fixtures                fixtures, labelled SYNTHETIC or CAPTURED
-docs/feasibility              per-platform reports, capability JSON, run logs, samples, research notes
-docs/adr                      architecture decision records
+apps/api            Fastify REST API (/api/v1), OpenAPI, serves the UI in native mode
+apps/worker         BullMQ workers
+apps/scheduler      BullMQ job schedulers (DB-defined schedules)
+apps/web            minimal React UI (full dashboard comes in Phase 5)
+packages/collectors core contract, bluesky, youtube, registry
+packages/database   Prisma schema/migrations, embedded PostgreSQL, seeding
+packages/services   business logic: projects, tracking, sync, posts, jobs, providers, usage
+packages/queue      queues, payloads, idempotency keys, BullMQ and inline dispatchers
+packages/policy-engine  data policy decisions (deny by default)
+packages/config, packages/shared
+tools/feasibility   Phase 0 proof-of-concept harness
+tools/local         native start/stop/doctor, migrate-seed, vertical slice
+docs/               architecture, API, database, deployment, runbook, feasibility, ADRs
 ```
 
-## Data rules (summary)
-- No fabricated data. Fixtures are labelled, and every collected record carries provenance.
-- A missing value is stored as `null` with a reason. It is never stored as `0`.
-- Policies are deny-by-default until verified. See `docs/feasibility/capabilities/*.json`.
-- No scraping, and no bypassing of CAPTCHAs, rate limits or access controls. Unsupported sources are marked `BLOCKED` or `AUTH_REQUIRED`.
+## Data rules
+- No fabricated data. Fixtures are labelled, and every record carries provenance (provider, collection time, policy).
+- A missing value is stored as `null` with a reason, never as `0`.
+- Every provider has a data policy, and it is deny-by-default until verified. YouTube in particular: data is kept for at most 30 days and no derived metrics are computed (ADR-0004).
+- No scraping and no bypassing of access controls. Unsupported sources are shown as `BLOCKED` or `AUTH_REQUIRED`, with the reason.
 
-## Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| `process.loadEnvFile is not a function` | Your Node version is too old. Install Node 22. |
-| YouTube `INVALID` | The key is wrong. Re-copy it. |
-| YouTube `API_DISABLED` | Enable YouTube Data API v3 in the key's Google Cloud project. |
-| YouTube `QUOTA_EXCEEDED` | The daily quota is used up. It resets at midnight Pacific Time. |
-| Bluesky search page 2 returns `PERMISSION_DENIED` | Expected without auth. Set an App Password (see ADR-0005). |
-| `BUDGET_EXCEEDED` | The per-run cap was reached. Raise `*_POC_MAX_*` in `.env`. |
+Troubleshooting: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).

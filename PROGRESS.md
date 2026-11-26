@@ -1,79 +1,132 @@
 # PROGRESS — Social Spy Automation
 
-Specification: [`SOCIAL_SPY_AUTOMATION_PLAN.md`](SOCIAL_SPY_AUTOMATION_PLAN.md). Architecture decisions: [`docs/adr/`](docs/adr/).
+- **Specification:** [`SOCIAL_SPY_AUTOMATION_PLAN.md`](SOCIAL_SPY_AUTOMATION_PLAN.md)
+- **Decisions:** [`docs/adr/`](docs/adr/)
+- **Repository:** github.com/sonprovv/AutomationWorkflowSocial (branch `main`)
 
-Status legend: ✅ done (with evidence) · 🟡 in progress or blocked on input · ⬜ not started
+**Status legend:** ✅ done, with evidence · 🟡 in progress, or blocked waiting on input · ⬜ not started · ⚠ written but not yet run or verified
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Data Source Feasibility | 🟡 **Code, tests and docs done. Gate blocked on `YOUTUBE_API_KEY`** (needs a second verified source) |
-| 1 | Monorepo, Compose, DB, REST skeleton, queue, provider SDK | ⬜ (starts after the Phase 0 gate) |
-| 2–9 | See Master Plan §16 | ⬜ |
+| 0 | Data Source Feasibility | 🟡 Code, tests and docs are done. **The gate is still open:** it needs `YOUTUBE_API_KEY` to verify a second source. The Product Owner chose to continue in the meantime (ADR-0007) |
+| 1 | Monorepo, runtime, DB, REST, queue, provider SDK, vertical slice | 🟡 **Core done and tested with real data.** Open: the BullMQ path with a real Redis, Docker mode, and macOS (§Phase 1 open items) |
+| 2 | YouTube/Bluesky live adapters at production level; TikTok/Meta where possible | ⬜ |
+| 3–9 | See Master Plan §16 | ⬜ |
 
 ---
 
-## Phase 0 — Data Source Feasibility
+## Phase 1 — Platform skeleton (started 2026-11-26)
 
-**Started:** 2026-11-26 · **Spec:** Master Plan §4, sprint items P0-01…P0-05 (§16.1)
+### Sprint items (Master Plan §16.1)
+| ID | Item | Status | Evidence |
+|---|---|---|---|
+| P1-01 | Monorepo, Compose, configurable port, `.env.example` | ✅ / ⚠ | npm workspaces: `apps/*`, `packages/*`, `tools/*`. `APP_PORT` defaults to 18966 and can be changed in config. `.env.example` is complete. The native `start.bat`/`start.command`, `stop.*` and `scripts/doctor.*` were **run on Windows 11**. ⚠ `docker-compose.yml` is written but **not run** (this machine has no Docker). ⚠ macOS has not been tested |
+| P1-02 | Migrations for projects, accounts, posts, providers, jobs and policies | ✅ | Prisma 7 with 17 tables, the init migration, and a partial unique index for active-job dedup. Applied on every test run against real PostgreSQL 17 (embedded). See `docs/DATABASE.md` |
+| P1-03 | Adapter interfaces, canonical types, typed errors, fixtures | ✅ | Done in Phase 0 (ADR-0003). Added `collectors/registry`. Fixtures are labelled SYNTHETIC or CAPTURED |
+| P1-04 | Queue, worker, idempotency, scheduler, health endpoints | ✅ / ⚠ | `@sss/queue` provides the BullMQ dispatcher plus an inline dispatcher for dev and test. The worker and scheduler apps are written. Idempotency: a DB partial unique index, with 409 on conflict. `/health/live` and `/health/ready` work. Retry, backoff, cancel and partial success are **tested through the inline path**. ⚠ The BullMQ path has its test written (`tests/integration/bullmq.test.ts`) but it is **skipped** until Redis or Memurai is installed |
+| P1-05 | API endpoints: create project, track account, sync, job status | ✅ | Fastify `/api/v1` with OpenAPI at `/api/docs` (see `docs/API_SPEC.md`). The routes planned for later phases return 501 and name their phase |
+| P1-06 | Vertical slice: account URL → real data → DB → UI/API | ✅ | `npm run slice` against real Bluesky passed all checks, with evidence in `docs/phase1/vertical-slice/2026-11-26T09-45-51-361Z.json`. Native start ran on Windows: an account was tracked over HTTP, real posts were served by the API and the UI, and the data was still there after stop/start |
+
+### Test evidence (2026-11-26, Windows 11, Node 22.16.0)
+- `npm run typecheck`: clean. Covers the server packages and the web app.
+- `npm test`: **89 passed, 1 skipped.** The skipped test is the BullMQ test, which needs Redis.
+  - **unit (74):** collectors, feasibility tooling.
+  - **integration (15)** on real embedded PostgreSQL:
+    - the API → services → processor → real Bluesky adapter flow, run against a local fake AppView;
+    - project CRUD, cascades and audit log;
+    - account tracking, initial sync and incremental re-sync with no duplicates;
+    - the policy that keeps only the latest metric snapshot;
+    - keyset pagination;
+    - typed NOT_FOUND marking the account (network errors never do);
+    - retry with backoff, then FAILED;
+    - retry endpoint, PARTIAL_SUCCESS and checkpoint atomicity;
+    - 409 dedup and cooperative cancel;
+    - blocked and disabled providers (422 / 403);
+    - error envelope and 501 planned routes;
+    - Unicode (emoji, Vietnamese, CJK) storage and Vietnamese case-insensitive search;
+    - DB constraints and seeding from capability records;
+    - daily quota guard (429 with no request sent);
+    - scheduler-triggered runs and shared dedup keys.
+- `npm run slice -- https://bsky.app/profile/bsky.app` (**real data**):
+
+  | Step | Result |
+  |---|---|
+  | Track | 201, 609 ms |
+  | Initial sync | 20 posts, 3.2 s |
+  | Re-sync | SUCCEEDED, 0 duplicates |
+  | Metric snapshots | 1 per post |
+  | `views` | `null` (Bluesky has no views) |
+
+- Native runtime on Windows:
+  - `start` brought up embedded PG → migrations → API + UI at http://127.0.0.1:18966.
+  - Tracked `@atproto.com` over HTTP and received real posts with like counts.
+  - `stop` shut down gracefully (PG stopped).
+  - On restart the data was still there.
+
+### Bugs found by real-data runs (fixed, with regression tests)
+| Bug | Fix |
+|---|---|
+| On Windows, embedded PostgreSQL defaulted to **WIN1252**, so emoji in a profile caused HTTP 500 | `initdb --encoding=UTF8` |
+| The C locale cannot case-fold Vietnamese (`'Tiếng' ILIKE '%TIẾNG%'` = false) | ICU `und` locale. Docker uses the same initdb flags |
+
+### Decisions (ADR)
+- **ADR-0007:** continue with Phase 1 while the Phase 0 gate waits for the YouTube key.
+- **ADR-0008:** native local runtime by default.
+  - Embedded PG, with Redis or Memurai optional; inline mode is dev-only.
+  - Docker stays optional. Garnet was evaluated and found **not compatible with BullMQ**.
+- **ADR-0009:**
+  - job state lives in PostgreSQL;
+  - dedup, retry and cancel semantics;
+  - transactional checkpoints;
+  - policy-aware metric storage;
+  - layering, pagination, API conventions.
+
+### Technical limitations and proposed solutions
+| Limitation | Proposal |
+|---|---|
+| This machine has no Redis, so there is no worker or scheduler (inline mode) | User installs `winget install Memurai.MemuraiDeveloper`. The BullMQ test then runs automatically |
+| No Docker, so Compose cannot be verified | Optional. Verify on a machine with Docker Desktop, or keep native mode |
+| Phase 1 quota guard is a daily cap; concurrent workers can overshoot by up to one operation | Atomic reservation engine in Phase 4 (§9.1) |
+| The UI is minimal (no design system or charts) and has no Playwright tests | Phase 5 (dashboard, Content Explorer, Playwright) |
+| The UI build is served correctly but has not been checked visually in a browser by the agent | The user opens http://127.0.0.1:18966 after `start.bat` |
+
+### Phase 1 open items
+1. ⚠ Run `tests/integration/bullmq.test.ts` with Redis or Memurai (needs the user to install one).
+2. ⚠ Run `start.bat --docker` on a machine with Docker. Optional.
+3. ⚠ Test `start.command` on macOS.
+
+---
+
+## Phase 0 — Data Source Feasibility (started 2026-11-26)
 
 ### Sprint items
 | ID | Item | Status | Evidence |
 |---|---|---|---|
-| P0-01 | Repo, ADR and capability matrix | ✅ | `docs/adr/0001…0006`; `docs/feasibility/capabilities/*.json` (10 platforms, schema-tested); `docs/feasibility/README.md` |
-| P0-02 | YouTube PoC CLI with a user-supplied API key; policy check | 🟡 | Adapter and contract tests done ([youtube.md](docs/feasibility/youtube.md)). Policy reviewed (ADR-0004). Live classification of invalid and missing keys verified. **Waiting for `YOUTUBE_API_KEY`** to run the 3 live runs. |
-| P0-03 | Bluesky PoC CLI; check public endpoints | ✅ | Live runs in `docs/feasibility/runs/bluesky/` and [`SUMMARY.md`](docs/feasibility/runs/bluesky/SUMMARY.md); [bluesky.md](docs/feasibility/bluesky.md) |
-| P0-04 | Try TikTok/Meta legitimate sources; report blocked | ✅ | [tiktok.md](docs/feasibility/tiktok.md) (BLOCKED / LEGAL_RISK), [facebook.md](docs/feasibility/facebook.md), [instagram.md](docs/feasibility/instagram.md), [threads.md](docs/feasibility/threads.md) (AUTH_REQUIRED) and ADR-0006. No credentials were available, so these are desk research only. |
-| P0-05 | Save test results, cost, fields, sample payloads, source links, check dates | ✅ | `runs/*/*.json` (redacted), `samples/*.sample.json`, cost estimate in `docs/feasibility/README.md` §3, sources with dates in every capability record |
+| P0-01 | Repo, ADR, capability matrix | ✅ | ADR-0001…0006; `docs/feasibility/capabilities/*.json` (10 platforms, schema-tested) |
+| P0-02 | YouTube PoC CLI with the user's API key, plus policy check | 🟡 | Adapter and contract tests are done. Live checks of invalid and missing keys pass. **Waiting for `YOUTUBE_API_KEY`** to do the 3 live runs |
+| P0-03 | Bluesky PoC CLI against public endpoints | ✅ | `docs/feasibility/runs/bluesky/` + `SUMMARY.md` |
+| P0-04 | TikTok/Meta legitimate sources, or a report of what is blocked | ✅ | tiktok.md (BLOCKED / LEGAL_RISK); facebook, instagram, threads (AUTH_REQUIRED); ADR-0006 |
+| P0-05 | Results, cost, fields, samples, sources and dates | ✅ | `runs/`, `samples/`, cost estimate in `docs/feasibility/README.md` §3 |
 
-### Deliverables
-- `packages/collectors/core`
-  - Typed errors (§5.3) and canonical types plus the `PlatformAdapter` contract (§5.1).
-  - `HttpClient`: timeout, backoff with jitter, Retry-After handling, SSRF allowlist, redacted logs.
-  - `UsageMeter`: request, quota and cost caps.
-  - Zod response and input validation, and the capability record schema.
-- `packages/collectors/bluesky`: adapter implementing all 8 capabilities, with optional App Password authentication.
-- `packages/collectors/youtube`: adapter implementing all 8 capabilities. The API key travels in a header, and quota is reserved at the upper bound.
-- `tools/feasibility`
-  - `npm run poc -- <platform>` runs the §4.2 test cases TC01–TC13 against the real API and writes a redacted run report plus a normalized sample.
-  - `npm run poc:summary` aggregates runs: latency, error codes, and ID stability across runs.
-- `docs/feasibility/`: a report per platform for all 10 platforms in the §4.1 matrix, plus `_research/` notes that quote the official documentation.
-
-### Test evidence (2026-11-26, Windows 11, Node 22.16.0)
-- `npm run typecheck`: clean.
-- `npm test`: **74 passed**, 4 files.
-  - Unit tests.
-  - Contract tests against a local fake HTTP server, with no network.
-  - A schema check on the capability records.
-  - A drift check between each adapter and its capability record.
-- `npm run test:live`: Bluesky live smoke **3 passed**. YouTube is skipped because no key is configured.
-- `npm run poc -- bluesky`: 24 PASS / 3 FAIL / 1 SKIP in each run.
-  - The 3 FAILs are a **real platform limitation**: unauthenticated search pagination returns HTTP 403. See ADR-0005.
-  - The SKIP is the negative credential test, which needs an App Password.
-  - The full run history is in `runs/bluesky/SUMMARY.md`.
-- `npm run poc -- youtube`: `AUTH_REQUIRED`. Credential checks ran; the invalid key was classified live as `INVALID`.
-
-### Technical limitations found (with proposed solutions)
-| Limitation | Proposed solution |
-|---|---|
-| Bluesky: no view counts | Engagement-only metrics, labelled as such. `views=null` with reason `NOT_SUPPORTED`. |
-| Bluesky: unauthenticated search is limited to page 1 (≤100 results) | Narrower time windows, or the user supplies an App Password (ADR-0005). |
-| YouTube: 30-day retention; no derived metrics or cross-owner aggregation without III.L approval | Restrictive policy (ADR-0004). Apply for an audit and III.L approval in parallel. |
-| YouTube: search capped at about 100 calls per day | Spend searches on discovery only; use cheap list calls for monitoring. |
-| TikTok: no commercial official API; scraping conflicts with the ToS | BLOCKED. Interim option: manual URL plus oEmbed metadata. A scraper only with written acceptance of the legal risk (ADR-0006). |
-| Facebook, Instagram, Threads: App Review and Business Verification required | User action needed. The adapters will be built once access is granted. |
-| Reddit: official terms pages blocked our automated fetch | Manual verification in a browser. |
-| macOS: not tested yet (Windows only) | The commands are cross-platform (npm, tsx). To be verified on a Mac; start/stop scripts come in Phase 1. |
+### Evidence
+- Bluesky PoC runs: 24 PASS / 3 FAIL / 1 SKIP per run.
+  - The 3 FAILs are a real platform limit: unauthenticated search pagination returns 403 (ADR-0005).
+- YouTube: `AUTH_REQUIRED` (no key yet).
 
 ### Open items blocking the Phase 0 gate
-1. 🟡 **User:** add `YOUTUBE_API_KEY` to `.env`, then run `npm run poc -- youtube` three times at different times, then `npm run poc:summary`.
-2. 🟡 **Product Owner:** the decisions listed in [docs/feasibility/README.md §5](docs/feasibility/README.md).
-3. 🟡 **Git push to GitHub:** blocked by the permission policy in this session. The user has to enable it from the terminal. Commits are made locally.
+1. 🟡 **User:** add `YOUTUBE_API_KEY` to `.env`. Then run `npm run poc -- youtube` three times and `npm run poc:summary`.
+2. 🟡 **Product Owner:** the decisions in `docs/feasibility/README.md` §5 (Bluesky policy proposal, TikTok option, Meta App Review, paid sources).
 
-### Log
-- 2026-11-26 08:11 UTC: Phase 0 started. Spec read. Toolchain checked: Node 22.16, npm 10.9, Git, Python 3.12. Docker is not installed (needed in Phase 1).
-- 2026-11-26 08:20: collector core and the Bluesky and YouTube adapters written. Official-documentation research completed for all 10 platforms.
-- 2026-11-26 08:27: Bluesky PoC run 1 against the live API.
-- 2026-11-26 08:28: YouTube PoC run 1. Credential checks only (no key).
-- 2026-11-26 08:34: Bluesky PoC run 2.
-- 2026-11-26 ~08:40: capability records, feasibility reports, ADRs 0001–0006 and this file written.
-- Scheduled: Bluesky run 3 at about 10:13 UTC (17:13 Asia/Ho_Chi_Minh), plus the YouTube runs if a key has been added by then.
+---
+
+## Log (UTC)
+- 2026-11-26 08:11 — Phase 0 start.
+- 2026-11-26 08:27 / 08:34 — Bluesky PoC runs 1 and 2. YouTube credential checks only.
+- 2026-11-26 ~08:45 — Phase 0 docs, capability records, ADR-0001…0006. Pushed to GitHub.
+- 2026-11-26 09:13 — Product Owner: continue; keys will be added at the end. Phase 1 starts.
+- 2026-11-26 09:15–09:25 — Environment check: no Docker or WSL. Garnet rejected (BullMQ incompatible). Embedded PG chosen; Product Owner prefers lightweight.
+- 2026-11-26 09:30–09:40 — Prisma schema and migrations, queue, services, API, worker, scheduler. 82 tests passing.
+- 2026-11-26 09:45 — Real-data vertical slice. Found and fixed the UTF-8/ICU bugs.
+- 2026-11-26 09:50 — Native start/stop verified on Windows. Minimal web UI. Docker Compose written (not run).
+- 2026-11-26 ~10:00 — Phase 1 docs (ARCHITECTURE, API_SPEC, DATABASE, DEPLOYMENT, RUNBOOK, COLLECTOR_SPEC, ADR-0007…0009).
+- Scheduled: Bluesky PoC run 3 at 10:13 UTC (17:13 Asia/Ho_Chi_Minh).
