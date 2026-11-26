@@ -1,0 +1,28 @@
+{
+  "name": "@sss/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "5.12.8",
+    "@fastify/swagger": "9.9.5",
+    "@fastify/swagger-ui": "6.1.5",
+    "fastify-type-provider-zod": "7.0.0",
+    "zod": "4.6.7",
+    "@sss/config": "0.0.0",
+    "@sss/database": "0.0.0",
+    "@sss/queue": "0.0.0",
+    "@sss/services": "0.0.0",
+    "@sss/shared": "0.0.0",
+    "@sss/collector-core": "0.0.0",
+    "@sss/collector-registry": "0.0.0",
+    "@fastify/static": "10.1.12"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts"
+  }
+}

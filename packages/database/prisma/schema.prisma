@@ -1,0 +1,393 @@
+// Social Spy Automation — database schema (Master Plan §6).
+// Phase 1 scope (P1-02): projects, competitors, accounts, posts, metrics, providers, policies, jobs,
+// collection runs, sync cursors, usage, schedules, audit. Remaining §6.2 tables arrive with their phases.
+//
+// Rules: internal UUIDs; external IDs are strings unique per (platform, external_id); all timestamps UTC
+// (timestamptz); NULL = missing/unknown/not provided (never coerced to 0).
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum AccountStatus {
+  ACTIVE
+  NOT_FOUND
+  PRIVATE_OR_REMOVED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TrackingStatus {
+  TRACKING
+  PAUSED
+}
+
+enum PostStatus {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  PARTIAL_SUCCESS
+  FAILED
+  CANCELLED
+  SKIPPED
+}
+
+model Project {
+  id               String          @id @default(uuid()) @db.Uuid
+  name             String
+  niche            String?
+  platforms        String[]
+  languages        String[]
+  markets          String[]
+  timezone         String          @default("Asia/Ho_Chi_Minh")
+  dailyBudgetUsd   Decimal?        @map("daily_budget_usd") @db.Decimal(12, 4)
+  monthlyBudgetUsd Decimal?        @map("monthly_budget_usd") @db.Decimal(12, 4)
+  /// project_defaults (Master Plan §9.1): auto_track, max_accounts, initial_posts_per_account, ...
+  settings         Json            @default("{}")
+  status           ProjectStatus   @default(ACTIVE)
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  accounts         ProjectAccount[]
+  jobs             Job[]
+
+  @@map("projects")
+}
+
+model Competitor {
+  id        String              @id @default(uuid()) @db.Uuid
+  brandName String              @map("brand_name")
+  website   String?
+  category  String?
+  notes     String?
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  accounts  CompetitorAccount[]
+
+  @@map("competitors")
+}
+
+model CompetitorAccount {
+  competitorId    String     @map("competitor_id") @db.Uuid
+  accountId       String     @map("account_id") @db.Uuid
+  matchConfidence Float?     @map("match_confidence")
+  evidenceUrl     String?    @map("evidence_url")
+  verifiedAt      DateTime?  @map("verified_at") @db.Timestamptz(3)
+  competitor      Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  account         SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([competitorId, accountId])
+  @@map("competitor_accounts")
+}
+
+model SocialAccount {
+  id               String              @id @default(uuid()) @db.Uuid
+  platform         String
+  externalId       String              @map("external_id")
+  username         String?
+  displayName      String?             @map("display_name")
+  profileUrl       String              @map("profile_url")
+  bio              String?
+  avatarUrl        String?             @map("avatar_url")
+  accountCreatedAt DateTime?           @map("account_created_at") @db.Timestamptz(3)
+  status           AccountStatus       @default(ACTIVE)
+  providerId       String              @map("provider_id")
+  policyId         String              @map("policy_id")
+  schemaVersion    String              @map("schema_version")
+  firstSeenAt      DateTime            @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastCollectedAt  DateTime?           @map("last_collected_at") @db.Timestamptz(3)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  projects         ProjectAccount[]
+  competitors      CompetitorAccount[]
+  posts            Post[]
+  metrics          AccountMetric[]
+  cursors          SyncCursor[]
+
+  @@unique([platform, externalId])
+  @@map("social_accounts")
+}
+
+model ProjectAccount {
+  projectId      String         @map("project_id") @db.Uuid
+  accountId      String         @map("account_id") @db.Uuid
+  relevanceScore Float?         @map("relevance_score")
+  approvalStatus ApprovalStatus @default(PENDING) @map("approval_status")
+  trackingStatus TrackingStatus @default(TRACKING) @map("tracking_status")
+  priority       Int            @default(0)
+  nextSyncAt     DateTime?      @map("next_sync_at") @db.Timestamptz(3)
+  lastSyncAt     DateTime?      @map("last_sync_at") @db.Timestamptz(3)
+  lastSyncStatus JobStatus?     @map("last_sync_status")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account        SocialAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, accountId])
+  @@index([projectId, approvalStatus])
+  @@index([nextSyncAt])
+  @@map("project_accounts")
+}
+
+model Post {
+  id              String        @id @default(uuid()) @db.Uuid
+  platform        String
+  externalId      String        @map("external_id")
+  accountId       String        @map("account_id") @db.Uuid
+  url             String
+  contentType     String        @map("content_type")
+  title           String?
+  caption         String?
+  hashtags        String[]
+  language        String?
+  thumbnailUrl    String?       @map("thumbnail_url")
+  durationSeconds Int?          @map("duration_seconds")
+  publishedAt     DateTime?     @map("published_at") @db.Timestamptz(3)
+  /// published_at, or first_seen_at when the provider gives no publish time. Stable keyset-pagination key.
+  sortAt          DateTime      @map("sort_at") @db.Timestamptz(3)
+  firstSeenAt     DateTime      @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastCollectedAt DateTime      @map("last_collected_at") @db.Timestamptz(3)
+  status          PostStatus    @default(AVAILABLE)
+  providerId      String        @map("provider_id")
+  policyId        String        @map("policy_id")
+  schemaVersion   String        @map("schema_version")
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  account         SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  metrics         PostMetric[]
+
+  @@unique([platform, externalId])
+  @@index([accountId, publishedAt(sort: Desc)])
+  @@index([sortAt(sort: Desc), id(sort: Desc)])
+  @@index([accountId, sortAt(sort: Desc), id(sort: Desc)])
+  @@map("posts")
+}
+
+/// Metric snapshot. When the provider policy forbids historical snapshots only the latest row is kept.
+model PostMetric {
+  id          BigInt   @id @default(autoincrement())
+  postId      String   @map("post_id") @db.Uuid
+  collectedAt DateTime @map("collected_at") @db.Timestamptz(3)
+  views       BigInt?
+  likes       BigInt?
+  comments    BigInt?
+  shares      BigInt?
+  saves       BigInt?
+  extra       Json     @default("{}")
+  /// Reasons for NULL values, e.g. {"views":"NOT_SUPPORTED"}
+  missing     Json     @default("{}")
+  providerId  String   @map("provider_id")
+  policyId    String   @map("policy_id")
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, collectedAt(sort: Desc)])
+  @@map("post_metrics")
+}
+
+model AccountMetric {
+  id          BigInt        @id @default(autoincrement())
+  accountId   String        @map("account_id") @db.Uuid
+  collectedAt DateTime      @map("collected_at") @db.Timestamptz(3)
+  followers   BigInt?
+  following   BigInt?
+  postsCount  BigInt?       @map("posts_count")
+  extra       Json          @default("{}")
+  missing     Json          @default("{}")
+  providerId  String        @map("provider_id")
+  policyId    String        @map("policy_id")
+  account     SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, collectedAt(sort: Desc)])
+  @@map("account_metrics")
+}
+
+model Provider {
+  id            String       @id
+  platform      String
+  /// VERIFIED | UNVERIFIED | AUTH_REQUIRED | BLOCKED | NOT_SUPPORTED (from the Phase 0 capability record)
+  status        String
+  enabled       Boolean      @default(false)
+  capabilities  Json
+  /// Name of the env var / secret store entry holding the credential. Never the secret itself.
+  credentialRef String?      @map("credential_ref")
+  lastHealth    Json?        @map("last_health")
+  checkedAt     DateTime?    @map("checked_at") @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  policies      DataPolicy[]
+
+  @@map("providers")
+}
+
+model DataPolicy {
+  id                String    @id
+  providerId        String    @map("provider_id")
+  version           Int       @default(1)
+  /// {allowHistoricalSnapshots, allowDerivedMetrics, allowMediaProcessing, allowExport}
+  allowedOperations Json      @map("allowed_operations")
+  retentionDays     Int?      @map("retention_days")
+  refreshDays       Int?      @map("refresh_days")
+  notes             Json      @default("[]")
+  sources           Json      @default("[]")
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  provider          Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("data_policies")
+}
+
+model Job {
+  id              String    @id @default(uuid()) @db.Uuid
+  queue           String
+  name            String
+  /// Deterministic key: project + operation + resource + window/config version (Master Plan §8).
+  idempotencyKey  String    @map("idempotency_key")
+  status          JobStatus @default(QUEUED)
+  projectId       String?   @map("project_id") @db.Uuid
+  resourceType    String?   @map("resource_type")
+  resourceId      String?   @map("resource_id")
+  payload         Json      @default("{}")
+  result          Json?
+  warnings        String[]
+  errorCode       String?   @map("error_code")
+  errorMessage    String?   @map("error_message")
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3) @map("max_attempts")
+  progress        Int       @default(0)
+  cancelRequested Boolean   @default(false) @map("cancel_requested")
+  retryOfId       String?   @map("retry_of_id") @db.Uuid
+  correlationId   String    @default(uuid()) @map("correlation_id")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt       DateTime? @map("started_at") @db.Timestamptz(3)
+  finishedAt      DateTime? @map("finished_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  logs            JobLog[]
+  runs            CollectionRun[]
+
+  @@index([idempotencyKey, status])
+  @@index([status, createdAt])
+  @@index([resourceType, resourceId, createdAt(sort: Desc)])
+  @@map("jobs")
+}
+
+model JobLog {
+  id      BigInt   @id @default(autoincrement())
+  jobId   String   @map("job_id") @db.Uuid
+  ts      DateTime @default(now()) @db.Timestamptz(3)
+  level   String
+  stage   String
+  message String
+  /// Redacted before insert.
+  data    Json?
+  job     Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, ts])
+  @@map("job_logs")
+}
+
+model CollectionRun {
+  id           String    @id @default(uuid()) @db.Uuid
+  jobId        String?   @map("job_id") @db.Uuid
+  providerId   String    @map("provider_id")
+  accountId    String?   @map("account_id") @db.Uuid
+  operation    String
+  status       JobStatus
+  requestCount Int       @default(0) @map("request_count")
+  recordCount  Int       @default(0) @map("record_count")
+  quotaUnits   Int       @default(0) @map("quota_units")
+  costUsd      Decimal   @default(0) @map("cost_usd") @db.Decimal(12, 6)
+  latencyMs    Int?      @map("latency_ms")
+  errorCode    String?   @map("error_code")
+  warnings     String[]
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(3)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(3)
+  job          Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([providerId, startedAt])
+  @@map("collection_runs")
+}
+
+model SyncCursor {
+  accountId     String        @map("account_id") @db.Uuid
+  providerId    String        @map("provider_id")
+  /// Continuation cursor for an interrupted backfill (provider-opaque).
+  cursor        String?
+  /// Newest published_at fully committed.
+  watermark     DateTime?     @db.Timestamptz(3)
+  backfillDone  Boolean       @default(false) @map("backfill_done")
+  lastSuccessAt DateTime?     @map("last_success_at") @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  account       SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, providerId])
+  @@map("sync_cursors")
+}
+
+model UsageLog {
+  id           BigInt   @id @default(autoincrement())
+  providerId   String   @map("provider_id")
+  projectId    String?  @map("project_id") @db.Uuid
+  jobId        String?  @map("job_id") @db.Uuid
+  /// requests | quota_units | records | tokens ...
+  unit         String
+  quantity     Int
+  reservedCost Decimal  @default(0) @map("reserved_cost") @db.Decimal(12, 6)
+  actualCost   Decimal  @default(0) @map("actual_cost") @db.Decimal(12, 6)
+  /// UTC date bucket used for daily caps.
+  day          DateTime @db.Date
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([providerId, day])
+  @@map("usage_logs")
+}
+
+model Schedule {
+  id          String    @id
+  /// Workflow template key, e.g. WF13 provider-health-check (workflow tables: Phase 4).
+  workflowKey String    @map("workflow_key")
+  cron        String?
+  everyMs     Int?      @map("every_ms")
+  timezone    String    @default("Asia/Ho_Chi_Minh")
+  enabled     Boolean   @default(true)
+  config      Json      @default("{}")
+  nextRunAt   DateTime? @map("next_run_at") @db.Timestamptz(3)
+  lastRunAt   DateTime? @map("last_run_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("schedules")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actor      String
+  action     String
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id")
+  ts         DateTime @default(now()) @db.Timestamptz(3)
+  /// Redacted metadata only; never secrets or deleted content.
+  metadata   Json?
+
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}

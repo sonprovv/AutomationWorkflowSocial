@@ -9,3 +9,8 @@ coverage/
 Thumbs.db
 # Local PoC scratch output (committed run logs live in docs/feasibility/runs)
 .poc-tmp/
+
+# Prisma generated client (run: npm run db:generate)
+packages/database/src/generated/
+# Local native-mode data (embedded PostgreSQL, exports)
+.data/

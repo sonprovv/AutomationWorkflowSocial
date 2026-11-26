@@ -8,6 +8,13 @@
     "node": ">=22.12 <25"
   },
   "workspaces": [
+    "apps/*",
+    "packages/config",
+    "packages/shared",
+    "packages/database",
+    "packages/queue",
+    "packages/policy-engine",
+    "packages/services",
     "packages/collectors/*",
     "tools/*"
   ],
@@ -16,12 +23,18 @@
     "test": "vitest run",
     "test:live": "vitest run --config vitest.live.config.ts",
     "poc": "tsx tools/feasibility/src/cli.ts",
-    "poc:summary": "tsx tools/feasibility/src/summary.ts"
+    "poc:summary": "tsx tools/feasibility/src/summary.ts",
+    "postinstall": "npm run generate -w @sss/database --silent",
+    "db:generate": "npm run generate -w @sss/database",
+    "db:migrate:new": "npm run migrate:new -w @sss/database --"
   },
   "devDependencies": {
     "@types/node": "22.20.7",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.1.2"
+  },
+  "overrides": {
+    "effect": "3.22.5"
   }
 }

@@ -1,0 +1,105 @@
+import { CollectorError, toCollectorError } from '@sss/collector-core';
+import { accountSyncPayload, idempotencyKey, JOB_NAMES, PAYLOAD_SCHEMAS, providerHealthPayload, unrecoverable, type JobName, type JobProcessor } from '@sss/queue';
+import { AppError } from '@sss/shared';
+import type { ServiceContext } from './context.ts';
+import { JobService } from './jobs.ts';
+import { ProviderService } from './providers.ts';
+import { SyncService } from './sync.ts';
+
+/**
+ * The single job processor used by BOTH the BullMQ worker and the inline dev/test dispatcher.
+ * Status bookkeeping lives in Postgres; retry decisions follow the typed error (Master Plan §5.3):
+ * transient (RATE_LIMITED / PROVIDER_UNAVAILABLE / TIMEOUT) → retry with backoff; everything else → fail now.
+ */
+export function createJobProcessor(ctx: ServiceContext): JobProcessor {
+  const jobs = new JobService(ctx);
+  const sync = new SyncService(ctx);
+  const providers = new ProviderService(ctx);
+
+  const run: JobProcessor = async ({ jobId, name, payload, attempt, signal }) => {
+    const row = await ctx.db.job.findUnique({ where: { id: jobId }, select: { maxAttempts: true } });
+    if (!row) {
+      ctx.logger.warn({ jobId }, 'job row missing; dropping');
+      return;
+    }
+    if (!(await jobs.markRunning(jobId, attempt))) {
+      ctx.logger.info({ jobId }, 'job cancelled or already finished; skipping');
+      return;
+    }
+    const log = (level: 'info' | 'warn', stage: string, message: string, data?: unknown) => jobs.log(jobId, level, stage, message, data);
+    await log('info', 'start', `${name} attempt ${attempt}/${row.maxAttempts}`);
+    try {
+      if (name === JOB_NAMES.ACCOUNT_SYNC) {
+        const p = accountSyncPayload.parse(payload);
+        const r = await sync.syncAccount({
+          accountId: p.accountId,
+          projectId: p.projectId,
+          jobId,
+          signal,
+          isCancelled: () => jobs.isCancelRequested(jobId),
+          onProgress: (pct) => jobs.progress(jobId, pct),
+          onLog: log,
+        });
+        await jobs.finish(jobId, r.status, {
+          result: r,
+          warnings: r.warnings,
+          errorCode: r.error?.code ?? (r.status === 'CANCELLED' ? 'CANCELLED' : null),
+          errorMessage: r.error?.message ?? null,
+        });
+        await log('info', 'finish', `${r.status}: ${r.postsNew} new, ${r.postsUpdated} updated, ${r.pages} page(s), ${r.usage.requests} request(s)`);
+        return;
+      }
+      if (name === JOB_NAMES.PROVIDER_HEALTH) {
+        const p = providerHealthPayload.parse(payload);
+        const r = p.providerId ? [await providers.test(p.providerId)] : await providers.testAllEnabled();
+        const unhealthy = r.filter((x) => !x.healthy).map((x) => x.providerId);
+        await jobs.finish(jobId, unhealthy.length ? 'PARTIAL_SUCCESS' : 'SUCCEEDED', {
+          result: r,
+          warnings: unhealthy.map((id) => `Provider ${id} unhealthy`),
+        });
+        return;
+      }
+      throw new CollectorError('NOT_SUPPORTED', `Unknown job ${name}`);
+    } catch (e) {
+      const code = e instanceof AppError ? e.code : toCollectorError(e).code;
+      const message = e instanceof Error ? e.message : String(e);
+      const retryable = !(e instanceof AppError) && toCollectorError(e).retryable && !signal.aborted;
+      if (signal.aborted) {
+        await jobs.finish(jobId, 'CANCELLED', { errorCode: 'CANCELLED', errorMessage: 'Cancelled' });
+        throw unrecoverable(new Error('cancelled'));
+      }
+      if (retryable && attempt < row.maxAttempts) {
+        await jobs.markRetrying(jobId, code, message);
+        await log('warn', 'retry', `Attempt ${attempt} failed with ${code}; will retry`, { message });
+        throw e instanceof Error ? e : new Error(message);
+      }
+      await jobs.finish(jobId, 'FAILED', { errorCode: code, errorMessage: message });
+      await log('warn', 'failed', `${code}: ${message}`);
+      throw unrecoverable(e instanceof Error ? e : new Error(message));
+    }
+  };
+
+  /**
+   * Scheduler-triggered executions arrive as BullMQ jobs named `scheduled:<job name>` without a DB row.
+   * Create the DB job (same idempotency key space as manual runs: an active manual run → SKIPPED) and run it here.
+   */
+  return async (job) => {
+    if (!job.name.startsWith('scheduled:')) return run(job);
+    const name = job.name.slice('scheduled:'.length) as JobName;
+    const data = (job.payload ?? {}) as Record<string, unknown>;
+    const payload = PAYLOAD_SCHEMAS[name].parse(data);
+    const resource = name === JOB_NAMES.PROVIDER_HEALTH ? String((payload as { providerId: string | null }).providerId ?? 'all') : String((payload as { accountId?: string }).accountId);
+    let created;
+    try {
+      created = await jobs.create({ name, payload, idempotencyKey: idempotencyKey({ op: name, resource }), dispatch: false, maxAttempts: 1 });
+    } catch (e) {
+      if (e instanceof AppError && e.code === 'CONFLICT') {
+        ctx.logger.info({ name, resource }, 'scheduled run skipped: identical job already active');
+        return;
+      }
+      throw e;
+    }
+    await jobs.log(created.id, 'info', 'schedule', `Triggered by schedule ${String(data.scheduleId ?? '?')}`);
+    return run({ ...job, jobId: created.id, name, payload, attempt: 1 });
+  };
+}

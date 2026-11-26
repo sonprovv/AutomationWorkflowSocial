@@ -1,0 +1,15 @@
+{
+  "name": "@sss/collector-registry",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sss/collector-core": "0.0.0",
+    "@sss/collector-bluesky": "0.0.0",
+    "@sss/collector-youtube": "0.0.0",
+    "@sss/config": "0.0.0"
+  }
+}

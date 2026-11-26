@@ -1,0 +1,25 @@
+{
+  "name": "@sss/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "@sss/collector-core": "0.0.0"
+  },
+  "devDependencies": {
+    "prisma": "7.10.1",
+    "embedded-postgres": "17.12.0-beta.19",
+    "effect": "3.22.5"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:new": "tsx scripts/migrate-dev.ts",
+    "migrate:deploy": "prisma migrate deploy"
+  }
+}

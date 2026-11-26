@@ -1,0 +1,25 @@
+{
+  "name": "@sss/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "bullmq": "6.7.10",
+    "@sss/config": "0.0.0",
+    "@sss/database": "0.0.0",
+    "@sss/queue": "0.0.0",
+    "@sss/services": "0.0.0",
+    "@sss/shared": "0.0.0",
+    "@sss/collector-registry": "0.0.0",
+    "@sss/collector-core": "0.0.0",
+    "pino": "10.4.0",
+    "ioredis": "6.1.0"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts"
+  }
+}
