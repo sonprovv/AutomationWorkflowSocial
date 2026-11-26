@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.git
+.data
+.env
+.env.*
+!.env.example
+.poc-tmp
+apps/web/dist
+packages/database/src/generated
+coverage
+*.log

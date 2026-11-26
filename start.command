@@ -14,7 +14,8 @@ fi
 
 if [ "${1:-}" = "--docker" ]; then
   command -v docker >/dev/null 2>&1 || { echo "[start] Docker is not installed. Run without --docker for native mode."; exit 1; }
-  [ -f .env ] || cp .env.example .env
+  [ -d node_modules ] || npm ci
+  node node_modules/tsx/dist/cli.mjs tools/local/src/docker-env.ts
   docker compose up -d --build
   APP_PORT="$(grep -E '^APP_PORT=' .env | cut -d= -f2 || true)"
   APP_PORT="${APP_PORT:-18966}"

@@ -2,7 +2,7 @@
   "name": "social-spy-automation",
   "version": "0.0.0",
   "private": true,
-  "description": "Social Intelligence Automation — local-first competitor & content research (see SOCIAL_SPY_AUTOMATION_PLAN.md)",
+  "description": "Social Intelligence Automation \u2014 local-first competitor & content research (see SOCIAL_SPY_AUTOMATION_PLAN.md)",
   "type": "module",
   "engines": {
     "node": ">=22.12 <25"
@@ -19,7 +19,7 @@
     "tools/*"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:live": "vitest run --config vitest.live.config.ts",
     "poc": "tsx tools/feasibility/src/cli.ts",
@@ -30,7 +30,8 @@
     "slice": "tsx tools/local/src/slice.ts",
     "doctor": "tsx tools/local/src/doctor.ts",
     "start:native": "tsx tools/local/src/start.ts",
-    "stop:native": "tsx tools/local/src/stop.ts"
+    "stop:native": "tsx tools/local/src/stop.ts",
+    "build:web": "npm run build -w @sss/web"
   },
   "devDependencies": {
     "@types/node": "22.20.7",

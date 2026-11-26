@@ -1,0 +1,92 @@
+# Docker mode (optional; native mode via start.bat / start.command needs no Docker) — Master Plan §15.1.
+#   start.bat --docker   |   ./start.command --docker
+# Only the web port is published, bound to 127.0.0.1. Postgres and Redis are never exposed (§11, §13).
+# POSTGRES_PASSWORD is generated into .env by tools/local/src/docker-env.ts (called by the start scripts).
+name: social-spy
+
+x-app: &app
+  build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: app }
+  image: social-spy-app:local
+  env_file: [.env]
+  environment: &app-env
+    NODE_ENV: production
+    QUEUE_DRIVER: bullmq
+    DATABASE_URL: postgresql://sss:${POSTGRES_PASSWORD:?run start --docker to generate POSTGRES_PASSWORD}@postgres:5432/social_spy
+    REDIS_URL: redis://redis:6379
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sss
+      POSTGRES_DB: social_spy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run start --docker to generate POSTGRES_PASSWORD}
+      # UTF-8 + ICU, same as the embedded database (Vietnamese case-folding, emoji).
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale-provider=icu --icu-locale=und --locale=C
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sss -d social_spy']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ['node', 'node_modules/tsx/dist/cli.mjs', 'tools/local/src/migrate-seed.ts']
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: 'no'
+
+  api:
+    <<: *app
+    command: ['node', 'node_modules/tsx/dist/cli.mjs', 'apps/api/src/main.ts']
+    environment:
+      <<: *app-env
+      API_HOST: 0.0.0.0
+      API_PORT: '3000'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/v1/health/live']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    <<: *app
+    command: ['node', 'node_modules/tsx/dist/cli.mjs', 'apps/worker/src/main.ts']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 30s
+
+  scheduler:
+    <<: *app
+    command: ['node', 'node_modules/tsx/dist/cli.mjs', 'apps/scheduler/src/main.ts']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  web:
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: web }
+    image: social-spy-web:local
+    ports: ['127.0.0.1:${APP_PORT:-18966}:80']
+    depends_on: { api: { condition: service_healthy } }
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

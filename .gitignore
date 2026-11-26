@@ -14,3 +14,6 @@ Thumbs.db
 packages/database/src/generated/
 # Local native-mode data (embedded PostgreSQL, exports)
 .data/
+
+# Built web UI
+apps/web/dist/

@@ -35,7 +35,8 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-if not exist .env copy .env.example .env >nul
+if not exist node_modules call npm ci
+node node_modules\tsx\dist\cli.mjs tools\local\src\docker-env.ts
 docker compose up -d --build
 if errorlevel 1 (
   pause
