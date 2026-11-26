@@ -65,8 +65,17 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
       const message = e instanceof Error ? e.message : String(e);
       const retryable = !(e instanceof AppError) && toCollectorError(e).retryable && !signal.aborted;
       if (signal.aborted) {
-        await jobs.finish(jobId, 'CANCELLED', { errorCode: 'CANCELLED', errorMessage: 'Cancelled' });
-        throw unrecoverable(new Error('cancelled'));
+        // A user cancel, the job timeout and a process shutdown all abort the signal: record which one it was.
+        const reason = signal.reason as { name?: string } | undefined;
+        if (await jobs.isCancelRequested(jobId)) {
+          await jobs.finish(jobId, 'CANCELLED', { errorCode: 'CANCELLED', errorMessage: 'Cancelled by user' });
+        } else if (reason?.name === 'TimeoutError') {
+          await jobs.finish(jobId, 'FAILED', { errorCode: 'TIMEOUT', errorMessage: 'Job exceeded JOB_TIMEOUT_SECONDS' });
+          await log('warn', 'failed', 'TIMEOUT: job exceeded JOB_TIMEOUT_SECONDS');
+        } else {
+          await jobs.finish(jobId, 'CANCELLED', { errorCode: 'ABORTED', errorMessage: 'Aborted (worker shutdown); committed pages are kept' });
+        }
+        throw unrecoverable(new Error('aborted'));
       }
       if (retryable && attempt < row.maxAttempts) {
         await jobs.markRetrying(jobId, code, message);
@@ -89,9 +98,16 @@ export function createJobProcessor(ctx: ServiceContext): JobProcessor {
     const data = (job.payload ?? {}) as Record<string, unknown>;
     const payload = PAYLOAD_SCHEMAS[name].parse(data);
     const resource = name === JOB_NAMES.PROVIDER_HEALTH ? String((payload as { providerId: string | null }).providerId ?? 'all') : String((payload as { accountId?: string }).accountId);
+    // Re-delivery of the same scheduled execution (stalled job recovered by BullMQ): resume its DB row
+    // instead of skipping on the dedup conflict, which would leave that row RUNNING forever.
+    const existing = await ctx.db.job.findFirst({ where: { correlationId: job.jobId, status: { in: ['QUEUED', 'RUNNING'] } } });
+    if (existing) {
+      await jobs.log(existing.id, 'warn', 'schedule', 'Scheduled execution re-delivered (stalled); resuming');
+      return run({ ...job, jobId: existing.id, name, payload, attempt: 1 });
+    }
     let created;
     try {
-      created = await jobs.create({ name, payload, idempotencyKey: idempotencyKey({ op: name, resource }), dispatch: false, maxAttempts: 1 });
+      created = await jobs.create({ name, payload, idempotencyKey: idempotencyKey({ op: name, resource }), dispatch: false, maxAttempts: 1, correlationId: job.jobId });
     } catch (e) {
       if (e instanceof AppError && e.code === 'CONFLICT') {
         ctx.logger.info({ name, resource }, 'scheduled run skipped: identical job already active');

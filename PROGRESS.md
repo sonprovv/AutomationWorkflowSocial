@@ -4,7 +4,7 @@
 - **Decisions:** [`docs/adr/`](docs/adr/)
 - **Repository:** github.com/sonprovv/AutomationWorkflowSocial (branch `main`)
 
-> ⏸ **Paused 2026-11-26.** Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
+> ▶ **Resumed 2026-11-26 15:23 UTC.** Open items are in [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
 **Status legend:** ✅ done, with evidence · 🟡 in progress, or blocked waiting on input · ⬜ not started · ⚠ written but not yet run or verified
 
@@ -31,7 +31,7 @@
 
 ### Test evidence (2026-11-26, Windows 11, Node 22.16.0)
 - `npm run typecheck`: clean. Covers the server packages and the web app.
-- `npm test`: **89 passed, 1 skipped.** The skipped test is the BullMQ test, which needs Redis.
+- `npm test`: **94 passed, 1 skipped.** The skipped test is the BullMQ test, which needs Redis.
   - **unit (74):** collectors, feasibility tooling.
   - **integration (15)** on real embedded PostgreSQL:
     - the API → services → processor → real Bluesky adapter flow, run against a local fake AppView;
@@ -70,6 +70,19 @@
 |---|---|
 | On Windows, embedded PostgreSQL defaulted to **WIN1252**, so emoji in a profile caused HTTP 500 | `initdb --encoding=UTF8` |
 | The C locale cannot case-fold Vietnamese (`'Tiếng' ILIKE '%TIẾNG%'` = false) | ICU `und` locale. Docker uses the same initdb flags |
+
+### Bugs found by the Phase 1 code review (fixed; regression tests in `tests/integration/review-fixes.test.ts`)
+| Bug | Fix |
+|---|---|
+| A job that hit `JOB_TIMEOUT_SECONDS` was recorded as CANCELLED ("Cancelled") | Abort reason is checked: user cancel → CANCELLED, timeout → FAILED/`TIMEOUT`, shutdown → CANCELLED/`ABORTED` |
+| A scheduled execution re-delivered by BullMQ after a stall hit the dedup conflict and was skipped, leaving its DB row RUNNING forever | The DB row stores the BullMQ job id in `correlationId`; a re-delivery resumes that row |
+| A BullMQ job that failed for good without the processor recording it (stalled too often, lock lost) left the DB row RUNNING/QUEUED | Worker `failed` handler makes the row terminal (`STALLED`/`FAILED`); no-op if already finished |
+| After a restart, jobs whose execution was lost stayed active forever (inline mode always; BullMQ if Redis data was lost) | Startup reconciliation marks them FAILED/`ORPHANED` (API in inline mode, worker in BullMQ mode; jobs younger than 2 min skipped) |
+| `usage_logs.actual_cost` repeated the operation cost on every unit row (2–3× when summed) | Cost booked on one row only |
+| Incremental sync stopped on page 1 when a pinned old post was at the top, missing newer posts on later pages | "Caught up" now uses the oldest post of the page; a warning is added when the 10-page cap is hit first |
+| On Windows the 15 s stop fallback killed only the tsx wrapper, leaving the real service process running | `taskkill /T /F` on the process tree |
+
+Reviewed with no change needed: keyset pagination (`sortAt desc, id desc` with a matching cursor predicate), the API error-handler status mapping, and the retry path (`markRetrying` → QUEUED, re-delivery accepted by `markRunning`).
 
 ### Decisions (ADR)
 - **ADR-0007:** continue with Phase 1 while the Phase 0 gate waits for the YouTube key.
@@ -111,7 +124,7 @@
 | P0-05 | Results, cost, fields, samples, sources and dates | ✅ | `runs/`, `samples/`, cost estimate in `docs/feasibility/README.md` §3 |
 
 ### Evidence
-- Bluesky PoC runs: 24 PASS / 3 FAIL / 1 SKIP per run.
+- Bluesky PoC runs (3 runs, 08:27 to 15:23 UTC): 24 PASS / 3 FAIL / 1 SKIP per run.
   - The 3 FAILs are a real platform limit: unauthenticated search pagination returns 403 (ADR-0005).
 - YouTube: `AUTH_REQUIRED` (no key yet).
 
@@ -132,3 +145,5 @@
 - 2026-11-26 09:50 — Native start/stop verified on Windows. Minimal web UI. Docker Compose written (not run).
 - 2026-11-26 ~10:00 — Phase 1 docs (ARCHITECTURE, API_SPEC, DATABASE, DEPLOYMENT, RUNBOOK, COLLECTOR_SPEC, ADR-0007…0009).
 - 2026-11-26 10:00 — **Paused** at the Product Owner's request. The Phase 1 code review was interrupted and the scheduled Bluesky run 3 was cancelled. Resume from [`NEXT_STEPS.md`](NEXT_STEPS.md).
+- 2026-11-26 15:23 — Resumed. Bluesky PoC run 3: same result as runs 1–2 (24/3/1).
+- 2026-11-26 ~15:30 — Phase 1 code review done: 7 bugs fixed with regression tests (see above). `npm test`: 94 passed, 1 skipped. Native start/stop re-checked on Windows.

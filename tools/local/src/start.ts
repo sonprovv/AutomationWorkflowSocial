@@ -135,7 +135,7 @@ async function shutdown(code = 0) {
         new Promise<void>((resolve) => {
           if (c.proc.exitCode !== null) return resolve();
           const t = setTimeout(() => {
-            c.proc.kill();
+            killTree(c.proc);
             resolve();
           }, 15_000);
           c.proc.once('exit', () => {
@@ -161,6 +161,15 @@ setInterval(() => {
 }, 1000).unref();
 // Keep the supervisor alive.
 setInterval(() => {}, 1 << 30);
+
+/** tsx runs the service in a grandchild process; on Windows proc.kill() would only end the tsx wrapper. */
+function killTree(proc: ChildProcess) {
+  if (process.platform === 'win32' && proc.pid) {
+    spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    proc.kill();
+  }
+}
 
 function openBrowser(target: string) {
   const cmd = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';

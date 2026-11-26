@@ -30,7 +30,7 @@
 
 ## 2. Results of the §4.2 test cases (real calls)
 
-These are run 1 figures (2026-11-26 08:27 UTC). See `runs/bluesky/SUMMARY.md` for the later runs.
+These are run 1 figures (2026-11-26 08:27 UTC). Runs 2 (08:34 UTC) and 3 (15:23 UTC) gave the same results: 24 PASS, 3 FAIL (search page 2, HTTP 403), 1 SKIP, about 7 hours apart. Run 3 latency was higher (p50 610 ms, p95 1536 ms), still with no 429s. See `runs/bluesky/SUMMARY.md`.
 
 | Test case | Result |
 |---|---|

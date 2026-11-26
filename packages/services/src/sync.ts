@@ -129,7 +129,13 @@ export class SyncService {
         await o.onProgress?.(10 + Math.min(85, Math.round((res.postsSeen / Math.max(limit, 1)) * 85)));
         if (!nextCursor) break;
         if (mode === 'initial' && res.postsSeen >= limit) break;
-        if (stopBefore && posts.some((x) => x.publishedAt && new Date(x.publishedAt) < stopBefore)) break; // caught up
+        // Caught up when the OLDEST post of the page is past the overlap window. Checking "any post" would
+        // stop early on a pinned old post at the top of page 1 and miss newer posts on later pages.
+        const oldest = lastDated(posts);
+        if (stopBefore && oldest && oldest < stopBefore) break;
+        if (mode === 'incremental' && page === MAX_PAGES) {
+          res.warnings.push(`Stopped after ${MAX_PAGES} pages without reaching the previous watermark; older new posts may be missing.`);
+        }
         cursor = nextCursor;
       }
       res.watermark = watermark?.toISOString() ?? null;
@@ -190,6 +196,17 @@ export class SyncService {
     if (caughtError && res.status === 'SUCCEEDED') throw caughtError;
     return res;
   }
+}
+
+/** publishedAt of the last post in feed order that has a date (feeds are newest first). */
+function lastDated(posts: Post[]): Date | null {
+  for (let i = posts.length - 1; i >= 0; i--) {
+    const x = posts[i]!.publishedAt;
+    if (!x) continue;
+    const d = new Date(x);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
 }
 
 function maxDate(xs: (string | null)[]): Date | null {

@@ -45,7 +45,9 @@ export class UsageGuard {
     if (snap.quotaUnits) rows.push({ unit: 'quota_units', quantity: snap.quotaUnits });
     const data = rows
       .filter((r) => r.quantity > 0)
-      .map((r) => ({ providerId, projectId: ref.projectId ?? null, jobId: ref.jobId ?? null, unit: r.unit, quantity: r.quantity, actualCost: snap.costUsd, day }));
+      .map((r, i) => ({ providerId, projectId: ref.projectId ?? null, jobId: ref.jobId ?? null, unit: r.unit, quantity: r.quantity, actualCost: i === 0 ? snap.costUsd : 0, day }));
+    // The operation's cost is booked on exactly one row, so SUM(actual_cost) is not multiplied by the unit count.
+    if (!data.length && snap.costUsd > 0) data.push({ providerId, projectId: ref.projectId ?? null, jobId: ref.jobId ?? null, unit: 'requests', quantity: 0, actualCost: snap.costUsd, day });
     if (data.length) await this.ctx.db.usageLog.createMany({ data });
   }
 }

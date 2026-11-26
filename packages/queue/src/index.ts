@@ -122,6 +122,12 @@ export class BullMqDispatcher implements JobDispatcher {
     return 'not_found';
   }
 
+  /** BullMQ state of a queue job, or null if it no longer exists (removed / never added / Redis data lost). */
+  async state(queueJobId: string, name: JobName): Promise<string | null> {
+    const job = await this.queue(JOB_QUEUE[name]).getJob(queueJobId);
+    return job ? await job.getState() : null;
+  }
+
   async ping(): Promise<void> {
     const pong = await this.connection.ping();
     if (pong !== 'PONG') throw new Error(`Unexpected Redis ping reply: ${pong}`);

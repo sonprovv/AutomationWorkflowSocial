@@ -8,7 +8,7 @@ This report covers every platform in the Master Plan §4.1 matrix. Only Bluesky 
 
 | Platform | Status | Evidence | Credential needed to progress | MVP decision |
 |---|---|---|---|---|
-| **Bluesky** | ✅ **VERIFIED** | Live PoC runs: [runs/bluesky](runs/bluesky/SUMMARY.md) | None. An App Password is optional and only needed for search pagination | **Production adapter #1** |
+| **Bluesky** | ✅ **VERIFIED** | 3 live PoC runs over about 7 h: [runs/bluesky](runs/bluesky/SUMMARY.md) | None. An App Password is optional and only needed for search pagination | **Production adapter #1** |
 | **YouTube** | ⏳ AUTH_REQUIRED | Adapter + contract tests. Live key handling verified with an invalid key | `YOUTUBE_API_KEY` | **Production adapter #2**, once 3 live runs pass |
 | TikTok | ❌ BLOCKED | Official docs + ToS | No official commercial path. Apify = LEGAL_RISK | Not enabled. Alternatives are in [tiktok.md](tiktok.md) |
 | Facebook | ⏳ AUTH_REQUIRED | Official docs | Meta app + Business Verification + PPCA App Review | After MVP, if approved |

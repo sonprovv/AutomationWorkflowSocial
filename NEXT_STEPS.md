@@ -1,30 +1,18 @@
-# NEXT STEPS — resume here
+# NEXT STEPS
 
-Paused on 2026-11-26 at about 10:00 UTC, at the Product Owner's request ("dừng lại, note lại sau làm tiếp").
-The last pushed commit is on `main` (see `git log`). The full status and test evidence are in [`PROGRESS.md`](PROGRESS.md).
+Updated 2026-11-26 after resuming. The full status and test evidence are in [`PROGRESS.md`](PROGRESS.md).
 
 ## Where we stopped
 - **Phase 0:** code, tests and docs are done. The **gate is still open** until a YouTube API key is verified (ADR-0007).
-- **Phase 1:** the core is done and tested with real data (89 tests passing, 1 skipped). These items are still open:
+- **Phase 1:** the core is done and tested with real data (94 tests passing, 1 skipped). These items are still open:
   - BullMQ path: needs Redis.
   - Docker mode: not run.
   - macOS: not tested.
 
-## Interrupted or cancelled when we paused
-1. **Independent code review of Phase 1** (services, jobs, processor, queue, API, worker, scheduler, start/stop). It was stopped before producing any findings, so run it again first when resuming. Suggested focus:
-   - job status transitions under BullMQ retries and stalled jobs (can a job get stuck in RUNNING or QUEUED?);
-   - the scheduled-job path in `packages/services/src/processor.ts`;
-   - usage-guard accounting;
-   - incremental sync watermark and stop logic;
-   - keyset pagination;
-   - error-handler status mapping;
-   - `tools/local/src/start.ts` shutdown paths on Windows.
-2. **Bluesky PoC run 3** (it was scheduled for 17:13 and cancelled). Run it manually:
-   ```
-   npm run poc -- bluesky --label run3
-   npm run poc:summary
-   ```
-   Then update `docs/feasibility/bluesky.md`, `docs/feasibility/README.md` and `PROGRESS.md` to say 3 runs.
+## Done since resuming
+- Bluesky PoC run 3 (24/3/1, same as runs 1–2). Docs now say 3 runs.
+- Phase 1 code review: 7 bugs fixed with regression tests. See `PROGRESS.md` → "Bugs found by the Phase 1 code review".
+  - Still to verify once Redis is installed: the worker `failed` handler and the startup orphan check against a real BullMQ (stalled jobs).
 
 ## Waiting on the user / Product Owner
 | # | Item | What to do |

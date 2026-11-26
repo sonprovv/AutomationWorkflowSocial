@@ -1,14 +1,21 @@
 import { join } from 'node:path';
 import { findRepoRoot, loadConfig } from '@sss/config';
-import { createRuntime } from '@sss/services';
+import { createRuntime, JobService } from '@sss/services';
 import { buildServer } from './server.ts';
 
 const config = loadConfig();
 const serveWeb = process.env.SERVE_WEB === 'true';
 const webDist = serveWeb ? join(findRepoRoot(), 'apps', 'web', 'dist') : null;
 
+const runtime = createRuntime(config);
+// Inline mode runs jobs inside this process, so any job still QUEUED/RUNNING from an earlier run of the
+// API can never finish: mark those FAILED/ORPHANED at startup (the user can retry them).
+if (config.QUEUE_DRIVER === 'inline') {
+  const orphans = await new JobService(runtime.ctx).reconcileOrphans(async () => false, new Date());
+  if (orphans.length) console.warn(`[api] marked ${orphans.length} orphaned job(s) from a previous run as FAILED`);
+}
 const app = await buildServer({
-  runtime: createRuntime(config),
+  runtime,
   logger: {
     level: config.LOG_LEVEL,
     redact: { paths: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-goog-api-key"]'], censor: '[REDACTED]' },

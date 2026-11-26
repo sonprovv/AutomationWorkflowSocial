@@ -2,7 +2,7 @@
   "_sample": {
     "kind": "REAL normalized records from the latest PoC run (truncated). Not a fixture.",
     "platform": "bluesky",
-    "collectedAt": "2026-11-26T08:34:04.952Z",
+    "collectedAt": "2026-11-26T15:23:44.435Z",
     "deleteBy": null,
     "policyNote": "Public Bluesky content: remove on author deletion."
   },
@@ -16,45 +16,41 @@
     "avatarUrl": "https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka",
     "createdAt": "2023-04-12T04:53:57.057Z",
     "metrics": {
-      "followers": 35857927,
+      "followers": 35864099,
       "following": 44,
       "postsCount": 928,
       "extra": {},
       "missing": {},
-      "collectedAt": "2026-11-26T08:34:06.045Z"
+      "collectedAt": "2026-11-26T15:23:44.808Z"
     },
     "provenance": {
       "providerId": "bluesky-appview",
       "policyId": "bluesky-public-v0-unverified",
       "schemaVersion": "bluesky-appview@2026-11-26",
       "source": "app.bsky.actor.getProfile",
-      "collectedAt": "2026-11-26T08:34:06.045Z"
+      "collectedAt": "2026-11-26T15:23:44.808Z"
     }
   },
   "posts": [
     {
       "platform": "bluesky",
-      "externalId": "at://did:plc:iusdrawyeuqoq5we7mhbgcmt/app.bsky.feed.post/3n374wj63is2j",
-      "accountExternalId": "did:plc:iusdrawyeuqoq5we7mhbgcmt",
-      "url": "https://bsky.app/profile/did:plc:iusdrawyeuqoq5we7mhbgcmt/post/3n374wj63is2j",
-      "contentType": "image",
+      "externalId": "at://did:plc:hnpadzu673t2sf5kcgyqozbt/app.bsky.feed.post/3n37tosnvoc2s",
+      "accountExternalId": "did:plc:hnpadzu673t2sf5kcgyqozbt",
+      "url": "https://bsky.app/profile/did:plc:hnpadzu673t2sf5kcgyqozbt/post/3n37tosnvoc2s",
+      "contentType": "video",
       "title": null,
-      "caption": "Live your life like a desktop wallpaper \n\n#ffxiv #GPOSER #finalfantasyxiv #idk #midlander",
+      "caption": "a mac live wallpaper with lava, basalt under the icons, glowing rivers between them, slow embers, and the land goes with every file I drag\nterrarium.mulualem.com?ref=bluesky\n#macOS",
       "hashtags": [
-        "ffxiv",
-        "gposer",
-        "finalfantasyxiv",
-        "idk",
-        "midlander"
+        "macos"
       ],
       "language": "en",
-      "thumbnailUrl": "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:iusdrawyeuqoq5we7mhbgcmt/bafkreiekzeomjpr5xjg35zj6q7lgvrfhauwksjhhrfe2vya5nmdwcabdwi",
+      "thumbnailUrl": "https://video.bsky.app/watch/did%3Aplc%3Ahnpadzu673t2sf5kcgyqozbt/bafkreiaiyyfoliqkp2kls7drnony5dsvdm2jxqrd2sbxql6opos5l25cxi/thumbnail.jpg",
       "durationSeconds": null,
-      "publishedAt": "2026-11-26T07:16:29.717Z",
+      "publishedAt": "2026-11-26T14:03:47.301Z",
       "metrics": {
-        "postExternalId": "at://did:plc:iusdrawyeuqoq5we7mhbgcmt/app.bsky.feed.post/3n374wj63is2j",
+        "postExternalId": "at://did:plc:hnpadzu673t2sf5kcgyqozbt/app.bsky.feed.post/3n37tosnvoc2s",
         "views": null,
-        "likes": 1,
+        "likes": 0,
         "comments": 0,
         "shares": 0,
         "saves": 0,
@@ -64,35 +60,39 @@
         "missing": {
           "views": "NOT_SUPPORTED"
         },
-        "collectedAt": "2026-11-26T08:34:08.493Z"
+        "collectedAt": "2026-11-26T15:23:49.218Z"
       },
       "provenance": {
         "providerId": "bluesky-appview",
         "policyId": "bluesky-public-v0-unverified",
         "schemaVersion": "bluesky-appview@2026-11-26",
         "source": "app.bsky.feed.searchPosts",
-        "collectedAt": "2026-11-26T08:34:08.493Z"
+        "collectedAt": "2026-11-26T15:23:49.218Z"
       }
     },
     {
       "platform": "bluesky",
-      "externalId": "at://did:plc:lrkvtfoqzvfhkq3yi7iijsf4/app.bsky.feed.post/3n36vyeir3k2h",
-      "accountExternalId": "did:plc:lrkvtfoqzvfhkq3yi7iijsf4",
-      "url": "https://bsky.app/profile/did:plc:lrkvtfoqzvfhkq3yi7iijsf4/post/3n36vyeir3k2h",
-      "contentType": "link",
+      "externalId": "at://did:plc:eyhobandd5fypb3crjaubom6/app.bsky.feed.post/3n37mttc4qs2g",
+      "accountExternalId": "did:plc:eyhobandd5fypb3crjaubom6",
+      "url": "https://bsky.app/profile/did:plc:eyhobandd5fypb3crjaubom6/post/3n37mttc4qs2g",
+      "contentType": "image",
       "title": null,
-      "caption": "pin.it/2PV2awYnZ\n\nSweet dreams 😴 ✨️",
-      "hashtags": [],
+      "caption": "15th film of #Noirvember\nWarren Oates as a down on his luck detective? It seems like I'm already starting the day with something to be thankful for.\n#NowWatching #NeoNoir\nChandler (1971)",
+      "hashtags": [
+        "noirvember",
+        "nowwatching",
+        "neonoir"
+      ],
       "language": "en",
-      "thumbnailUrl": "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:lrkvtfoqzvfhkq3yi7iijsf4/bafkreighnmjmqbcly6bd7fxx36nyoi3zgqk4nezca2wuaiuycdgpiymibu",
+      "thumbnailUrl": "https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:eyhobandd5fypb3crjaubom6/bafkreibgfpgckxygxvm5ahebp2y7vhvja7maoknyhfjbkpaxearej4jps4",
       "durationSeconds": null,
-      "publishedAt": "2026-11-26T05:12:15.743Z",
+      "publishedAt": "2026-11-26T12:01:19.527Z",
       "metrics": {
-        "postExternalId": "at://did:plc:lrkvtfoqzvfhkq3yi7iijsf4/app.bsky.feed.post/3n36vyeir3k2h",
+        "postExternalId": "at://did:plc:eyhobandd5fypb3crjaubom6/app.bsky.feed.post/3n37mttc4qs2g",
         "views": null,
-        "likes": 1,
+        "likes": 4,
         "comments": 0,
-        "shares": 0,
+        "shares": 2,
         "saves": 0,
         "extra": {
           "quotes": 0
@@ -100,14 +100,14 @@
         "missing": {
           "views": "NOT_SUPPORTED"
         },
-        "collectedAt": "2026-11-26T08:34:08.493Z"
+        "collectedAt": "2026-11-26T15:23:49.218Z"
       },
       "provenance": {
         "providerId": "bluesky-appview",
         "policyId": "bluesky-public-v0-unverified",
         "schemaVersion": "bluesky-appview@2026-11-26",
         "source": "app.bsky.feed.searchPosts",
-        "collectedAt": "2026-11-26T08:34:08.493Z"
+        "collectedAt": "2026-11-26T15:23:49.218Z"
       }
     }
   ]

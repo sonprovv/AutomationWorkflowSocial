@@ -16,6 +16,8 @@ export interface CreateJobInput {
   retryOfId?: string;
   /** false = only create the DB row (the caller executes it, e.g. a scheduler-triggered run in the worker). */
   dispatch?: boolean;
+  /** Links the DB row to an external execution id (scheduler-triggered runs: the BullMQ job id). */
+  correlationId?: string;
 }
 
 export interface JobView {
@@ -89,6 +91,7 @@ export class JobService {
           payload: payload as Prisma.InputJsonValue,
           maxAttempts,
           retryOfId: input.retryOfId,
+          ...(input.correlationId ? { correlationId: input.correlationId } : {}),
         },
       });
     } catch (e) {
@@ -150,6 +153,33 @@ export class JobService {
         errorMessage: extra.errorMessage === undefined ? undefined : extra.errorMessage?.slice(0, 2000),
       },
     });
+  }
+
+  /**
+   * Make a still-active job terminal (FAILED). No-op if it already finished. Used when the queue gives up
+   * on a job without the processor recording an outcome (stalled too often, lock lost, worker crash).
+   */
+  async failIfActive(jobId: string, errorCode: string, errorMessage: string): Promise<boolean> {
+    const r = await this.ctx.db.job.updateMany({
+      where: { id: jobId, status: { in: ['QUEUED', 'RUNNING'] } },
+      data: { status: 'FAILED', finishedAt: nowOf(this.ctx), errorCode, errorMessage: errorMessage.slice(0, 2000) },
+    });
+    if (r.count) await this.log(jobId, 'warn', 'reconcile', `${errorCode}: ${errorMessage}`);
+    return r.count > 0;
+  }
+
+  /**
+   * Startup reconciliation: active DB jobs created before `createdBefore` whose execution no longer exists
+   * (`isLive` returns false) are marked FAILED/ORPHANED so they never stay QUEUED/RUNNING forever.
+   */
+  async reconcileOrphans(isLive: (job: Job) => Promise<boolean>, createdBefore: Date): Promise<string[]> {
+    const active = await this.ctx.db.job.findMany({ where: { status: { in: ['QUEUED', 'RUNNING'] }, createdAt: { lt: createdBefore } } });
+    const failed: string[] = [];
+    for (const j of active) {
+      if (await isLive(j).catch(() => true)) continue;
+      if (await this.failIfActive(j.id, 'ORPHANED', 'The job execution was lost (process restart or queue data loss); retry it if needed')) failed.push(j.id);
+    }
+    return failed;
   }
 
   async log(jobId: string, level: 'debug' | 'info' | 'warn' | 'error', stage: string, message: string, data?: unknown): Promise<void> {
